@@ -46,6 +46,18 @@ subprojects {
         withJavadocJar()
     }
 
+    val generateFastStatsProperties by tasks.registering {
+        val outputDir = layout.buildDirectory.dir("generated/resources/faststats")
+        outputs.dir(outputDir)
+        doLast {
+            val file = outputDir.get().file("META-INF/faststats.properties").asFile
+            file.parentFile.mkdirs()
+            file.writeText("name=${project.name}\nversion=${project.version}\n")
+        }
+    }
+
+    sourceSets.main { resources.srcDir(generateFastStatsProperties) }
+
     tasks.compileJava {
         options.release.set(javaVersion)
     }

@@ -49,6 +49,20 @@ public abstract class SimpleMetrics implements Metrics {
     private final URI url;
     private final boolean debug;
 
+    private final String SDK_NAME;
+    private final String SDK_VERSION;
+
+    {
+        final var properties = new Properties();
+        try (final var stream = getClass().getResourceAsStream("/META-INF/faststats.properties")) {
+            if (stream != null) properties.load(stream);
+        } catch (final IOException ignored) {
+        }
+        this.SDK_NAME = properties.getProperty("name", "unknown");
+        this.SDK_VERSION = properties.getProperty("version", "unknown");
+        System.out.println(SDK_NAME + "/" + SDK_VERSION);
+    }
+
     @Contract(mutates = "io")
     @SuppressWarnings("PatternValidation")
     protected SimpleMetrics(final Factory<?, ?> factory, final Config config) throws IllegalStateException {
@@ -191,7 +205,7 @@ public abstract class SimpleMetrics implements Metrics {
                     .header("Content-Encoding", "gzip")
                     .header("Content-Type", "application/octet-stream")
                     .header("Authorization", "Bearer " + getToken())
-                    .header("User-Agent", "FastStats Metrics")
+                    .header("User-Agent", "FastStats Metrics " + getSdkName() + "/" + getSdkVersion())
                     .timeout(Duration.ofSeconds(3))
                     .uri(url)
                     .build();
@@ -225,6 +239,14 @@ public abstract class SimpleMetrics implements Metrics {
             }
             return false;
         }
+    }
+
+    private String getSdkName() {
+        return SDK_NAME;
+    }
+
+    private String getSdkVersion() {
+        return SDK_VERSION;
     }
 
     private final String javaVersion = System.getProperty("java.version");
