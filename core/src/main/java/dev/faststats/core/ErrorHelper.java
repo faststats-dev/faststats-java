@@ -190,21 +190,21 @@ final class ErrorHelper {
     private static final Pattern IPV4_PATTERN = Pattern.compile(
             "\\b(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\b");
     private static final Pattern IPV6_PATTERN = Pattern.compile(
-            "(?i)\\b([0-9a-f]{1,4}:){7}[0-9a-f]{1,4}\\b|" +                          // Full form
-                    "(?i)\\b([0-9a-f]{1,4}:){1,7}:\\b|" +                                     // Trailing ::
-                    "(?i)\\b([0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}\\b|" +                        // :: in middle (1 group after)
-                    "(?i)\\b([0-9a-f]{1,4}:){1,5}(:[0-9a-f]{1,4}){1,2}\\b|" +                 // :: in middle (2 groups after)
-                    "(?i)\\b([0-9a-f]{1,4}:){1,4}(:[0-9a-f]{1,4}){1,3}\\b|" +                 // :: in middle (3 groups after)
-                    "(?i)\\b([0-9a-f]{1,4}:){1,3}(:[0-9a-f]{1,4}){1,4}\\b|" +                 // :: in middle (4 groups after)
-                    "(?i)\\b([0-9a-f]{1,4}:){1,2}(:[0-9a-f]{1,4}){1,5}\\b|" +                 // :: in middle (5 groups after)
-                    "(?i)\\b[0-9a-f]{1,4}:(:[0-9a-f]{1,4}){1,6}\\b|" +                        // :: in middle (6 groups after)
-                    "(?i)\\b:(:[0-9a-f]{1,4}){1,7}\\b|" +                                     // Leading ::
-                    "(?i)\\b::([0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4}\\b|" +                       // :: at start
-                    "(?i)\\b::\\b");                                                           // Just ::
+            "(?i)\\b([0-9a-f]{1,4}:){7}[0-9a-f]{1,4}\\b|" +                      // Full form
+                    "(?i)\\b([0-9a-f]{1,4}:){1,7}:\\b|" +                        // Trailing ::
+                    "(?i)\\b([0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}\\b|" +           // :: in middle (1 group after)
+                    "(?i)\\b([0-9a-f]{1,4}:){1,5}(:[0-9a-f]{1,4}){1,2}\\b|" +    // :: in middle (2 groups after)
+                    "(?i)\\b([0-9a-f]{1,4}:){1,4}(:[0-9a-f]{1,4}){1,3}\\b|" +    // :: in middle (3 groups after)
+                    "(?i)\\b([0-9a-f]{1,4}:){1,3}(:[0-9a-f]{1,4}){1,4}\\b|" +    // :: in middle (4 groups after)
+                    "(?i)\\b([0-9a-f]{1,4}:){1,2}(:[0-9a-f]{1,4}){1,5}\\b|" +    // :: in middle (5 groups after)
+                    "(?i)\\b[0-9a-f]{1,4}:(:[0-9a-f]{1,4}){1,6}\\b|" +           // :: in middle (6 groups after)
+                    "(?i)\\b:(:[0-9a-f]{1,4}){1,7}\\b|" +                        // Leading ::
+                    "(?i)\\b::([0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4}\\b|" +          // :: at start
+                    "(?i)\\b::\\b");                                             // Just ::
     private static final Pattern USER_HOME_PATH_PATTERN = Pattern.compile(
-            "(/home/)[^/\\s]+" +                                                      // Linux: /home/username
-                    "|(/Users/)[^/\\s]+" +                                                    // macOS: /Users/username
-                    "|((?i)[A-Z]:\\\\Users\\\\)[^\\\\\\s]+");                                  // Windows: A-Z:\\Users\\username
+            "(/home/)[^/\\s]+" +                                                 // Linux: /home/username
+                    "|(/Users/)[^/\\s]+" +                                       // macOS: /Users/username
+                    "|((?i)[A-Z]:\\\\Users\\\\)[^\\\\\\s]+");                    // Windows: A-Z:\\Users\\username
 
     private static String anonymize(String message) {
         message = IPV4_PATTERN.matcher(message).replaceAll("[IP hidden]");
