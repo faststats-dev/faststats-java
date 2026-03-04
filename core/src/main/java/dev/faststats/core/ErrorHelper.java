@@ -46,6 +46,8 @@ final class ErrorHelper {
 
     private static void appendCauseChain(@Nullable Throwable cause, final List<String> parentStack,
                                          @Nullable final List<String> suppress, final JsonArray stacktrace) {
+        final var toSuppress = new ArrayList<>(parentStack);
+        if (suppress != null) toSuppress.addAll(suppress);
         final var visited = Collections.<Throwable>newSetFromMap(new IdentityHashMap<>());
         while (cause != null && visited.add(cause)) {
             final var causeMessage = getAnonymizedMessage(cause);
@@ -57,8 +59,6 @@ final class ErrorHelper {
             final var causeElements = cause.getStackTrace();
             final var causeStack = collapseStackTrace(causeElements);
             final var causeList = new ArrayList<>(causeStack);
-            final var toSuppress = new ArrayList<>(parentStack);
-            if (suppress != null) toSuppress.addAll(suppress);
             causeList.removeAll(toSuppress);
             final var causeTraces = Math.min(causeList.size(), STACK_TRACE_LIMIT);
             populateTraces(causeTraces, causeList, causeElements, stacktrace);
