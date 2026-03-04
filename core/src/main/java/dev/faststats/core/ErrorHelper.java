@@ -20,8 +20,11 @@ final class ErrorHelper {
         final var report = new JsonObject();
         final var message = getAnonymizedMessage(error);
 
-        report.addProperty("error", error.getClass().getName());
-        if (message != null) report.addProperty("message", message);
+        final var stacktrace = new JsonArray();
+        final var header = message != null
+                ? error.getClass().getName() + ": " + message
+                : error.getClass().getName();
+        stacktrace.add(header);
 
         final var elements = error.getStackTrace();
         final var stack = collapseStackTrace(elements);
@@ -29,33 +32,52 @@ final class ErrorHelper {
         if (suppress != null) list.removeAll(suppress);
         final var traces = Math.min(list.size(), STACK_TRACE_LIMIT);
 
-        final var stacktrace = populateTraces(traces, list, elements);
-        if (!stacktrace.isEmpty()) report.add("stack", stacktrace);
+        populateTraces(traces, list, elements, stacktrace);
+        appendCauseChain(error.getCause(), stack, suppress, stacktrace);
 
-        if (error.getCause() != null) {
-            final var toSuppress = new ArrayList<>(stack);
-            if (suppress != null) toSuppress.addAll(suppress);
-            report.add("cause", compile(error.getCause(), toSuppress));
-        }
+        report.addProperty("error", error.getClass().getName());
+        if (message != null) report.addProperty("message", message);
+
+        report.add("stack", stacktrace);
 
         return report;
     }
 
-    private static JsonArray populateTraces(final int traces, final ArrayList<String> list, final StackTraceElement[] elements) {
-        final var stacktrace = new JsonArray(traces);
+    private static void appendCauseChain(@Nullable Throwable cause, final List<String> parentStack,
+                                         @Nullable final List<String> suppress, final JsonArray stacktrace) {
+        final var visited = Collections.<Throwable>newSetFromMap(new IdentityHashMap<>());
+        while (cause != null && visited.add(cause)) {
+            final var causeMessage = getAnonymizedMessage(cause);
+            final var header = causeMessage != null
+                    ? "Caused by: " + cause.getClass().getName() + ": " + causeMessage
+                    : "Caused by: " + cause.getClass().getName();
+            stacktrace.add(header);
 
+            final var causeElements = cause.getStackTrace();
+            final var causeStack = collapseStackTrace(causeElements);
+            final var causeList = new ArrayList<>(causeStack);
+            final var toSuppress = new ArrayList<>(parentStack);
+            if (suppress != null) toSuppress.addAll(suppress);
+            causeList.removeAll(toSuppress);
+            final var causeTraces = Math.min(causeList.size(), STACK_TRACE_LIMIT);
+            populateTraces(causeTraces, causeList, causeElements, stacktrace);
+
+            cause = cause.getCause();
+        }
+    }
+
+    private static void populateTraces(final int traces, final List<String> list, final StackTraceElement[] elements, final JsonArray stacktrace) {
         for (var i = 0; i < traces; i++) {
             final var string = list.get(i);
-            if (string.length() <= STACK_TRACE_LENGTH) stacktrace.add(string);
-            else stacktrace.add(string.substring(0, STACK_TRACE_LENGTH) + "...");
+            if (string.length() <= STACK_TRACE_LENGTH) stacktrace.add("  at " + string);
+            else stacktrace.add("  at " + string.substring(0, STACK_TRACE_LENGTH) + "...");
         }
         if (traces > 0 && traces < list.size()) {
-            stacktrace.add("and " + (list.size() - traces) + " more...");
+            stacktrace.add("  ... " + (list.size() - traces) + " more");
         } else {
             final var i = elements.length - list.size();
-            if (i > 0) stacktrace.add("Omitted " + i + " duplicate stack frame" + (i == 1 ? "" : "s"));
+            if (i > 0) stacktrace.add("  ... " + i + " more");
         }
-        return stacktrace;
     }
 
     private static List<String> collapseStackTrace(final StackTraceElement[] trace) {
