@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 final class ErrorHelper {
     private static final int MESSAGE_LENGTH = Math.min(1000, Integer.getInteger("faststats.message-length", 500));
@@ -186,9 +187,9 @@ final class ErrorHelper {
         return loader == current;
     }
 
-    private static final String IPV4_PATTERN =
-            "\\b(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\b";
-    private static final String IPV6_PATTERN =
+    private static final Pattern IPV4_PATTERN = Pattern.compile(
+            "\\b(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\b");
+    private static final Pattern IPV6_PATTERN = Pattern.compile(
             "(?i)\\b([0-9a-f]{1,4}:){7}[0-9a-f]{1,4}\\b|" +                          // Full form
                     "(?i)\\b([0-9a-f]{1,4}:){1,7}:\\b|" +                                     // Trailing ::
                     "(?i)\\b([0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}\\b|" +                        // :: in middle (1 group after)
@@ -199,16 +200,16 @@ final class ErrorHelper {
                     "(?i)\\b[0-9a-f]{1,4}:(:[0-9a-f]{1,4}){1,6}\\b|" +                        // :: in middle (6 groups after)
                     "(?i)\\b:(:[0-9a-f]{1,4}){1,7}\\b|" +                                     // Leading ::
                     "(?i)\\b::([0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4}\\b|" +                       // :: at start
-                    "(?i)\\b::\\b";                                                           // Just ::
-    private static final String USER_HOME_PATH_PATTERN =
+                    "(?i)\\b::\\b");                                                           // Just ::
+    private static final Pattern USER_HOME_PATH_PATTERN = Pattern.compile(
             "(/home/)[^/\\s]+" +                                                      // Linux: /home/username
                     "|(/Users/)[^/\\s]+" +                                                    // macOS: /Users/username
-                    "|((?i)[A-Z]:\\\\Users\\\\)[^\\\\\\s]+";                                  // Windows: A-Z:\\Users\\username
+                    "|((?i)[A-Z]:\\\\Users\\\\)[^\\\\\\s]+");                                  // Windows: A-Z:\\Users\\username
 
     private static String anonymize(String message) {
-        message = message.replaceAll(IPV4_PATTERN, "[IP hidden]");
-        message = message.replaceAll(IPV6_PATTERN, "[IP hidden]");
-        message = message.replaceAll(USER_HOME_PATH_PATTERN, "$1$2$3[username hidden]");
+        message = IPV4_PATTERN.matcher(message).replaceAll("[IP hidden]");
+        message = IPV6_PATTERN.matcher(message).replaceAll("[IP hidden]");
+        message = USER_HOME_PATH_PATTERN.matcher(message).replaceAll("$1$2$3[username hidden]");
         final var username = System.getProperty("user.name");
         if (username != null) message = message.replace(username, "[username hidden]");
         return message;
