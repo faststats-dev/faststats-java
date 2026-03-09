@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.time.Duration;
 import java.util.concurrent.CompletionException;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -170,7 +169,7 @@ public class ErrorTrackerTest {
             throw new CompletionException("async error", nestedAsyncError);
         });
         thisIsANiceError.start();
-        thisIsANiceError.join(Duration.ofSeconds(1));
+        thisIsANiceError.join(1000);
 
         Thread.sleep(1000);
 

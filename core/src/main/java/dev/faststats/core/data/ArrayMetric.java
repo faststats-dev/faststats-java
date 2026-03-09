@@ -17,11 +17,9 @@ final class ArrayMetric<T> extends SimpleMetric<T[]> {
         return compute().map(data -> {
             final var elements = new JsonArray(data.length);
             for (final var d : data) {
-                switch (d) {
-                    case final Boolean b -> elements.add(b);
-                    case final Number n -> elements.add(n);
-                    default -> elements.add(d.toString());
-                }
+                if (d instanceof final Boolean b) elements.add(b);
+                else if (d instanceof final Number n) elements.add(n);
+                else elements.add(d.toString());
             }
             return elements;
         });
