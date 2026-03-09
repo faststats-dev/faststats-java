@@ -2,10 +2,6 @@ package dev.faststats.core;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import dev.faststats.core.concurrent.TrackingBase;
-import dev.faststats.core.concurrent.TrackingExecutors;
-import dev.faststats.core.concurrent.TrackingThreadFactory;
-import dev.faststats.core.concurrent.TrackingThreadPoolExecutor;
 import org.jspecify.annotations.Nullable;
 
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -17,11 +13,6 @@ import java.util.function.BiConsumer;
 final class SimpleErrorTracker implements ErrorTracker {
     private final Map<String, Integer> collected = new ConcurrentHashMap<>();
     private final Map<String, JsonObject> reports = new ConcurrentHashMap<>();
-
-    private final TrackingBase base = new SimpleTrackingBase(this);
-    private final TrackingExecutors executors = new SimpleTrackingExecutors(this);
-    private final TrackingThreadFactory threadFactory = new SimpleTrackingThreadFactory(this);
-    private final TrackingThreadPoolExecutor threadPoolExecutor = new SimpleTrackingThreadPoolExecutor(this);
 
     private volatile @Nullable BiConsumer<@Nullable ClassLoader, Throwable> errorEvent = null;
     private volatile @Nullable UncaughtExceptionHandler originalHandler = null;
@@ -119,25 +110,5 @@ final class SimpleErrorTracker implements ErrorTracker {
     @Override
     public synchronized Optional<BiConsumer<@Nullable ClassLoader, Throwable>> getContextErrorHandler() {
         return Optional.ofNullable(errorEvent);
-    }
-
-    @Override
-    public TrackingBase base() {
-        return base;
-    }
-
-    @Override
-    public TrackingExecutors executors() {
-        return executors;
-    }
-
-    @Override
-    public TrackingThreadFactory threadFactory() {
-        return threadFactory;
-    }
-
-    @Override
-    public TrackingThreadPoolExecutor threadPoolExecutor() {
-        return threadPoolExecutor;
     }
 }

@@ -1,9 +1,5 @@
 package dev.faststats.core;
 
-import dev.faststats.core.concurrent.TrackingBase;
-import dev.faststats.core.concurrent.TrackingExecutors;
-import dev.faststats.core.concurrent.TrackingThreadFactory;
-import dev.faststats.core.concurrent.TrackingThreadPoolExecutor;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
@@ -124,45 +120,6 @@ public sealed interface ErrorTracker permits SimpleErrorTracker {
      */
     @Contract(pure = true)
     Optional<BiConsumer<@Nullable ClassLoader, Throwable>> getContextErrorHandler();
-
-    /**
-     * Returns the tracking base.
-     *
-     * @return the tracking base
-     * @since 0.10.0
-     */
-    @Contract(pure = true)
-    TrackingBase base();
-
-    /**
-     * Returns the tracking equivalent to {@link java.util.concurrent.Executors}.
-     *
-     * @return the tracking executors
-     * @see java.util.concurrent.Executors
-     * @since 0.10.0
-     */
-    @Contract(pure = true)
-    TrackingExecutors executors();
-
-    /**
-     * Returns the tracking equivalent to {@link java.util.concurrent.ThreadFactory}.
-     *
-     * @return the tracking thread factory
-     * @see java.util.concurrent.ThreadFactory
-     * @since 0.10.0
-     */
-    @Contract(pure = true)
-    TrackingThreadFactory threadFactory();
-
-    /**
-     * Returns the tracking equivalent to {@link java.util.concurrent.ThreadPoolExecutor}.
-     *
-     * @return the tracking thread pool executor
-     * @see java.util.concurrent.ThreadPoolExecutor
-     * @since 0.10.0
-     */
-    @Contract(pure = true)
-    TrackingThreadPoolExecutor threadPoolExecutor();
 
     /**
      * Checks if the error occurred in the same class loader as the provided loader.
