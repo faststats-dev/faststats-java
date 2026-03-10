@@ -11,6 +11,7 @@ record PaperEventListener(BukkitMetricsImpl metrics) implements Listener {
     public void onServerException(final ServerExceptionEvent event) {
         if (!(event.getException() instanceof final ServerPluginException exception)) return;
         if (!exception.getResponsiblePlugin().equals(metrics.plugin())) return;
-        metrics.getErrorTracker().ifPresent(tracker -> tracker.trackError(exception));
+        final var report = exception.getCause() != null ? exception.getCause() : exception;
+        metrics.getErrorTracker().ifPresent(tracker -> tracker.trackError(report));
     }
 }
