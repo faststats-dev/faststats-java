@@ -248,6 +248,7 @@ public abstract class SimpleMetrics implements Metrics {
         return SDK_VERSION;
     }
 
+    private final String javaVendor = System.getProperty("java.vendor");
     private final String javaVersion = System.getProperty("java.version");
     private final String osArch = System.getProperty("os.arch");
     private final String osName = System.getProperty("os.name");
@@ -258,11 +259,12 @@ public abstract class SimpleMetrics implements Metrics {
         final var data = new JsonObject();
         final var metrics = new JsonObject();
 
+        metrics.addProperty("core_count", coreCount);
+        metrics.addProperty("java_vendor", javaVendor);
         metrics.addProperty("java_version", javaVersion);
         metrics.addProperty("os_arch", osArch);
         metrics.addProperty("os_name", osName);
         metrics.addProperty("os_version", osVersion);
-        metrics.addProperty("core_count", coreCount);
 
         this.metrics.forEach(metric -> {
             try {
