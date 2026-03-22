@@ -1,20 +1,20 @@
 [versions]
-google-gson = "2.13.2"
-gradle-shadow = "9.4.0"
+google-gson = "2.13.2" # https://github.com/google/gson
+gradle-shadow = "9.4.0" # https://github.com/GradleUp/shadow
 hytale-server = "2026.03.20-db226053c"
-minecraft-bungeecord = "26.1-R0.1-SNAPSHOT"
-minecraft-fabric-api = "0.139.4+1.21.11"
-minecraft-fabric-loader = "0.18.4"
-minecraft-fabric-loom = "1.15-SNAPSHOT"
-minecraft-minestom = "2026.03.03-1.21.11"
-minecraft-nukkit = "1.0-SNAPSHOT"
-minecraft-paper = "1.21.11-R0.1-SNAPSHOT"
-minecraft-sponge = "8.3.0-SNAPSHOT"
-minecraft-velocity = "3.5.0-SNAPSHOT"
+minecraft-bungeecord = "26.1-R0.1-SNAPSHOT" # https://github.com/SpigotMC/BungeeCord
+minecraft-fabric-api = "0.139.4+1.21.11" # https://github.com/FabricMC/fabric
+minecraft-fabric-loader = "0.18.4" # https://github.com/FabricMC/fabric-loader
+minecraft-fabric-loom = "1.15-SNAPSHOT" # https://github.com/FabricMC/fabric-loom
+minecraft-minestom = "2026.03.03-1.21.11" # https://github.com/Minestom/Minestom
+minecraft-nukkit = "1.0-SNAPSHOT" # https://github.com/CloudburstMC/Nukkit
+minecraft-paper = "1.21.11-R0.1-SNAPSHOT" # https://github.com/PaperMC/Paper
+minecraft-sponge = "8.3.0-SNAPSHOT" # https://github.com/SpongePowered/SpongeAPI
+minecraft-velocity = "3.5.0-SNAPSHOT" # https://github.com/PaperMC/Velocity
 minecraft-version = "1.21.11"
-test-junit-bom = "6.1.0-M1"
-tool-jb-annotations = "26.1.0"
-tool-jspecify = "1.0.0"
+test-junit-bom = "6.1.0-M1" # https://github.com/junit-team/junit5
+tool-jb-annotations = "26.1.0" # https://github.com/JetBrains/java-annotations
+tool-jspecify = "1.0.0" # https://github.com/jspecify/jspecify
 
 [libraries]
 google-gson = { module = "com.google.code.gson:gson", version.ref = "google-gson" }
