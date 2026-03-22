@@ -204,7 +204,7 @@ public abstract class SimpleMetrics implements Metrics {
                     .header("Content-Encoding", "gzip")
                     .header("Content-Type", "application/octet-stream")
                     .header("Authorization", "Bearer " + getToken())
-                    .header("User-Agent", "FastStats Metrics " + getSdkName() + "/" + getSdkVersion())
+                    .header("User-Agent", "FastStats Metrics " + SDK_NAME + "/" + SDK_VERSION)
                     .timeout(Duration.ofSeconds(3))
                     .uri(url)
                     .build();
@@ -238,14 +238,6 @@ public abstract class SimpleMetrics implements Metrics {
             }
             return false;
         }
-    }
-
-    private String getSdkName() {
-        return SDK_NAME;
-    }
-
-    private String getSdkVersion() {
-        return SDK_VERSION;
     }
 
     private final String javaVendor = System.getProperty("java.vendor");
