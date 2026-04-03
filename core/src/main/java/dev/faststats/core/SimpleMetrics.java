@@ -260,6 +260,13 @@ public abstract class SimpleMetrics implements Metrics {
         metrics.addProperty("os_name", osName);
         metrics.addProperty("os_version", osVersion);
 
+        try {
+            appendDefaultData(metrics);
+        } catch (final Throwable t) {
+            error("Failed to append default data", t);
+            getErrorTracker().ifPresent(tracker -> tracker.trackError(t));
+        }
+
         this.metrics.forEach(metric -> {
             try {
                 metric.getData().ifPresent(element -> metrics.add(metric.getId(), element));
@@ -268,13 +275,6 @@ public abstract class SimpleMetrics implements Metrics {
                 getErrorTracker().ifPresent(tracker -> tracker.trackError(t));
             }
         });
-
-        try {
-            appendDefaultData(metrics);
-        } catch (final Throwable t) {
-            error("Failed to append default data", t);
-            getErrorTracker().ifPresent(tracker -> tracker.trackError(t));
-        }
 
         data.addProperty("identifier", config.serverId().toString());
         data.add("data", metrics);
