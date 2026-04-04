@@ -40,7 +40,7 @@ final class ErrorHelper {
         if (message != null) report.addProperty("message", message);
 
         report.add("stack", stacktrace);
-        report.addProperty("handled", true);
+        report.addProperty("handled", handled);
 
         return report;
     }
