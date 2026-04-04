@@ -1,10 +1,12 @@
 package dev.faststats.core;
 
+import org.intellij.lang.annotations.RegExp;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.regex.Pattern;
 
 /**
  * An error tracker.
@@ -95,6 +97,85 @@ public sealed interface ErrorTracker permits SimpleErrorTracker {
      */
     @Contract(mutates = "this")
     void trackError(Throwable error, boolean handled);
+
+    /**
+     * Adds an error type that will not be reported to FastStats.
+     * <p>
+     * Matching is done exactly. If, for example {@link LinkageError} was ignored,
+     * {@link NoClassDefFoundError} would still be reported, even though it extends {@link LinkageError}
+     *
+     * @param type the error type
+     * @return the error tracker
+     * @since 0.21.0
+     */
+    @Contract(value = "_ -> this", mutates = "this")
+    ErrorTracker ignoreErrorType(Class<? extends Throwable> type);
+
+    /**
+     * Adds a pattern that will be matched against all error messages.
+     * <p>
+     * If an error's message matches the given pattern, it will not be reported to FastStats.
+     * <pre>{@code
+     * // Exact match
+     * tracker.ignoreError(Pattern.compile("No space left on device"));
+     *
+     * // Regex match
+     * tracker.ignoreError(Pattern.compile("No serializer for: class .*"));
+     * }</pre>
+     *
+     * @param pattern the regex pattern to match against error messages
+     * @return the error tracker
+     * @since 0.21.0
+     */
+    @Contract(value = "_ -> this", mutates = "this")
+    ErrorTracker ignoreError(Pattern pattern);
+
+    /**
+     * Adds a pattern that will be matched against all error messages.
+     * <p>
+     * If an error's message matches the given pattern, it will not be reported to FastStats.
+     *
+     * @param pattern the regex pattern string to match against error messages
+     * @return the error tracker
+     * @see #ignoreError(Pattern)
+     * @since 0.21.0
+     */
+    @Contract(value = "_ -> this", mutates = "this")
+    default ErrorTracker ignoreError(@RegExp final String pattern) {
+        return ignoreError(Pattern.compile(pattern));
+    }
+
+    /**
+     * Adds an error type combined with a message pattern that will not be reported to FastStats.
+     * <p>
+     * An error is ignored only if its class matches the given type exactly and its message matches the given pattern.
+     * <pre>{@code
+     * tracker.ignoreError(IOException.class, Pattern.compile("No space left on device"));
+     * }</pre>
+     *
+     * @param type    the error type
+     * @param pattern the regex pattern to match against error messages
+     * @return the error tracker
+     * @since 0.21.0
+     */
+    @Contract(value = "_, _ -> this", mutates = "this")
+    ErrorTracker ignoreError(Class<? extends Throwable> type, Pattern pattern);
+
+    /**
+     * Adds an error type combined with a message pattern that will not be reported to FastStats.
+     * <p>
+     * An error is ignored only if its class matches the given type exactly and its message matches the given pattern.
+     *
+     * @param type    the error type
+     * @param pattern the regex pattern string to match against error messages
+     * @return the error tracker
+     * @see #ignoreError(Class, Pattern)
+     * @since 0.21.0
+     */
+    @Contract(value = "_, _ -> this", mutates = "this")
+    default ErrorTracker ignoreError(final Class<? extends Throwable> type, @RegExp final String pattern) {
+        return ignoreError(type, Pattern.compile(pattern));
+    }
 
     /**
      * Attaches an error context to the tracker.
