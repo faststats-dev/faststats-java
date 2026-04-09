@@ -6,7 +6,7 @@ dependencies {
     implementation(project(":fabric"))
     mappings(loom.officialMojangMappings())
     minecraft("com.mojang:minecraft:1.21.11")
-    modCompileOnly("net.fabricmc:fabric-loader:0.19.0")
+    modCompileOnly("net.fabricmc:fabric-loader:0.19.1")
 }
 
 tasks.jar {
