@@ -72,7 +72,7 @@ final class SimpleErrorTracker implements ErrorTracker {
     }
 
     @Override
-    public ErrorTracker ignoreErrorType(final Class<? extends Throwable> type) {
+    public ErrorTracker ignoreError(final Class<? extends Throwable> type) {
         ignoredTypes.add(type);
         return this;
     }

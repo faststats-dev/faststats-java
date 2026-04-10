@@ -106,10 +106,10 @@ public sealed interface ErrorTracker permits SimpleErrorTracker {
      *
      * @param type the error type
      * @return the error tracker
-     * @since 0.21.0
+     * @since 0.22.0
      */
     @Contract(value = "_ -> this", mutates = "this")
-    ErrorTracker ignoreErrorType(Class<? extends Throwable> type);
+    ErrorTracker ignoreError(Class<? extends Throwable> type);
 
     /**
      * Adds a pattern that will be matched against all error messages.
