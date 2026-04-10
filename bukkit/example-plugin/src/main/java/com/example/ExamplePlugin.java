@@ -5,15 +5,26 @@ import dev.faststats.core.ErrorTracker;
 import dev.faststats.core.data.Metric;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.nio.file.AccessDeniedException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ExamplePlugin extends JavaPlugin {
     // context-aware error tracker, automatically tracks errors in the same class loader
-    public static final ErrorTracker ERROR_TRACKER = ErrorTracker.contextAware();
+    public static final ErrorTracker ERROR_TRACKER = ErrorTracker.contextAware()
+            // Ignore specific errors and messages
+            .ignoreError(InvocationTargetException.class, "Expected .* but got .*") // Ignored an error with a message
+            .ignoreError(AccessDeniedException.class); // Ignored a specific error type
 
     // context-unaware error tracker, does not automatically track errors
-    public static final ErrorTracker CONTEXT_UNAWARE_ERROR_TRACKER = ErrorTracker.contextUnaware();
+    public static final ErrorTracker CONTEXT_UNAWARE_ERROR_TRACKER = ErrorTracker.contextUnaware()
+            // Anonymize error messages if required
+            .anonymize("^[\\w-.]+@([\\w-]+\\.)+[\\w-]{2,4}$", "[email hidden]") // Email addresses
+            .anonymize("Bearer [A-Za-z0-9._~+/=-]+", "Bearer [token hidden]") // Bearer tokens in error messages
+            .anonymize("AKIA[0-9A-Z]{16}", "[aws-key hidden]") // AWS access key IDs
+            .anonymize("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", "[uuid hidden]") // UUIDs (e.g. session/user IDs)
+            .anonymize("([?&](?:api_?key|token|secret)=)[^&\\s]+", "$1[redacted]"); // API keys in query strings
 
     private final AtomicInteger gameCount = new AtomicInteger();
 

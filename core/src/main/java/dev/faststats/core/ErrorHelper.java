@@ -9,6 +9,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -17,9 +19,10 @@ final class ErrorHelper {
     private static final int STACK_TRACE_LENGTH = Math.min(500, Integer.getInteger("faststats.stack-trace-length", 300));
     private static final int STACK_TRACE_LIMIT = Math.min(50, Integer.getInteger("faststats.stack-trace-limit", 15));
 
-    public static JsonObject compile(final Throwable error, @Nullable final List<String> suppress, final boolean handled) {
+    public static JsonObject compile(final Throwable error, @Nullable final List<String> suppress, final boolean handled,
+                                     final List<Map.Entry<Pattern, String>> customPatterns) {
         final var report = new JsonObject();
-        final var message = getAnonymizedMessage(error);
+        final var message = getAnonymizedMessage(error, customPatterns);
 
         final var stacktrace = new JsonArray();
         final var header = message != null
@@ -34,7 +37,7 @@ final class ErrorHelper {
         final var traces = Math.min(list.size(), STACK_TRACE_LIMIT);
 
         populateTraces(traces, list, elements, stacktrace);
-        appendCauseChain(error.getCause(), stack, suppress, stacktrace);
+        appendCauseChain(error.getCause(), stack, suppress, stacktrace, customPatterns);
 
         report.addProperty("error", error.getClass().getName());
         if (message != null) report.addProperty("message", message);
@@ -46,12 +49,13 @@ final class ErrorHelper {
     }
 
     private static void appendCauseChain(@Nullable Throwable cause, final List<String> parentStack,
-                                         @Nullable final List<String> suppress, final JsonArray stacktrace) {
+                                         @Nullable final List<String> suppress, final JsonArray stacktrace,
+                                         final List<Map.Entry<Pattern, String>> customPatterns) {
         final var toSuppress = new ArrayList<>(parentStack);
         if (suppress != null) toSuppress.addAll(suppress);
         final var visited = Collections.<Throwable>newSetFromMap(new IdentityHashMap<>());
         while (cause != null && visited.add(cause)) {
-            final var causeMessage = getAnonymizedMessage(cause);
+            final var causeMessage = getAnonymizedMessage(cause, customPatterns);
             final var header = causeMessage != null
                     ? "Caused by: " + cause.getClass().getName() + ": " + causeMessage
                     : "Caused by: " + cause.getClass().getName();
@@ -68,7 +72,8 @@ final class ErrorHelper {
         }
     }
 
-    private static void populateTraces(final int traces, final List<String> list, final StackTraceElement[] elements, final JsonArray stacktrace) {
+    private static void populateTraces(final int traces, final List<String> list, final StackTraceElement[] elements,
+                                       final JsonArray stacktrace) {
         for (var i = 0; i < traces; i++) {
             final var string = list.get(i);
             if (string.length() <= STACK_TRACE_LENGTH) stacktrace.add("  at " + string);
@@ -188,40 +193,54 @@ final class ErrorHelper {
         return loader == current;
     }
 
-    private static final Pattern IPV4_PATTERN = Pattern.compile(
-            "\\b(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\b");
-    private static final Pattern IPV6_PATTERN = Pattern.compile(
-            "(?i)\\b([0-9a-f]{1,4}:){7}[0-9a-f]{1,4}\\b|" +                      // Full form
-                    "(?i)\\b([0-9a-f]{1,4}:){1,7}:\\b|" +                        // Trailing ::
-                    "(?i)\\b([0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}\\b|" +           // :: in middle (1 group after)
-                    "(?i)\\b([0-9a-f]{1,4}:){1,5}(:[0-9a-f]{1,4}){1,2}\\b|" +    // :: in middle (2 groups after)
-                    "(?i)\\b([0-9a-f]{1,4}:){1,4}(:[0-9a-f]{1,4}){1,3}\\b|" +    // :: in middle (3 groups after)
-                    "(?i)\\b([0-9a-f]{1,4}:){1,3}(:[0-9a-f]{1,4}){1,4}\\b|" +    // :: in middle (4 groups after)
-                    "(?i)\\b([0-9a-f]{1,4}:){1,2}(:[0-9a-f]{1,4}){1,5}\\b|" +    // :: in middle (5 groups after)
-                    "(?i)\\b[0-9a-f]{1,4}:(:[0-9a-f]{1,4}){1,6}\\b|" +           // :: in middle (6 groups after)
-                    "(?i)\\b:(:[0-9a-f]{1,4}){1,7}\\b|" +                        // Leading ::
-                    "(?i)\\b::([0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4}\\b|" +          // :: at start
-                    "(?i)\\b::\\b");                                             // Just ::
-    private static final Pattern USER_HOME_PATH_PATTERN = Pattern.compile(
-            "(/home/)[^/\\s]+" +                                                 // Linux: /home/username
-                    "|(/Users/)[^/\\s]+" +                                       // macOS: /Users/username
-                    "|((?i)[A-Z]:\\\\Users\\\\)[^\\\\\\s]+");                    // Windows: A-Z:\\Users\\username
-
-    private static String anonymize(String message) {
-        message = IPV4_PATTERN.matcher(message).replaceAll("[IP hidden]");
-        message = IPV6_PATTERN.matcher(message).replaceAll("[IP hidden]");
-        message = USER_HOME_PATH_PATTERN.matcher(message).replaceAll("$1$2$3[username hidden]");
-        final var username = System.getProperty("user.name");
-        if (username != null) message = message.replace(username, "[username hidden]");
-        return message;
-    }
-
-    private static @Nullable String getAnonymizedMessage(final Throwable error) {
+    private static @Nullable String getAnonymizedMessage(final Throwable error, final List<Map.Entry<Pattern, String>> customPatterns) {
         final var message = error.getMessage();
         if (message == null) return null;
-        final var truncated = message.length() > MESSAGE_LENGTH
+        var truncated = message.length() > MESSAGE_LENGTH
                 ? message.substring(0, MESSAGE_LENGTH) + "..."
                 : message;
-        return anonymize(truncated);
+        for (final var entry : customPatterns) {
+            truncated = entry.getKey().matcher(truncated).replaceAll(entry.getValue());
+        }
+        return truncated;
+    }
+
+    public static Pattern discordWebhookPattern() {
+        return Pattern.compile("(https://discord\\.com/api/webhooks/\\d+/)[\\w-]+");
+    }
+
+    public static Pattern ipv4Pattern() {
+        return Pattern.compile("\\b(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\b");
+    }
+
+    public static Pattern ipv6Pattern() {
+        return Pattern.compile("(?i)\\b([0-9a-f]{1,4}:){7}[0-9a-f]{1,4}\\b|" + // Full form
+                "(?i)\\b([0-9a-f]{1,4}:){1,7}:\\b|" +                          // Trailing ::
+                "(?i)\\b([0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}\\b|" +             // :: in middle (1 group after)
+                "(?i)\\b([0-9a-f]{1,4}:){1,5}(:[0-9a-f]{1,4}){1,2}\\b|" +      // :: in middle (2 groups after)
+                "(?i)\\b([0-9a-f]{1,4}:){1,4}(:[0-9a-f]{1,4}){1,3}\\b|" +      // :: in middle (3 groups after)
+                "(?i)\\b([0-9a-f]{1,4}:){1,3}(:[0-9a-f]{1,4}){1,4}\\b|" +      // :: in middle (4 groups after)
+                "(?i)\\b([0-9a-f]{1,4}:){1,2}(:[0-9a-f]{1,4}){1,5}\\b|" +      // :: in middle (5 groups after)
+                "(?i)\\b[0-9a-f]{1,4}:(:[0-9a-f]{1,4}){1,6}\\b|" +             // :: in middle (6 groups after)
+                "(?i)\\b:(:[0-9a-f]{1,4}){1,7}\\b|" +                          // Leading ::
+                "(?i)\\b::([0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4}\\b|" +            // :: at start
+                "(?i)\\b::\\b");                                               // Just ::
+    }
+
+    public static Pattern jdbcUrlPattern() {
+        return Pattern.compile("(jdbc:[^:]+://[^:]+:(?:\\d+:)?)[^@]+(@)");
+    }
+
+    public static Pattern userHomePathPattern() {
+        return Pattern.compile("(/home/)[^/\\s]+" +       // Linux: /home/username
+                "|(/Users/)[^/\\s]+" +                    // macOS: /Users/username
+                "|((?i)[A-Z]:\\\\Users\\\\)[^\\\\\\s]+"); // Windows: A-Z:\\Users\\username
+    }
+
+    public static Optional<Pattern> usernamePattern() {
+        return Optional.ofNullable(System.getProperty("user.name"))
+                .filter(s -> s.trim().length() > 2)
+                .map(Pattern::quote)
+                .map(Pattern::compile);
     }
 }
