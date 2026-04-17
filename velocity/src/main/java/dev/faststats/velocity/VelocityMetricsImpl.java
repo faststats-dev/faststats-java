@@ -5,6 +5,7 @@ import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import dev.faststats.core.Metrics;
+import dev.faststats.core.Settings;
 import dev.faststats.core.SimpleMetrics;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
@@ -79,9 +80,9 @@ final class VelocityMetricsImpl extends SimpleMetrics implements VelocityMetrics
          *
          * @param plugin the plugin instance
          * @return the metrics instance
-         * @throws IllegalStateException    if the token is not specified
+         * @throws IllegalStateException    if the settings are not specified
          * @throws IllegalArgumentException if the given object is not a valid plugin
-         * @see #token(String)
+         * @see #settings(Settings) 
          * @since 0.1.0
          */
         @Override

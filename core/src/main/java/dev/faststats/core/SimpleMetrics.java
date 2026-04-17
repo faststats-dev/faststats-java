@@ -2,6 +2,7 @@ package dev.faststats.core;
 
 import com.google.gson.JsonObject;
 import dev.faststats.core.data.Metric;
+import dev.faststats.core.flags.FeatureFlagService;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
@@ -12,7 +13,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.ConnectException;
-import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
@@ -43,10 +43,10 @@ public abstract class SimpleMetrics implements Metrics {
 
     private final Set<Metric<?>> metrics;
     private final Config config;
-    private final @Token String token;
+    private final Settings settings;
     private final @Nullable ErrorTracker tracker;
     private final @Nullable Runnable flush;
-    private final URI url;
+    private final @Nullable FeatureFlagService flagService;
     private final boolean debug;
 
     private final String SDK_NAME;
@@ -65,17 +65,16 @@ public abstract class SimpleMetrics implements Metrics {
     }
 
     @Contract(mutates = "io")
-    @SuppressWarnings("PatternValidation")
     protected SimpleMetrics(final Factory<?, ?> factory, final Config config) throws IllegalStateException {
-        if (factory.token == null) throw new IllegalStateException("Token must be specified");
+        if (factory.settings == null) throw new IllegalStateException("Settings must be specified");
 
         this.config = config;
+        this.settings = factory.settings;
         this.metrics = config.additionalMetrics ? Set.copyOf(factory.metrics) : Set.of();
-        this.debug = factory.debug || Boolean.getBoolean("faststats.debug") || config.debug();
-        this.token = factory.token;
+        this.debug = settings.debug() || Boolean.getBoolean("faststats.debug") || config.debug();
         this.tracker = config.errorTracking ? factory.tracker : null;
         this.flush = factory.flush;
-        this.url = factory.url;
+        this.flagService = factory.flagService;
     }
 
     @Contract(mutates = "io")
@@ -87,23 +86,17 @@ public abstract class SimpleMetrics implements Metrics {
     protected SimpleMetrics(
             final Config config,
             final Set<Metric<?>> metrics,
-            @Token final String token,
+            final Settings settings,
             @Nullable final ErrorTracker tracker,
-            @Nullable final Runnable flush,
-            final URI url,
-            final boolean debug
+            @Nullable final Runnable flush
     ) {
-        if (!token.matches(Token.PATTERN)) {
-            throw new IllegalArgumentException("Invalid token '" + token + "', must match '" + Token.PATTERN + "'");
-        }
-
         this.metrics = config.additionalMetrics ? Set.copyOf(metrics) : Set.of();
         this.config = config;
-        this.debug = debug;
-        this.token = token;
+        this.debug = settings.debug();
+        this.settings = settings;
         this.tracker = tracker;
         this.flush = flush;
-        this.url = url;
+        this.flagService = null;
     }
 
     protected String getOnboardingMessage() {
@@ -205,13 +198,13 @@ public abstract class SimpleMetrics implements Metrics {
                     .POST(HttpRequest.BodyPublishers.ofByteArray(compressed))
                     .header("Content-Encoding", "gzip")
                     .header("Content-Type", "application/octet-stream")
-                    .header("Authorization", "Bearer " + getToken())
+                    .header("Authorization", "Bearer " + settings.token())
                     .header("User-Agent", "FastStats Metrics " + SDK_NAME + "/" + SDK_VERSION)
                     .timeout(Duration.ofSeconds(3))
-                    .uri(url)
+                    .uri(settings.url())
                     .build();
 
-            info("Sending metrics to: " + url);
+            info("Sending metrics to: " + settings.url());
             try {
                 final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(UTF_8));
                 final var statusCode = response.statusCode();
@@ -232,9 +225,9 @@ public abstract class SimpleMetrics implements Metrics {
                     warn("Received unexpected response from metrics server: " + statusCode + " (" + body + ")");
                 }
             } catch (final HttpConnectTimeoutException t) {
-                error("Metrics submission timed out after 3 seconds: " + url, null);
+                error("Metrics submission timed out after 3 seconds: " + settings.url(), null);
             } catch (final ConnectException t) {
-                error("Failed to connect to metrics server: " + url, null);
+                error("Failed to connect to metrics server: " + settings.url(), null);
             } catch (final Throwable t) {
                 error("Failed to submit metrics", t);
             }
@@ -287,13 +280,18 @@ public abstract class SimpleMetrics implements Metrics {
     }
 
     @Override
-    public @Token String getToken() {
-        return token;
+    public Settings getSettings() {
+        return settings;
     }
 
     @Override
     public Optional<ErrorTracker> getErrorTracker() {
         return Optional.ofNullable(tracker);
+    }
+
+    @Override
+    public Optional<FeatureFlagService> getFeatureFlagService() {
+        return Optional.ofNullable(flagService);
     }
 
     @Override
@@ -324,6 +322,7 @@ public abstract class SimpleMetrics implements Metrics {
 
     @Override
     public void shutdown() {
+        if (flagService != null) flagService.shutdown();
         getErrorTracker().ifPresent(ErrorTracker::detachErrorContext);
         if (executor != null) try {
             info("Shutting down metrics submission");
@@ -338,11 +337,10 @@ public abstract class SimpleMetrics implements Metrics {
 
     public abstract static class Factory<T, F extends Metrics.Factory<T, F>> implements Metrics.Factory<T, F> {
         private final Set<Metric<?>> metrics = new HashSet<>(0);
-        private URI url = URI.create("https://metrics.faststats.dev/v1/collect");
         private @Nullable ErrorTracker tracker;
+        private @Nullable FeatureFlagService flagService;
         private @Nullable Runnable flush;
-        private @Nullable String token;
-        private boolean debug = false;
+        private @Nullable Settings settings;
 
         @Override
         @SuppressWarnings("unchecked")
@@ -367,25 +365,15 @@ public abstract class SimpleMetrics implements Metrics {
 
         @Override
         @SuppressWarnings("unchecked")
-        public F debug(final boolean enabled) {
-            this.debug = enabled;
+        public F featureFlagService(final FeatureFlagService service) {
+            this.flagService = service;
             return (F) this;
         }
 
         @Override
         @SuppressWarnings("unchecked")
-        public F token(@Token final String token) throws IllegalArgumentException {
-            if (!token.matches(Token.PATTERN)) {
-                throw new IllegalArgumentException("Invalid token '" + token + "', must match '" + Token.PATTERN + "'");
-            }
-            this.token = token;
-            return (F) this;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public F url(final URI url) {
-            this.url = url;
+        public F settings(final Settings settings) {
+            this.settings = settings;
             return (F) this;
         }
     }

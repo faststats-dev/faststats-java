@@ -47,7 +47,7 @@ public sealed interface ErrorTracker permits SimpleErrorTracker {
      * @see #trackError(Throwable)
      * @since 0.10.0
      */
-    @Contract(value = " -> new")
+    @Contract(value = " -> new", pure = true)
     static ErrorTracker contextUnaware() {
         return new SimpleErrorTracker();
     }

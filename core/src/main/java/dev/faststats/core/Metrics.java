@@ -1,10 +1,10 @@
 package dev.faststats.core;
 
 import dev.faststats.core.data.Metric;
+import dev.faststats.core.flags.FeatureFlagService;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
 
-import java.net.URI;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,14 +15,13 @@ import java.util.UUID;
  */
 public interface Metrics {
     /**
-     * Get the token used to authenticate with the metrics server and identify the project.
+     * Get the SDK-wide settings for this metrics instance.
      *
-     * @return the metrics token
-     * @since 0.1.0
+     * @return the settings
+     * @since 0.23.0
      */
-    @Token
     @Contract(pure = true)
-    String getToken();
+    Settings getSettings();
 
     /**
      * Get the error tracker for this metrics instance.
@@ -32,6 +31,15 @@ public interface Metrics {
      */
     @Contract(pure = true)
     Optional<ErrorTracker> getErrorTracker();
+
+    /**
+     * Get the feature flag service for this metrics instance.
+     *
+     * @return the feature flag service
+     * @since 0.23.0
+     */
+    @Contract(pure = true)
+    Optional<FeatureFlagService> getFeatureFlagService();
 
     /**
      * Get the metrics configuration.
@@ -49,6 +57,7 @@ public interface Metrics {
      * <p>
      * <i>No-op in most implementations.</i>
      *
+     * @apiNote Refer to your {@code Metrics} provider's documentation.
      * @since 0.14.0
      */
     default void ready() {
@@ -108,44 +117,24 @@ public interface Metrics {
         F errorTracker(ErrorTracker tracker);
 
         /**
-         * Enables or disabled debug mode for this metrics instance.
-         * <p>
-         * If {@link Config#debug()} is enabled, debug logging will be enabled for all metrics instances,
-         * including this one, regardless of this setting.
-         * <p>
-         * This is only meant for development and testing and should not be enabled in production.
+         * Sets the feature flag service for this metrics instance.
          *
-         * @param enabled whether debug mode is enabled
+         * @param service the feature flag service
          * @return the metrics factory
-         * @since 0.1.0
+         * @since 0.23.0
          */
         @Contract(mutates = "this")
-        F debug(boolean enabled);
+        F featureFlagService(FeatureFlagService service);
 
         /**
-         * Sets the token used to authenticate with the metrics server and identify the project.
-         * <p>
-         * This token can be found in the settings of your project under <b>"Your API Token"</b>.
+         * Sets the SDK-wide settings for this metrics instance.
          *
-         * @param token the metrics token
+         * @param settings the settings
          * @return the metrics factory
-         * @throws IllegalArgumentException if the token does not match the {@link Token#PATTERN}
-         * @since 0.1.0
+         * @since 0.23.0
          */
         @Contract(mutates = "this")
-        F token(@Token String token) throws IllegalArgumentException;
-
-        /**
-         * Sets the metrics server URL.
-         * <p>
-         * This is only required for self-hosted metrics servers.
-         *
-         * @param url the metrics server URL
-         * @return the metrics factory
-         * @since 0.1.0
-         */
-        @Contract(mutates = "this")
-        F url(URI url);
+        F settings(Settings settings);
 
         /**
          * Creates a new metrics instance.
@@ -154,8 +143,8 @@ public interface Metrics {
          *
          * @param object a required object as defined by the implementation
          * @return the metrics instance
-         * @throws IllegalStateException if the token is not specified
-         * @see #token(String)
+         * @throws IllegalStateException if the settings are not specified
+         * @see #settings(Settings)
          * @since 0.1.0
          */
         @Async.Schedule
