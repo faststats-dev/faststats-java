@@ -9,7 +9,7 @@ import java.util.UUID;
  *
  * @since 0.23.0
  */
-public sealed interface Config permits SimpleConfig {
+public interface Config {
     /**
      * The server id.
      *
