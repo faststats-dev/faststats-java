@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
+import java.util.Optional;
 
 /**
  * A service for managing feature flags.
@@ -127,6 +128,26 @@ public sealed interface FeatureFlagService permits SimpleFeatureFlagService {
      */
     @Contract(value = "_, _, _ -> new", pure = true)
     FeatureFlag<Number> define(String id, Number defaultValue, Attributes attributes);
+
+    /**
+     * Returns the global targeting attributes configured for this service.
+     * <p>
+     * These attributes apply to every flag defined by the service and are
+     * merged with any per-flag attributes supplied during definition.
+     *
+     * @return the global targeting attributes, if configured
+     * @since 0.23.0
+     */
+    @Contract(pure = true)
+    Optional<Attributes> getAttributes();
+
+    /**
+     * Returns the cache time-to-live used for resolved flag values.
+     *
+     * @return the configured cache time-to-live
+     * @since 0.23.0
+     */
+    Duration getTTL();
 
     /**
      * Shuts down the feature flag service.

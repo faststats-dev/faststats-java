@@ -207,6 +207,16 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
     }
 
     @Override
+    public Optional<Attributes> getAttributes() {
+        return Optional.ofNullable(attributes);
+    }
+
+    @Override
+    public Duration getTTL() {
+        return ttl;
+    }
+
+    @Override
     public void shutdown() {
         cache.clear();
         fetchTimes.clear();
