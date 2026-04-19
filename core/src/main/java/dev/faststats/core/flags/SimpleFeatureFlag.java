@@ -13,6 +13,7 @@ final class SimpleFeatureFlag<T> implements FeatureFlag<T> {
     private final String id;
     private final T defaultValue;
     private final @Nullable Attributes attributes;
+    private final Type type;
 
     SimpleFeatureFlag(
             final String id,
@@ -24,6 +25,13 @@ final class SimpleFeatureFlag<T> implements FeatureFlag<T> {
         this.defaultValue = defaultValue;
         this.attributes = attributes;
         this.service = service;
+        if (defaultValue instanceof final String string) {
+            this.type = Type.STRING;
+        } else if (defaultValue instanceof final Number number) {
+            this.type = Type.NUMBER;
+        } else if (defaultValue instanceof final Boolean bool) {
+            this.type = Type.BOOLEAN;
+        } else throw new IllegalArgumentException("Unsupported type: " + defaultValue.getClass().getName());
         service.fetch(this);
     }
 
@@ -33,9 +41,18 @@ final class SimpleFeatureFlag<T> implements FeatureFlag<T> {
     }
 
     @Override
+    public Type getType() {
+        return type;
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
-    public Class<T> getType() {
-        return (Class<T>) defaultValue.getClass();
+    public Class<T> getTypeClass() {
+        return (Class<T>) switch (type) {
+            case STRING -> String.class;
+            case NUMBER -> Number.class;
+            case BOOLEAN -> Boolean.class;
+        };
     }
 
     @Override
