@@ -2,13 +2,11 @@ package dev.faststats.nukkit;
 
 import cn.nukkit.Server;
 import cn.nukkit.plugin.PluginBase;
-import cn.nukkit.utils.Logger;
 import com.google.gson.JsonObject;
 import dev.faststats.core.Metrics;
 import dev.faststats.core.SimpleMetrics;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.Optional;
