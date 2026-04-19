@@ -216,8 +216,9 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
 
     @Override
     public void shutdown() {
-        cache.clear();
-        fetchTimes.clear();
+        fetchesInProgress.values().forEach(fetch -> fetch.cancel(true));
         fetchesInProgress.clear();
+        fetchTimes.clear();
+        cache.clear();
     }
 }
