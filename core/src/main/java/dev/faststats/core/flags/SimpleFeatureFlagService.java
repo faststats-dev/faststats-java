@@ -5,6 +5,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
+import dev.faststats.core.Config;
+import dev.faststats.core.SimpleConfig;
 import dev.faststats.core.Token;
 import dev.faststats.core.internal.Logger;
 import dev.faststats.core.internal.LoggerFactory;
@@ -15,11 +17,11 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -31,6 +33,7 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
             .connectTimeout(Duration.ofSeconds(3))
             .version(HttpClient.Version.HTTP_1_1)
             .build();
+    private final Config config = SimpleConfig.read(Path.of("plugins/faststats")); // todo: DI config or just server id?
 
     private final @Token String token;
     private final @Nullable Attributes attributes;
@@ -88,7 +91,7 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
 
     private <T> CompletableFuture<T> sendOptRequest(final SimpleFeatureFlag<T> flag, final String path) {
         final var requestBody = new JsonObject();
-        requestBody.addProperty("serverId", UUID.randomUUID().toString()); // todo: read from config
+        requestBody.addProperty("serverId", config.serverId().toString());
         requestBody.addProperty("flag", flag.getId());
 
         final var request = HttpRequest.newBuilder()
@@ -127,7 +130,7 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
 
     private <T> CompletableFuture<T> createFetch(final SimpleFeatureFlag<T> flag) {
         final var requestBody = new JsonObject();
-        requestBody.addProperty("serverId", UUID.randomUUID().toString()); // todo: read from config
+        requestBody.addProperty("serverId", config.serverId().toString());
         requestBody.addProperty("key", flag.getId());
 
         final var attributes = new JsonObject();
