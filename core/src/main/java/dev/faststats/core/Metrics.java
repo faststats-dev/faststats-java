@@ -1,7 +1,6 @@
 package dev.faststats.core;
 
 import dev.faststats.core.data.Metric;
-import dev.faststats.core.flags.FeatureFlagService;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
 
@@ -31,15 +30,6 @@ public interface Metrics {
      */
     @Contract(pure = true)
     Optional<ErrorTracker> getErrorTracker();
-
-    /**
-     * Get the feature flag service for this metrics instance.
-     *
-     * @return the feature flag service
-     * @since 0.23.0
-     */
-    @Contract(pure = true)
-    Optional<FeatureFlagService> getFeatureFlagService();
 
     /**
      * Get the metrics configuration.
@@ -115,16 +105,6 @@ public interface Metrics {
          */
         @Contract(mutates = "this")
         F errorTracker(ErrorTracker tracker);
-
-        /**
-         * Sets the feature flag service for this metrics instance.
-         *
-         * @param service the feature flag service
-         * @return the metrics factory
-         * @since 0.23.0
-         */
-        @Contract(mutates = "this")
-        F featureFlagService(FeatureFlagService service);
 
         /**
          * Sets the token used to authenticate with the metrics server and identify the project.

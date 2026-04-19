@@ -2,7 +2,6 @@ package dev.faststats.core;
 
 import com.google.gson.JsonObject;
 import dev.faststats.core.data.Metric;
-import dev.faststats.core.flags.FeatureFlagService;
 import dev.faststats.core.internal.Constants;
 import dev.faststats.core.internal.Logger;
 import dev.faststats.core.internal.LoggerFactory;
@@ -49,7 +48,6 @@ public abstract class SimpleMetrics implements Metrics {
     private final @Token String token;
     private final @Nullable ErrorTracker tracker;
     private final @Nullable Runnable flush;
-    private final @Nullable FeatureFlagService flagService;
 
     @Contract(mutates = "io")
     @SuppressWarnings("PatternValidation")
@@ -63,7 +61,6 @@ public abstract class SimpleMetrics implements Metrics {
         this.logger.setFilter(level -> debug || level.equals(Level.CONFIG));
         this.tracker = config.errorTracking() ? factory.tracker : null;
         this.flush = factory.flush;
-        this.flagService = factory.flagService;
         this.url = getMetricsServerUrl();
     }
 
@@ -292,11 +289,6 @@ public abstract class SimpleMetrics implements Metrics {
     }
 
     @Override
-    public Optional<FeatureFlagService> getFeatureFlagService() {
-        return Optional.ofNullable(flagService);
-    }
-
-    @Override
     public dev.faststats.core.Config getConfig() {
         return config;
     }
@@ -306,7 +298,6 @@ public abstract class SimpleMetrics implements Metrics {
 
     @Override
     public void shutdown() {
-        if (flagService != null) flagService.shutdown();
         getErrorTracker().ifPresent(ErrorTracker::detachErrorContext);
         if (executor != null) try {
             logger.info("Shutting down metrics submission");
@@ -322,7 +313,6 @@ public abstract class SimpleMetrics implements Metrics {
     public abstract static class Factory<T, F extends Metrics.Factory<T, F>> implements Metrics.Factory<T, F> {
         private final Set<Metric<?>> metrics = new HashSet<>(0);
         private @Nullable ErrorTracker tracker;
-        private @Nullable FeatureFlagService flagService;
         private @Nullable Runnable flush;
         private @Nullable String token;
 
@@ -344,13 +334,6 @@ public abstract class SimpleMetrics implements Metrics {
         @SuppressWarnings("unchecked")
         public F errorTracker(final ErrorTracker tracker) {
             this.tracker = tracker;
-            return (F) this;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public F featureFlagService(final FeatureFlagService service) {
-            this.flagService = service;
             return (F) this;
         }
 
