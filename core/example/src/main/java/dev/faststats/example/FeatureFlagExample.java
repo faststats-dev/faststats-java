@@ -1,6 +1,5 @@
 package dev.faststats.example;
 
-import dev.faststats.core.Settings;
 import dev.faststats.core.flags.Attributes;
 import dev.faststats.core.flags.FeatureFlag;
 import dev.faststats.core.flags.FeatureFlagService;
@@ -9,16 +8,14 @@ import java.time.Duration;
 import java.time.Instant;
 
 public final class FeatureFlagExample {
-    private static final Settings SETTINGS = Settings.withToken("YOUR_TOKEN_HERE");
-
-    public static final FeatureFlagService SERVICE = FeatureFlagService.factory()
-            .settings(SETTINGS)
-            .ttl(Duration.ofMinutes(10))
-            .attributes(Attributes.create()
+    public static final FeatureFlagService SERVICE = FeatureFlagService.create(
+            "YOUR_TOKEN_HERE", // token can be found in the settings of your project
+            Attributes.create()
                     .put("version", "1.2.3")
                     .put("java_version", System.getProperty("java.version"))
-                    .put("java_vendor", System.getProperty("java.vendor")))
-            .create();
+                    .put("java_vendor", System.getProperty("java.vendor")),
+            Duration.ofMinutes(10)
+    );
 
     // Define flags with default values
     public static final FeatureFlag<Boolean> NEW_COMMANDS = SERVICE.define("new_commands", false);

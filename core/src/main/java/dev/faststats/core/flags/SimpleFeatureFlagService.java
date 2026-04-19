@@ -6,9 +6,11 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
-import dev.faststats.core.Settings;
+import dev.faststats.core.Token;
 import org.jspecify.annotations.Nullable;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -22,28 +24,41 @@ import java.util.concurrent.ConcurrentHashMap;
 
 final class SimpleFeatureFlagService implements FeatureFlagService {
     private static final Gson GSON = new Gson();
+    private static final URI defaultUrl = URI.create("https://flags.faststats.dev/v1");
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(3))
             .version(HttpClient.Version.HTTP_1_1)
             .build();
 
-    private final Settings settings;
+    private final @Token String token;
     private final @Nullable Attributes attributes;
     private final Duration ttl;
+    private final URI url;
 
     private final Map<String, Object> cache = new ConcurrentHashMap<>();
     private final Map<String, Long> fetchTimes = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<?>> fetchesInProgress = new ConcurrentHashMap<>();
 
     SimpleFeatureFlagService(
-            final Settings settings,
+            final @Token String token,
             final @Nullable Attributes attributes,
             final Duration ttl
     ) {
-        this.settings = settings;
+        this.token = token;
         this.attributes = attributes;
         this.ttl = ttl;
+        this.url = getFlagsServerUrl();
+    }
+
+    private URI getFlagsServerUrl() {
+        final var property = System.getProperty("faststats.flags-server");
+        try {
+            return property != null ? new URI(property) : defaultUrl;
+        } catch (final URISyntaxException e) {
+            //error("Failed to parse flags server url: %s", e, property); // todo: recover
+            return defaultUrl;
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -73,16 +88,15 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
 
     private <T> CompletableFuture<T> sendOptRequest(final SimpleFeatureFlag<T> flag, final String path) {
         final var requestBody = new JsonObject();
-        requestBody.addProperty("projectToken", settings.token());
         requestBody.addProperty("serverId", UUID.randomUUID().toString()); // todo: read from config
         requestBody.addProperty("flag", flag.getId());
 
         final var request = HttpRequest.newBuilder()
                 .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(requestBody)))
                 .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + settings.token())
+                .header("Authorization", "Bearer " + token)
                 .timeout(Duration.ofSeconds(3))
-                .uri(settings.flagsUrl().resolve(path))
+                .uri(url.resolve(path))
                 .build();
 
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenCompose(response -> {
@@ -113,7 +127,6 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
 
     private <T> CompletableFuture<T> createFetch(final SimpleFeatureFlag<T> flag) {
         final var requestBody = new JsonObject();
-        requestBody.addProperty("projectToken", settings.token());
         requestBody.addProperty("serverId", UUID.randomUUID().toString()); // todo: read from config
         requestBody.addProperty("key", flag.getId());
 
@@ -125,9 +138,9 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
         final var request = HttpRequest.newBuilder()
                 .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(requestBody)))
                 .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + settings.token())
+                .header("Authorization", "Bearer " + token)
                 .timeout(Duration.ofSeconds(3))
-                .uri(settings.flagsUrl().resolve("/check"))
+                .uri(url.resolve("/check"))
                 .build();
 
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(response -> {
@@ -196,35 +209,5 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
         cache.clear();
         fetchTimes.clear();
         fetchesInProgress.clear();
-    }
-
-    static final class Factory implements FeatureFlagService.Factory {
-        private Duration ttl = Duration.ofMinutes(5);
-        private @Nullable Settings settings;
-        private @Nullable Attributes attributes;
-
-        @Override
-        public FeatureFlagService.Factory ttl(final Duration ttl) {
-            this.ttl = ttl;
-            return this;
-        }
-
-        @Override
-        public FeatureFlagService.Factory attributes(final Attributes attributes) {
-            this.attributes = attributes;
-            return this;
-        }
-
-        @Override
-        public FeatureFlagService.Factory settings(final Settings settings) {
-            this.settings = settings;
-            return this;
-        }
-
-        @Override
-        public FeatureFlagService create() throws IllegalStateException {
-            if (settings == null) throw new IllegalStateException("Settings must be specified");
-            return new SimpleFeatureFlagService(settings, attributes, ttl);
-        }
     }
 }

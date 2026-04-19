@@ -2,7 +2,6 @@ package com.example;
 
 import dev.faststats.bukkit.BukkitMetrics;
 import dev.faststats.core.ErrorTracker;
-import dev.faststats.core.Settings;
 import dev.faststats.core.data.Metric;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -23,7 +22,7 @@ public final class ExamplePlugin extends JavaPlugin {
             // This is useful for cleaning up cached data
             .onFlush(() -> gameCount.set(0)) // reset game count on flush
 
-            .settings(Settings.withToken("YOUR_TOKEN_HERE")) // token can be found in the settings of your project
+            .token("YOUR_TOKEN_HERE") // required -> token can be found in the settings of your project
             .create(this);
 
     @Override

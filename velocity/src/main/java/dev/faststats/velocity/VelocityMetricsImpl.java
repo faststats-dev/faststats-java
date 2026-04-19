@@ -61,9 +61,9 @@ final class VelocityMetricsImpl extends SimpleMetrics implements VelocityMetrics
          *
          * @param plugin the plugin instance
          * @return the metrics instance
-         * @throws IllegalStateException    if the settings are not specified
+         * @throws IllegalStateException    if the token is not specified
          * @throws IllegalArgumentException if the given object is not a valid plugin
-         * @see #settings(Settings) 
+         * @see #token(String)
          * @since 0.1.0
          */
         @Override

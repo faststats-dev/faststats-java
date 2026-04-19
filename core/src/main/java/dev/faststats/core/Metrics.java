@@ -15,13 +15,14 @@ import java.util.UUID;
  */
 public interface Metrics {
     /**
-     * Get the SDK-wide settings for this metrics instance.
+     * Get the token used to authenticate with the metrics server and identify the project.
      *
-     * @return the settings
-     * @since 0.23.0
+     * @return the metrics token
+     * @since 0.1.0
      */
+    @Token
     @Contract(pure = true)
-    Settings getSettings();
+    String getToken();
 
     /**
      * Get the error tracker for this metrics instance.
@@ -127,14 +128,17 @@ public interface Metrics {
         F featureFlagService(FeatureFlagService service);
 
         /**
-         * Sets the SDK-wide settings for this metrics instance.
+         * Sets the token used to authenticate with the metrics server and identify the project.
+         * <p>
+         * This token can be found in the settings of your project under <b>"Your API Token"</b>.
          *
-         * @param settings the settings
+         * @param token the metrics token
          * @return the metrics factory
-         * @since 0.23.0
+         * @throws IllegalArgumentException if the token does not match the {@link Token#PATTERN}
+         * @since 0.1.0
          */
         @Contract(mutates = "this")
-        F settings(Settings settings);
+        F token(@Token String token) throws IllegalArgumentException;
 
         /**
          * Creates a new metrics instance.
@@ -143,8 +147,8 @@ public interface Metrics {
          *
          * @param object a required object as defined by the implementation
          * @return the metrics instance
-         * @throws IllegalStateException if the settings are not specified
-         * @see #settings(Settings)
+         * @throws IllegalStateException if the token is not specified
+         * @see #token(String)
          * @since 0.1.0
          */
         @Async.Schedule

@@ -1,41 +1,61 @@
 package dev.faststats.core.flags;
 
-import dev.faststats.core.Metrics;
-import dev.faststats.core.Settings;
+import dev.faststats.core.Token;
 import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.Nullable;
 
 import java.time.Duration;
 
 /**
  * A service for managing feature flags.
  * <p>
- * Create an instance using the {@link Factory} and pass it to the metrics factory
- * via {@link Metrics.Factory#featureFlagService(FeatureFlagService)}.
+ * Use one of the static {@code create} methods to construct a service instance.
  *
  * @since 0.23.0
  */
 public sealed interface FeatureFlagService permits SimpleFeatureFlagService {
     /**
-     * Create a new {@link FeatureFlagService} with the given settings and default options.
+     * Creates a feature flag service for the given environment token
+     * and a default cache TTL of five minutes.
      *
-     * @param settings the SDK-wide settings
+     * @param token the environment token
      * @return a new feature flag service
+     * @see #create(String, Attributes)
      * @since 0.23.0
      */
     @Contract(value = "_ -> new", pure = true)
-    static FeatureFlagService create(final Settings settings) {
-        return factory().settings(settings).create();
+    static FeatureFlagService create(@Token final String token) {
+        return create(token, null);
     }
 
     /**
-     * Create a new factory for building a {@link FeatureFlagService}.
+     * Creates a feature flag service for the given environment token
+     * and global targeting attributes with a default cache TTL of five minutes.
      *
-     * @return a new factory
+     * @param token      the environment token
+     * @param attributes the global targeting attributes
+     * @return a new feature flag service
+     * @see #create(String, Attributes, Duration)
      * @since 0.23.0
      */
-    @Contract(value = " -> new", pure = true)
-    static Factory factory() {
-        return new SimpleFeatureFlagService.Factory();
+    @Contract(value = "_, _ -> new", pure = true)
+    static FeatureFlagService create(@Token final String token, @Nullable final Attributes attributes) {
+        return create(token, attributes, Duration.ofMinutes(5));
+    }
+
+    /**
+     * Creates a feature flag service for the given environment token,
+     * global targeting attributes, and cache TTL.
+     *
+     * @param token      the environment token
+     * @param attributes the global targeting attributes
+     * @param ttl        the cache time-to-live for resolved flag values
+     * @return a new feature flag service
+     * @since 0.23.0
+     */
+    @Contract(value = "_, _, _ -> new", pure = true)
+    static FeatureFlagService create(@Token final String token, @Nullable final Attributes attributes, final Duration ttl) {
+        return new SimpleFeatureFlagService(token, attributes, ttl);
     }
 
     /**
@@ -114,56 +134,4 @@ public sealed interface FeatureFlagService permits SimpleFeatureFlagService {
      */
     @Contract(mutates = "this")
     void shutdown();
-
-    /**
-     * A factory for creating {@link FeatureFlagService} instances.
-     *
-     * @since 0.23.0
-     */
-    interface Factory {
-        /**
-         * Sets the cache time-to-live for flag values.
-         * <p>
-         * This TTL determines the staleness window reported by
-         * {@link FeatureFlag#getExpiration()}. Expired cached values remain
-         * readable until they are explicitly refreshed or invalidated.
-         *
-         * @param ttl the cache time-to-live
-         * @return the factory
-         * @since 0.23.0
-         */
-        @Contract(mutates = "this")
-        Factory ttl(Duration ttl);
-
-        /**
-         * Sets the global targeting attributes for all flags created by this service.
-         *
-         * @param attributes the targeting attributes
-         * @return the factory
-         * @since 0.23.0
-         */
-        @Contract(mutates = "this")
-        Factory attributes(Attributes attributes);
-
-        /**
-         * Sets the SDK-wide settings for this feature flag service.
-         *
-         * @param settings the settings
-         * @return the factory
-         * @since 0.23.0
-         */
-        @Contract(mutates = "this")
-        Factory settings(Settings settings);
-
-        /**
-         * Creates a new {@link FeatureFlagService} instance.
-         *
-         * @return the feature flag service
-         * @throws IllegalStateException if the settings are not specified
-         * @see #settings(Settings)
-         * @since 0.23.0
-         */
-        @Contract(value = " -> new", pure = true)
-        FeatureFlagService create() throws IllegalStateException;
-    }
 }
