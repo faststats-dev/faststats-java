@@ -3,7 +3,9 @@ package dev.faststats.core;
 import com.google.gson.JsonObject;
 import dev.faststats.core.data.Metric;
 import dev.faststats.core.flags.FeatureFlagService;
-import org.intellij.lang.annotations.PrintFormat;
+import dev.faststats.core.internal.Constants;
+import dev.faststats.core.internal.Logger;
+import dev.faststats.core.internal.LoggerFactory;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
@@ -34,19 +36,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiPredicate;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public abstract class SimpleMetrics implements Metrics {
-    protected final Logger logger = Logger.getLogger(getClass().getName());
+    protected final Logger logger = LoggerFactory.factory().getLogger(getClass().getName());
     private static final URI defaultUrl = URI.create("https://metrics.faststats.dev/v1/collect");
-
-    private static final String SDK_NAME;
-    private static final String SDK_VERSION;
-    private static final String BUILD_ID;
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(3))
@@ -61,17 +57,6 @@ public abstract class SimpleMetrics implements Metrics {
     private final @Nullable ErrorTracker tracker;
     private final @Nullable Runnable flush;
     private final @Nullable FeatureFlagService flagService;
-
-    static {
-        final var properties = new Properties();
-        try (final var stream = SimpleMetrics.class.getClassLoader().getResourceAsStream("/META-INF/faststats.properties")) {
-            if (stream != null) properties.load(stream);
-        } catch (final IOException ignored) {
-        }
-        SDK_NAME = properties.getProperty("name", "unknown");
-        SDK_VERSION = properties.getProperty("version", "unknown");
-        BUILD_ID = properties.getProperty("build-id", "unknown");
-    }
 
     @Contract(mutates = "io")
     @SuppressWarnings("PatternValidation")
@@ -94,7 +79,7 @@ public abstract class SimpleMetrics implements Metrics {
         try {
             return property != null ? new URI(property) : defaultUrl;
         } catch (final URISyntaxException e) {
-            error("Failed to parse metrics server url: %s", e, property);
+            logger.error("Failed to parse metrics server url: %s", e, property);
             return defaultUrl;
         }
     }
@@ -152,7 +137,7 @@ public abstract class SimpleMetrics implements Metrics {
     @SuppressWarnings("PatternValidation")
     private void startSubmitting(final long initialDelay, final long period, final TimeUnit unit) {
         if (Boolean.getBoolean("faststats.first-run")) {
-            info("Skipping metrics submission due to first-run flag");
+            logger.info("Skipping metrics submission due to first-run flag");
             return;
         }
 
@@ -162,9 +147,9 @@ public abstract class SimpleMetrics implements Metrics {
             final var split = getOnboardingMessage().split("\n");
             for (final var s : split) if (s.length() > separatorLength) separatorLength = s.length();
 
-            info("-".repeat(separatorLength));
-            for (final var s : split) info(s);
-            info("-".repeat(separatorLength));
+            logger.info("-".repeat(separatorLength));
+            for (final var s : split) logger.info(s);
+            logger.info("-".repeat(separatorLength));
 
             System.setProperty("faststats.first-run", "true");
             if (!config.externallyManaged()) return;
@@ -173,22 +158,22 @@ public abstract class SimpleMetrics implements Metrics {
         final var enabled = Boolean.parseBoolean(System.getProperty("faststats.enabled", "true"));
 
         if (!config.enabled() || !enabled) {
-            warn("Metrics disabled, not starting submission");
+            logger.warn("Metrics disabled, not starting submission");
             return;
         }
 
         if (isSubmitting()) {
-            warn("Metrics already submitting, not starting again");
+            logger.warn("Metrics already submitting, not starting again");
             return;
         }
 
-        this.executor = Executors.newSingleThreadScheduledExecutor(runnable -> {
+        this.executor = Executors.newSingleThreadScheduledExecutor(runnable -> { // todo: SINGLE THREAD??? what was i smoking?
             final var thread = new Thread(runnable, "metrics-submitter");
             thread.setDaemon(true);
             return thread;
         });
 
-        info("Starting metrics submission");
+        logger.info("Starting metrics submission");
         executor.scheduleAtFixedRate(this::submit, Math.max(0, initialDelay), Math.max(1000, period), unit);
     }
 
@@ -200,7 +185,7 @@ public abstract class SimpleMetrics implements Metrics {
         try {
             return submitNow();
         } catch (final Throwable t) {
-            error("Failed to submit metrics", t);
+            logger.error("Failed to submit metrics", t);
             return false;
         }
     }
@@ -209,7 +194,7 @@ public abstract class SimpleMetrics implements Metrics {
         final var data = createData().toString();
         final var bytes = data.getBytes(UTF_8);
 
-        info("Uncompressed data: %s", data);
+        logger.info("Uncompressed data: %s", data);
 
         try (final var byteOutput = new ByteArrayOutputStream();
              final var output = new GZIPOutputStream(byteOutput)) {
@@ -218,55 +203,55 @@ public abstract class SimpleMetrics implements Metrics {
             output.finish();
 
             final var compressed = byteOutput.toByteArray();
-            info("Compressed size: %s bytes", compressed.length);
+            logger.info("Compressed size: %s bytes", compressed.length);
 
             final var request = HttpRequest.newBuilder()
                     .POST(HttpRequest.BodyPublishers.ofByteArray(compressed))
                     .header("Content-Encoding", "gzip")
                     .header("Content-Type", "application/octet-stream")
                     .header("Authorization", "Bearer " + token)
-                    .header("User-Agent", "FastStats Metrics " + SDK_NAME + "/" + SDK_VERSION)
+                    .header("User-Agent", "FastStats Metrics " + Constants.SDK_NAME + "/" + Constants.SDK_VERSION)
                     .timeout(Duration.ofSeconds(3))
                     .uri(url)
                     .build();
 
-            info("Sending metrics to: %s", url);
+            logger.info("Sending metrics to: %s", url);
             try {
                 final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(UTF_8));
                 final var statusCode = response.statusCode();
                 final var body = response.body();
 
                 if (statusCode >= 200 && statusCode < 300) {
-                    info("Metrics submitted with status code: %s (%s)", statusCode, body);
+                    logger.info("Metrics submitted with status code: %s (%s)", statusCode, body);
                     getErrorTracker().map(SimpleErrorTracker.class::cast).ifPresent(SimpleErrorTracker::clear);
                     if (flush != null) flush.run();
                     return true;
                 } else if (statusCode >= 300 && statusCode < 400) {
-                    warn("Received redirect response from metrics server: %s (%s)", statusCode, body);
+                    logger.warn("Received redirect response from metrics server: %s (%s)", statusCode, body);
                 } else if (statusCode >= 400 && statusCode < 500) {
-                    error("Submitted invalid request to metrics server: %s (%s)", null, statusCode, body);
+                    logger.error("Submitted invalid request to metrics server: %s (%s)", null, statusCode, body);
                 } else if (statusCode >= 500 && statusCode < 600) {
-                    error("Received server error response from metrics server: %s (%s)", null, statusCode, body);
+                    logger.error("Received server error response from metrics server: %s (%s)", null, statusCode, body);
                 } else {
-                    warn("Received unexpected response from metrics server: %s (%s)", statusCode, body);
+                    logger.warn("Received unexpected response from metrics server: %s (%s)", statusCode, body);
                 }
             } catch (final HttpConnectTimeoutException t) {
-                error("Metrics submission timed out after 3 seconds: %s", null, url);
+                logger.error("Metrics submission timed out after 3 seconds: %s", null, url);
             } catch (final ConnectException t) {
-                error("Failed to connect to metrics server: %s", null, url);
+                logger.error("Failed to connect to metrics server: %s", null, url);
             } catch (final Throwable t) {
-                error("Failed to submit metrics", t);
+                logger.error("Failed to submit metrics", t);
             }
             return false;
         }
     }
 
-    private final String javaVendor = System.getProperty("java.vendor");
-    private final String javaVersion = System.getProperty("java.version");
-    private final String osArch = System.getProperty("os.arch");
-    private final String osName = System.getProperty("os.name");
-    private final String osVersion = System.getProperty("os.version");
-    private final int coreCount = Runtime.getRuntime().availableProcessors();
+    private static final String javaVendor = System.getProperty("java.vendor");
+    private static final String javaVersion = System.getProperty("java.version");
+    private static final String osArch = System.getProperty("os.arch");
+    private static final String osName = System.getProperty("os.name");
+    private static final String osVersion = System.getProperty("os.version");
+    private static final int coreCount = Runtime.getRuntime().availableProcessors();
 
     protected JsonObject createData() {
         final var data = new JsonObject();
@@ -282,7 +267,7 @@ public abstract class SimpleMetrics implements Metrics {
         try {
             appendDefaultData(metrics);
         } catch (final Throwable t) {
-            error("Failed to append default data", t);
+            logger.error("Failed to append default data", t);
             getErrorTracker().ifPresent(tracker -> tracker.trackError(t));
         }
 
@@ -290,7 +275,7 @@ public abstract class SimpleMetrics implements Metrics {
             try {
                 metric.getData().ifPresent(element -> metrics.add(metric.getId(), element));
             } catch (final Throwable t) {
-                error("Failed to build metric data: %s", t, metric.getId());
+                logger.error("Failed to build metric data: %s", t, metric.getId());
                 getErrorTracker().ifPresent(tracker -> tracker.trackError(t));
             }
         });
@@ -299,7 +284,7 @@ public abstract class SimpleMetrics implements Metrics {
         data.add("data", metrics);
 
         getErrorTracker().map(SimpleErrorTracker.class::cast)
-                .map(tracker -> tracker.getData(BUILD_ID))
+                .map(tracker -> tracker.getData(Constants.BUILD_ID))
                 .filter(errors -> !errors.isEmpty())
                 .ifPresent(errors -> data.add("errors", errors));
         return data;
@@ -328,39 +313,18 @@ public abstract class SimpleMetrics implements Metrics {
     @Contract(mutates = "param1")
     protected abstract void appendDefaultData(JsonObject metrics);
 
-    protected void error(@PrintFormat final String message, @Nullable final Throwable throwable, @Nullable final Object... args) {
-        if (throwable != null) {
-            if (!logger.isLoggable(Level.SEVERE)) return;
-            final var logRecord = new LogRecord(Level.SEVERE, message.formatted(args));
-            logRecord.setThrown(throwable);
-            logger.log(logRecord);
-        } else log(Level.SEVERE, message, args);
-    }
-
-    protected void log(final Level level, @PrintFormat final String message, @Nullable final Object... args) {
-        logger.log(level, () -> message.formatted(args));
-    }
-
-    protected void info(@PrintFormat final String message, @Nullable final Object... args) {
-        log(Level.INFO, message, args);
-    }
-
-    protected void warn(@PrintFormat final String message, @Nullable final Object... args) {
-        log(Level.WARNING, message, args);
-    }
-
     @Override
     public void shutdown() {
         if (flagService != null) flagService.shutdown();
         getErrorTracker().ifPresent(ErrorTracker::detachErrorContext);
         if (executor != null) try {
-            info("Shutting down metrics submission");
+            logger.info("Shutting down metrics submission");
             executor.shutdown();
             getErrorTracker().map(SimpleErrorTracker.class::cast)
                     .filter(SimpleErrorTracker::needsFlushing)
                     .ifPresent(ignored -> submit());
         } catch (final Throwable t) {
-            error("Failed to submit metrics on shutdown", t);
+            logger.error("Failed to submit metrics on shutdown", t);
         } finally {
             executor = null;
         }
