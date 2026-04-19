@@ -100,7 +100,7 @@ public abstract class SimpleMetrics implements Metrics {
 
     protected String getOnboardingMessage() {
         return """
-                This piece of software uses FastStats to collect anonymous usage statistics.
+                This plugin uses FastStats to collect anonymous usage statistics.
                 No personal or identifying information is ever collected.
                 To opt out, set 'enabled=false' in the metrics configuration file.
                 Learn more at: https://faststats.dev/info
