@@ -3,6 +3,7 @@ package dev.faststats.core;
 import com.google.gson.JsonObject;
 import dev.faststats.core.data.Metric;
 import dev.faststats.core.flags.FeatureFlagService;
+import dev.faststats.core.internal.ConfigProvider;
 import dev.faststats.core.internal.Constants;
 import dev.faststats.core.internal.Logger;
 import dev.faststats.core.internal.LoggerFactory;
@@ -14,7 +15,6 @@ import org.jspecify.annotations.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -22,19 +22,13 @@ import java.net.http.HttpClient;
 import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiPredicate;
 import java.util.logging.Level;
 import java.util.zip.GZIPOutputStream;
 
@@ -53,7 +47,7 @@ public abstract class SimpleMetrics implements Metrics {
 
     private final URI url;
     private final Set<Metric<?>> metrics;
-    private final Config config;
+    private final SimpleConfig config;
     private final @Token String token;
     private final @Nullable ErrorTracker tracker;
     private final @Nullable Runnable flush;
@@ -64,12 +58,12 @@ public abstract class SimpleMetrics implements Metrics {
     protected SimpleMetrics(final Factory<?, ?> factory, final Config config) throws IllegalStateException {
         if (factory.token == null) throw new IllegalStateException("Token must be specified");
 
-        this.config = config;
+        this.config = (SimpleConfig) config;
         this.token = factory.token;
-        this.metrics = config.additionalMetrics ? Set.copyOf(factory.metrics) : Set.of();
+        this.metrics = config.additionalMetrics() ? Set.copyOf(factory.metrics) : Set.of();
         final var debug = config.debug() || Boolean.getBoolean("faststats.debug");
         this.logger.setFilter(level -> debug || level.equals(Level.CONFIG));
-        this.tracker = config.errorTracking ? factory.tracker : null;
+        this.tracker = config.errorTracking() ? factory.tracker : null;
         this.flush = factory.flush;
         this.flagService = factory.flagService;
         this.url = getMetricsServerUrl();
@@ -86,8 +80,8 @@ public abstract class SimpleMetrics implements Metrics {
     }
 
     @Contract(mutates = "io")
-    protected SimpleMetrics(final Factory<?, ?> factory, final Path config) throws IllegalStateException {
-        this(factory, Config.read(config));
+    protected SimpleMetrics(final Factory<?, ?> factory) throws IllegalStateException {
+        this(factory, SimpleConfig.read(ConfigProvider.provider().getConfigPath().resolve("config.properties")));
     }
 
     @VisibleForTesting
@@ -100,8 +94,8 @@ public abstract class SimpleMetrics implements Metrics {
             final URI url,
             final boolean debug
     ) {
-        this.metrics = config.additionalMetrics ? Set.copyOf(metrics) : Set.of();
-        this.config = config;
+        this.metrics = config.additionalMetrics() ? Set.copyOf(metrics) : Set.of();
+        this.config = (SimpleConfig) config;
         this.logger.setLevel(debug ? Level.ALL : Level.OFF);
         this.token = token;
         this.tracker = tracker;
@@ -142,8 +136,7 @@ public abstract class SimpleMetrics implements Metrics {
             return;
         }
 
-        if (config.firstRun) {
-
+        if (config.firstRun()) {
             var separatorLength = 0;
             final var split = getOnboardingMessage().split("\n");
             for (final var s : split) if (s.length() > separatorLength) separatorLength = s.length();
@@ -307,7 +300,7 @@ public abstract class SimpleMetrics implements Metrics {
     }
 
     @Override
-    public Metrics.Config getConfig() {
+    public dev.faststats.core.Config getConfig() {
         return config;
     }
 
@@ -377,105 +370,4 @@ public abstract class SimpleMetrics implements Metrics {
         }
     }
 
-    public record Config(
-            UUID serverId,
-            boolean additionalMetrics,
-            boolean debug,
-            boolean enabled,
-            boolean errorTracking,
-            boolean firstRun,
-            boolean externallyManaged
-    ) implements Metrics.Config {
-
-        public static final String DEFAULT_COMMENT = """
-                 FastStats (https://faststats.dev) collects anonymous usage statistics for developers.
-                # This helps developers understand how their projects are used in the real world.
-                #
-                # No IP addresses, player data, or personal information is collected.
-                # The server ID below is randomly generated and can be regenerated at any time.
-                #
-                # Enabling metrics has no noticeable performance impact.
-                # Keeping metrics enabled is recommended, but you can opt out by setting
-                # 'enabled=false' in faststats/config.properties.
-                #
-                # If you suspect a developer is collecting personal data or bypassing the "enabled" option,
-                # please report it at: https://faststats.dev/abuse
-                #
-                # For more information, visit: https://faststats.dev/info
-                """;
-
-        @Contract(mutates = "io")
-        public static Config read(final Path file) throws RuntimeException {
-            return read(file, DEFAULT_COMMENT, false, false);
-        }
-
-        @Contract(mutates = "io")
-        public static Config read(final Path file, final String comment, final boolean externallyManaged, final boolean externallyEnabled) throws RuntimeException {
-            final var properties = readOrEmpty(file);
-            final var firstRun = properties.isEmpty();
-            final var saveConfig = new AtomicBoolean(firstRun);
-
-            final var serverId = properties.map(object -> object.getProperty("serverId")).map(string -> {
-                try {
-                    final var trimmed = string.trim();
-                    final var corrected = trimmed.length() > 36 ? trimmed.substring(0, 36) : trimmed;
-                    if (!corrected.equals(string)) saveConfig.set(true);
-                    return UUID.fromString(corrected);
-                } catch (final IllegalArgumentException e) {
-                    saveConfig.set(true);
-                    return UUID.randomUUID();
-                }
-            }).orElseGet(() -> {
-                saveConfig.set(true);
-                return UUID.randomUUID();
-            });
-
-            final BiPredicate<String, Boolean> predicate = (key, defaultValue) -> {
-                return properties.map(object -> object.getProperty(key)).map(Boolean::parseBoolean).orElseGet(() -> {
-                    saveConfig.set(true);
-                    return defaultValue;
-                });
-            };
-
-            final var enabled = externallyManaged ? externallyEnabled : predicate.test("enabled", true);
-            final var errorTracking = predicate.test("submitErrors", true);
-            final var additionalMetrics = predicate.test("submitAdditionalMetrics", true);
-            final var debug = predicate.test("debug", false);
-
-            if (saveConfig.get()) try {
-                save(file, externallyManaged, comment, serverId, enabled, errorTracking, additionalMetrics, debug);
-            } catch (final IOException e) {
-                throw new RuntimeException("Failed to save metrics config", e);
-            }
-
-            return new Config(serverId, additionalMetrics, debug, enabled, errorTracking, firstRun, externallyManaged);
-        }
-
-        private static Optional<Properties> readOrEmpty(final Path file) throws RuntimeException {
-            if (!Files.isRegularFile(file)) return Optional.empty();
-            try (final var reader = Files.newBufferedReader(file, UTF_8)) {
-                final var properties = new Properties();
-                properties.load(reader);
-                return Optional.of(properties);
-            } catch (final IOException e) {
-                throw new RuntimeException("Failed to read metrics config", e);
-            }
-        }
-
-        private static void save(final Path file, final boolean externallyManaged, final String comment, final UUID serverId, final boolean enabled, final boolean errorTracking, final boolean additionalMetrics, final boolean debug) throws IOException {
-            Files.createDirectories(file.getParent());
-            try (final var out = Files.newOutputStream(file);
-                 final var writer = new OutputStreamWriter(out, UTF_8)) {
-                final var properties = new Properties();
-
-                properties.setProperty("serverId", serverId.toString());
-                if (!externallyManaged) properties.setProperty("enabled", Boolean.toString(enabled));
-                properties.setProperty("submitErrors", Boolean.toString(errorTracking));
-                properties.setProperty("submitAdditionalMetrics", Boolean.toString(additionalMetrics));
-                properties.setProperty("debug", Boolean.toString(debug));
-
-                properties.store(writer, comment);
-            }
-        }
-    }
 }
