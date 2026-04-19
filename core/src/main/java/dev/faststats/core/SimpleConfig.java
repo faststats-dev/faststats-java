@@ -27,15 +27,14 @@ public record SimpleConfig(
 ) implements Config {
 
     public static final String DEFAULT_COMMENT = """
-             FastStats (https://faststats.dev) collects anonymous usage statistics for developers.
+             FastStats (https://faststats.dev) collects anonymous usage statistics.
             # This helps developers understand how their projects are used in the real world.
             #
             # No IP addresses, player data, or personal information is collected.
             # The server ID below is randomly generated and can be regenerated at any time.
             #
             # Enabling metrics has no noticeable performance impact.
-            # Keeping metrics enabled is recommended, but you can opt out by setting
-            # 'enabled=false' in faststats/config.properties.
+            # Keeping metrics enabled is recommended, but you can opt out by setting 'enabled=false'.
             #
             # If you suspect a developer is collecting personal data or bypassing the "enabled" option,
             # please report it at: https://faststats.dev/abuse

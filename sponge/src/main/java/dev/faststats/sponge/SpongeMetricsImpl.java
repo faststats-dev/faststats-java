@@ -15,7 +15,7 @@ import java.nio.file.Path;
 
 final class SpongeMetricsImpl extends SimpleMetrics implements SpongeMetrics {
     public static final String COMMENT = """
-             FastStats (https://faststats.dev) collects anonymous usage statistics for plugin developers.
+             FastStats (https://faststats.dev) collects anonymous usage statistics.
             # This helps developers understand how their projects are used in the real world.
             #
             # No IP addresses, player data, or personal information is collected.
@@ -25,7 +25,7 @@ final class SpongeMetricsImpl extends SimpleMetrics implements SpongeMetrics {
             # Enabling metrics is recommended, you can do so in the Sponge metrics.config,
             # by setting the "global-state" property to "TRUE".
             #
-            # If you suspect a plugin is collecting personal data or bypassing the Sponge config,
+            # If you suspect a developer is collecting personal data or bypassing the Sponge config,
             # please report it at: https://faststats.dev/abuse
             #
             # For more information, visit: https://faststats.dev/info
