@@ -16,7 +16,8 @@ import java.util.UUID;
 public final class MockMetrics extends SimpleMetrics {
     public MockMetrics(final UUID serverId, @Token final String token, @Nullable final ErrorTracker tracker, final boolean debug) {
         super(new Config(serverId, true, debug, true, true, false, false), Set.of(), Settings.factory()
-                .url(URI.create("http://localhost:5000/v1/collect"))
+                .metricsServer(URI.create("http://localhost:5000/v1"))
+                .flagsServer(URI.create("http://localhost:5001/v1"))
                 .token(token)
                 .debug(debug)
                 .create(), tracker, null);

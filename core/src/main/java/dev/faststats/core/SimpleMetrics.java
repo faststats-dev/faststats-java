@@ -194,6 +194,7 @@ public abstract class SimpleMetrics implements Metrics {
             final var compressed = byteOutput.toByteArray();
             info("Compressed size: " + compressed.length + " bytes");
 
+            final var url = settings.metricsUrl().resolve("/collect");
             final var request = HttpRequest.newBuilder()
                     .POST(HttpRequest.BodyPublishers.ofByteArray(compressed))
                     .header("Content-Encoding", "gzip")
@@ -201,10 +202,10 @@ public abstract class SimpleMetrics implements Metrics {
                     .header("Authorization", "Bearer " + settings.token())
                     .header("User-Agent", "FastStats Metrics " + SDK_NAME + "/" + SDK_VERSION)
                     .timeout(Duration.ofSeconds(3))
-                    .uri(settings.url())
+                    .uri(url)
                     .build();
 
-            info("Sending metrics to: " + settings.url());
+            info("Sending metrics to: " + url);
             try {
                 final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(UTF_8));
                 final var statusCode = response.statusCode();
@@ -225,9 +226,9 @@ public abstract class SimpleMetrics implements Metrics {
                     warn("Received unexpected response from metrics server: " + statusCode + " (" + body + ")");
                 }
             } catch (final HttpConnectTimeoutException t) {
-                error("Metrics submission timed out after 3 seconds: " + settings.url(), null);
+                error("Metrics submission timed out after 3 seconds: " + url, null);
             } catch (final ConnectException t) {
-                error("Failed to connect to metrics server: " + settings.url(), null);
+                error("Failed to connect to metrics server: " + url, null);
             } catch (final Throwable t) {
                 error("Failed to submit metrics", t);
             }

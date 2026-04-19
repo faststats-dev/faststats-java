@@ -20,13 +20,15 @@ import java.util.concurrent.ConcurrentHashMap;
 final class SimpleFeatureFlagService implements FeatureFlagService {
     private static final Gson GSON = new Gson();
 
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(3))
+            .version(HttpClient.Version.HTTP_1_1)
+            .build();
+
     private final Settings settings;
     private final @Nullable Attributes attributes;
     private final Duration ttl;
 
-    private final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(3))
-            .build();
     private final Map<String, Object> cache = new ConcurrentHashMap<>();
     private final Map<String, Long> fetchTimes = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<?>> fetchesInProgress = new ConcurrentHashMap<>();
@@ -62,11 +64,11 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
     }
 
     <T> CompletableFuture<T> optIn(final SimpleFeatureFlag<T> flag) {
-        return sendOptRequest(flag, "/v1/flag/opt-in");
+        return sendOptRequest(flag, "/opt-in");
     }
 
     <T> CompletableFuture<T> optOut(final SimpleFeatureFlag<T> flag) {
-        return sendOptRequest(flag, "/v1/flag/opt-out");
+        return sendOptRequest(flag, "/opt-out");
     }
 
     private <T> CompletableFuture<T> sendOptRequest(final SimpleFeatureFlag<T> flag, final String path) {
@@ -82,7 +84,7 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + settings.token())
                 .timeout(Duration.ofSeconds(3))
-                .uri(settings.url().resolve(path))
+                .uri(settings.flagsUrl().resolve(path))
                 .build();
 
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenCompose(response -> {
@@ -130,7 +132,7 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + settings.token())
                 .timeout(Duration.ofSeconds(3))
-                .uri(settings.url().resolve("/flags"))
+                .uri(settings.flagsUrl().resolve("/check"))
                 .build();
 
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(response -> {
