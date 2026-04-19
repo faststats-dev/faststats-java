@@ -47,13 +47,22 @@ public sealed interface Settings permits SimpleSettings {
     String token();
 
     /**
-     * The server URL.
+     * The metrics server URL.
      *
-     * @return the server URL
+     * @return the metrics server URL
      * @since 0.23.0
      */
     @Contract(pure = true)
-    URI url();
+    URI metricsUrl();
+    
+    /**
+     * The flags server URL.
+     *
+     * @return the flags server URL
+     * @since 0.23.0
+     */
+    @Contract(pure = true)
+    URI flagsUrl();
 
     /**
      * Whether debug logging is enabled.
@@ -93,7 +102,11 @@ public sealed interface Settings permits SimpleSettings {
          * @since 0.23.0
          */
         @Contract(mutates = "this")
-        Factory url(URI url);
+        Factory metricsServer(URI url); // todo: rethink naming
+
+        // todo: add docs
+        @Contract(mutates = "this")
+        Factory flagsServer(URI url); // todo: rethink naming
 
         /**
          * Enables or disables debug logging.
