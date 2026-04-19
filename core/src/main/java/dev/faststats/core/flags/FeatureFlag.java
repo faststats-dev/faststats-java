@@ -36,6 +36,9 @@ public sealed interface FeatureFlag<T> permits SimpleFeatureFlag {
 
     /**
      * Returns the class representing the value type of this flag.
+     * <p>
+     * This always returns exactly one of {@link String}.class,
+     * {@link Number}.class, or {@link Boolean}.class, matching {@link #getType()}.
      *
      * @return the value type class
      * @since 0.23.0
@@ -148,8 +151,31 @@ public sealed interface FeatureFlag<T> permits SimpleFeatureFlag {
     @Contract(pure = true)
     T getDefaultValue();
 
-    // todo: add docs
+    /**
+     * Supported value types for feature flags.
+     *
+     * @since 0.23.0
+     */
     enum Type {
-        STRING, BOOLEAN, NUMBER
+        /**
+         * A string-valued flag.
+         *
+         * @since 0.23.0
+         */
+        STRING,
+
+        /**
+         * A boolean-valued flag.
+         *
+         * @since 0.23.0
+         */
+        BOOLEAN,
+
+        /**
+         * A numeric flag.
+         *
+         * @since 0.23.0
+         */
+        NUMBER
     }
 }
