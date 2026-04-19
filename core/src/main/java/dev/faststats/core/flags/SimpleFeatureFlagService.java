@@ -3,6 +3,9 @@ package dev.faststats.core.flags;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import dev.faststats.core.Settings;
 import org.jspecify.annotations.Nullable;
 
@@ -45,17 +48,14 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
 
     @SuppressWarnings("unchecked")
     <T> Optional<T> get(final SimpleFeatureFlag<T> flag) {
-        final var cached = cache.get(flag.getId());
-        return Optional.ofNullable((T) cached);
+        return Optional.ofNullable((T) cache.get(flag.getId()));
     }
 
     @SuppressWarnings("unchecked")
     <T> CompletableFuture<T> whenReady(final SimpleFeatureFlag<T> flag) {
         final var cached = cache.get(flag.getId());
-        if (cached != null && !isExpired(flag)) {
-            return CompletableFuture.completedFuture((T) cached);
-        }
-        return fetch(flag);
+        if (cached == null || isExpired(flag)) return fetch(flag);
+        return CompletableFuture.completedFuture((T) cached);
     }
 
     @SuppressWarnings("unchecked")
@@ -72,8 +72,6 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
     }
 
     private <T> CompletableFuture<T> sendOptRequest(final SimpleFeatureFlag<T> flag, final String path) {
-        invalidate(flag);
-
         final var requestBody = new JsonObject();
         requestBody.addProperty("projectToken", settings.token());
         requestBody.addProperty("serverId", UUID.randomUUID().toString()); // todo: read from config
@@ -97,12 +95,6 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
         });
     }
 
-    <T> void invalidate(final SimpleFeatureFlag<T> flag) {
-        final var id = flag.getId();
-        cache.remove(id);
-        fetchTimes.remove(id);
-    }
-
     Optional<Instant> getExpiration(final SimpleFeatureFlag<?> flag) {
         final var lastFetch = fetchTimes.get(flag.getId());
         if (lastFetch == null) return Optional.empty();
@@ -121,11 +113,14 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
 
     private <T> CompletableFuture<T> createFetch(final SimpleFeatureFlag<T> flag) {
         final var requestBody = new JsonObject();
-        requestBody.addProperty("flag", flag.getId());
+        requestBody.addProperty("projectToken", settings.token());
+        requestBody.addProperty("serverId", UUID.randomUUID().toString()); // todo: read from config
+        requestBody.addProperty("key", flag.getId());
 
-        final var mergedAttributes = Attributes.join(attributes, flag.attributes());
-        // todo: drop gson
-        requestBody.add("attributes", GSON.toJsonTree(mergedAttributes));
+        final var attributes = new JsonObject();
+        if (this.attributes != null) this.attributes.forEachPrimitive(attributes::add);
+        if (flag.attributes() != null) flag.attributes().forEachPrimitive(attributes::add);
+        if (!attributes.isEmpty()) requestBody.add("attributes", attributes);
 
         final var request = HttpRequest.newBuilder()
                 .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(requestBody)))
@@ -136,28 +131,34 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
                 .build();
 
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(response -> {
-            if (response.statusCode() >= 200 && response.statusCode() < 300) {
-                // todo: replace gson with safer read
-                final var body = GSON.fromJson(response.body(), JsonObject.class);
-                final var value = body.get("value");
-                if (value != null && !value.isJsonNull()) {
-                    cache.put(flag.getId(), toValue(value));
-                    fetchTimes.put(flag.getId(), System.currentTimeMillis());
-                    return flag.getType().cast(cache.get(flag.getId()));
-                }
+            try {
+                final var body = JsonParser.parseString(response.body());
+
+                if (response.statusCode() < 200 && response.statusCode() >= 300)
+                    throw new IllegalStateException("Unexpected response status: %s (%s)".formatted(response.statusCode(), body));
+
+                final var value = getValue(flag, body);
+                cache.put(flag.getId(), value);
+                fetchTimes.put(flag.getId(), System.currentTimeMillis());
+                return value;
+            } catch (final JsonParseException e) {
+                throw new IllegalStateException("Unexpected response body: %s (%s)".formatted(response.body(), response.statusCode()), e);
             }
-            return flag.getDefaultValue();
         }).whenComplete((ignored, throwable) -> fetchesInProgress.remove(flag.getId()));
     }
 
-    private Object toValue(final JsonElement element) {
-        if (element.isJsonPrimitive()) {
-            final var primitive = element.getAsJsonPrimitive();
-            if (primitive.isBoolean()) return primitive.getAsBoolean();
-            if (primitive.isNumber()) return primitive.getAsNumber();
-            return primitive.getAsString();
-        } // todo: guarantee for primitives?
-        return element.toString();
+    @SuppressWarnings("unchecked")
+    private static <T> T getValue(final SimpleFeatureFlag<T> flag, final JsonElement body) {
+        if (!(body instanceof final JsonObject object))
+            throw new IllegalStateException("Unexpected JSON response: " + body);
+        if (!(object.get("value") instanceof final JsonPrimitive primitive))
+            throw new IllegalStateException("Missing or invalid 'value' in JSON response: " + body);
+
+        return (T) switch (flag.getType()) {
+            case STRING -> primitive.getAsString();
+            case NUMBER -> primitive.getAsNumber();
+            case BOOLEAN -> primitive.getAsBoolean();
+        };
     }
 
     @Override
