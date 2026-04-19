@@ -1,7 +1,6 @@
 package dev.faststats.fabric;
 
 import dev.faststats.core.Metrics;
-import dev.faststats.core.Settings;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
 
@@ -30,9 +29,9 @@ public sealed interface FabricMetrics extends Metrics permits FabricMetricsImpl 
          *
          * @param modId the mod id
          * @return the metrics instance
-         * @throws IllegalStateException    if the settings are not specified
+         * @throws IllegalStateException    if the token is not specified
          * @throws IllegalArgumentException if the mod is not found
-         * @see #settings(Settings)
+         * @see #token(String)
          * @since 0.12.0
          */
         @Override

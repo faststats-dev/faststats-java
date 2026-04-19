@@ -3,7 +3,6 @@ package com.example;
 import dev.faststats.bungee.BungeeMetrics;
 import dev.faststats.core.ErrorTracker;
 import dev.faststats.core.Metrics;
-import dev.faststats.core.Settings;
 import dev.faststats.core.data.Metric;
 import net.md_5.bungee.api.plugin.Plugin;
 
@@ -24,7 +23,7 @@ public class ExamplePlugin extends Plugin {
             // This is useful for cleaning up cached data
             .onFlush(() -> gameCount.set(0)) // reset game count on flush
 
-            .settings(Settings.withToken("YOUR_TOKEN_HERE")) // token can be found in the settings of your project
+            .token("YOUR_TOKEN_HERE") // required -> token can be found in the settings of your project
             .create(this);
 
     @Override

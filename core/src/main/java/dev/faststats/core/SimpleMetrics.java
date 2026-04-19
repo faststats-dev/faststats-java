@@ -14,6 +14,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.ConnectException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
@@ -41,19 +43,24 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public abstract class SimpleMetrics implements Metrics {
     protected final Logger logger = Logger.getLogger(getClass().getName());
     private static final URI defaultUrl = URI.create("https://metrics.faststats.dev/v1/collect");
+
+    private static final String SDK_NAME;
+    private static final String SDK_VERSION;
+    private static final String BUILD_ID;
+
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(3))
             .version(HttpClient.Version.HTTP_1_1)
             .build();
     private @Nullable ScheduledExecutorService executor = null;
 
+    private final URI url;
     private final Set<Metric<?>> metrics;
     private final Config config;
-    private final Settings settings;
+    private final @Token String token;
     private final @Nullable ErrorTracker tracker;
     private final @Nullable Runnable flush;
     private final @Nullable FeatureFlagService flagService;
-    private final boolean debug;
 
     private final String SDK_NAME;
     private final String SDK_VERSION;
@@ -71,16 +78,29 @@ public abstract class SimpleMetrics implements Metrics {
     }
 
     @Contract(mutates = "io")
+    @SuppressWarnings("PatternValidation")
     protected SimpleMetrics(final Factory<?, ?> factory, final Config config) throws IllegalStateException {
-        if (factory.settings == null) throw new IllegalStateException("Settings must be specified");
+        if (factory.token == null) throw new IllegalStateException("Token must be specified");
 
         this.config = config;
-        this.settings = factory.settings;
+        this.token = factory.token;
         this.metrics = config.additionalMetrics ? Set.copyOf(factory.metrics) : Set.of();
-        this.debug = settings.debug() || Boolean.getBoolean("faststats.debug") || config.debug();
+        final var debug = config.debug() || Boolean.getBoolean("faststats.debug");
+        this.logger.setFilter(record -> debug || record.getLevel().equals(Level.CONFIG));
         this.tracker = config.errorTracking ? factory.tracker : null;
         this.flush = factory.flush;
         this.flagService = factory.flagService;
+        this.url = getMetricsServerUrl();
+    }
+
+    private URI getMetricsServerUrl() {
+        final var property = System.getProperty("faststats.metrics-server");
+        try {
+            return property != null ? new URI(property) : defaultUrl;
+        } catch (final URISyntaxException e) {
+            error("Failed to parse metrics server url: %s", e, property);
+            return defaultUrl;
+        }
     }
 
     @Contract(mutates = "io")
@@ -92,16 +112,19 @@ public abstract class SimpleMetrics implements Metrics {
     protected SimpleMetrics(
             final Config config,
             final Set<Metric<?>> metrics,
-            final Settings settings,
+            @Token final String token,
             @Nullable final ErrorTracker tracker,
-            @Nullable final Runnable flush
+            @Nullable final Runnable flush,
+            final URI url,
+            final boolean debug
     ) {
         this.metrics = config.additionalMetrics ? Set.copyOf(metrics) : Set.of();
         this.config = config;
-        this.debug = settings.debug();
-        this.settings = settings;
+        this.logger.setLevel(debug ? Level.ALL : Level.OFF);
+        this.token = token;
         this.tracker = tracker;
         this.flush = flush;
+        this.url = url;
         this.flagService = null;
     }
 
@@ -201,18 +224,17 @@ public abstract class SimpleMetrics implements Metrics {
             final var compressed = byteOutput.toByteArray();
             info("Compressed size: %s bytes", compressed.length);
 
-            final var url = settings.metricsUrl().resolve("/collect");
             final var request = HttpRequest.newBuilder()
                     .POST(HttpRequest.BodyPublishers.ofByteArray(compressed))
                     .header("Content-Encoding", "gzip")
                     .header("Content-Type", "application/octet-stream")
-                    .header("Authorization", "Bearer " + settings.token())
+                    .header("Authorization", "Bearer " + token)
                     .header("User-Agent", "FastStats Metrics " + SDK_NAME + "/" + SDK_VERSION)
                     .timeout(Duration.ofSeconds(3))
                     .uri(url)
                     .build();
 
-            info("Sending metrics to: " + url);
+            info("Sending metrics to: %s", url);
             try {
                 final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(UTF_8));
                 final var statusCode = response.statusCode();
@@ -288,8 +310,8 @@ public abstract class SimpleMetrics implements Metrics {
     }
 
     @Override
-    public Settings getSettings() {
-        return settings;
+    public @Token String getToken() {
+        return token;
     }
 
     @Override
@@ -353,7 +375,7 @@ public abstract class SimpleMetrics implements Metrics {
         private @Nullable ErrorTracker tracker;
         private @Nullable FeatureFlagService flagService;
         private @Nullable Runnable flush;
-        private @Nullable Settings settings;
+        private @Nullable String token;
 
         @Override
         @SuppressWarnings("unchecked")
@@ -385,8 +407,11 @@ public abstract class SimpleMetrics implements Metrics {
 
         @Override
         @SuppressWarnings("unchecked")
-        public F settings(final Settings settings) {
-            this.settings = settings;
+        public F token(@Token final String token) throws IllegalArgumentException {
+            if (!token.matches(Token.PATTERN)) {
+                throw new IllegalArgumentException("Invalid token '" + token + "', must match '" + Token.PATTERN + "'");
+            }
+            this.token = token;
             return (F) this;
         }
     }
