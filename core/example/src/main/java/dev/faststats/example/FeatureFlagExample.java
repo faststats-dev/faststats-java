@@ -10,11 +10,11 @@ import java.time.Instant;
 public final class FeatureFlagExample {
     public static final FeatureFlagService SERVICE = FeatureFlagService.create(
             "YOUR_TOKEN_HERE", // token can be found in the settings of your project
-            Attributes.create()
+            Attributes.create() // Define global attributes
                     .put("version", "1.2.3")
                     .put("java_version", System.getProperty("java.version"))
                     .put("java_vendor", System.getProperty("java.vendor")),
-            Duration.ofMinutes(10)
+            Duration.ofMinutes(10) // Custom cache TTL for resolved flag values
     );
 
     // Define flags with default values
