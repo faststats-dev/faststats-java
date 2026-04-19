@@ -26,13 +26,22 @@ public sealed interface FeatureFlag<T> permits SimpleFeatureFlag {
     String getId();
 
     /**
+     * Returns the type representing the value type of this flag.
+     *
+     * @return the value type class
+     * @since 0.23.0
+     */
+    @Contract(pure = true)
+    Type getType();
+
+    /**
      * Returns the class representing the value type of this flag.
      *
      * @return the value type class
      * @since 0.23.0
      */
     @Contract(pure = true)
-    Class<T> getType();
+    Class<T> getTypeClass();
 
     /**
      * Get the current cached flag value.
@@ -138,4 +147,9 @@ public sealed interface FeatureFlag<T> permits SimpleFeatureFlag {
      */
     @Contract(pure = true)
     T getDefaultValue();
+
+    // todo: add docs
+    enum Type {
+        STRING, BOOLEAN, NUMBER
+    }
 }
