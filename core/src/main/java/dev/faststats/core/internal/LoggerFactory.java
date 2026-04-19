@@ -12,5 +12,9 @@ public interface LoggerFactory {
         return Holder.INSTANCE;
     }
 
+    default Logger getLogger(final Class<?> clazz) {
+        return getLogger(clazz.getName());
+    }
+
     Logger getLogger(String name);
 }
