@@ -5,6 +5,7 @@ module dev.faststats.bungee {
     exports dev.faststats.bungee;
 
     requires com.google.gson;
+    requires dev.faststats.config;
     requires dev.faststats.core;
     requires java.logging;
 

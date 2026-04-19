@@ -5,6 +5,7 @@ module dev.faststats.hytale {
     exports dev.faststats.hytale;
 
     requires com.google.gson;
+    requires dev.faststats.config;
     requires dev.faststats.core;
     requires java.logging;
 

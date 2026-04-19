@@ -1,8 +1,8 @@
 package dev.faststats;
 
 import com.google.gson.JsonObject;
+import dev.faststats.config.SimpleConfig;
 import dev.faststats.core.ErrorTracker;
-import dev.faststats.core.SimpleConfig;
 import dev.faststats.core.SimpleMetrics;
 import dev.faststats.core.Token;
 import org.jspecify.annotations.NullMarked;

@@ -1,5 +1,6 @@
-package dev.faststats.core;
+package dev.faststats.config;
 
+import dev.faststats.core.Config;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 

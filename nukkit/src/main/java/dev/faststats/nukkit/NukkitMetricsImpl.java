@@ -3,6 +3,7 @@ package dev.faststats.nukkit;
 import cn.nukkit.Server;
 import cn.nukkit.plugin.PluginBase;
 import com.google.gson.JsonObject;
+import dev.faststats.config.SimpleConfig;
 import dev.faststats.core.Metrics;
 import dev.faststats.core.SimpleMetrics;
 import org.jetbrains.annotations.Async;
@@ -19,7 +20,7 @@ final class NukkitMetricsImpl extends SimpleMetrics implements NukkitMetrics {
     @Async.Schedule
     @Contract(mutates = "io")
     private NukkitMetricsImpl(final Factory factory, final PluginBase plugin, final Path config) throws IllegalStateException {
-        super(factory, config);
+        super(factory, SimpleConfig.read(config));
 
         this.server = plugin.getServer();
         this.plugin = plugin;

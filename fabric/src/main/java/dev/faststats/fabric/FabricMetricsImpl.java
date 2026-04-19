@@ -1,6 +1,7 @@
 package dev.faststats.fabric;
 
 import com.google.gson.JsonObject;
+import dev.faststats.config.SimpleConfig;
 import dev.faststats.core.Metrics;
 import dev.faststats.core.SimpleMetrics;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
@@ -23,7 +24,7 @@ final class FabricMetricsImpl extends SimpleMetrics implements FabricMetrics {
     @Async.Schedule
     @Contract(mutates = "io")
     private FabricMetricsImpl(final Factory factory, final ModContainer mod, final Path config) throws IllegalStateException {
-        super(factory, config);
+        super(factory, SimpleConfig.read(config));
 
         this.mod = mod;
 

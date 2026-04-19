@@ -7,5 +7,6 @@ repositories {
 
 dependencies {
     api(project(":core"))
+    implementation(project(":config"))
     compileOnly("cn.nukkit:nukkit:1.0-SNAPSHOT")
 }

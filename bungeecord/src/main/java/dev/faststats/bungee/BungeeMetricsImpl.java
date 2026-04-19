@@ -1,6 +1,7 @@
 package dev.faststats.bungee;
 
 import com.google.gson.JsonObject;
+import dev.faststats.config.SimpleConfig;
 import dev.faststats.core.Metrics;
 import dev.faststats.core.SimpleMetrics;
 import net.md_5.bungee.api.ProxyServer;
@@ -17,7 +18,7 @@ final class BungeeMetricsImpl extends SimpleMetrics implements BungeeMetrics {
     @Async.Schedule
     @Contract(mutates = "io")
     private BungeeMetricsImpl(final Factory factory, final Plugin plugin, final Path config) throws IllegalStateException {
-        super(factory, config);
+        super(factory, SimpleConfig.read(config));
 
         this.server = plugin.getProxy();
         this.plugin = plugin;

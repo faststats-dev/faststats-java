@@ -1,11 +1,9 @@
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-module dev.faststats.nukkit {
-    exports dev.faststats.nukkit;
+module dev.faststats.config {
+    exports dev.faststats.config;
 
-    requires com.google.gson;
-    requires dev.faststats.config;
     requires dev.faststats.core;
 
     requires static org.jetbrains.annotations;
