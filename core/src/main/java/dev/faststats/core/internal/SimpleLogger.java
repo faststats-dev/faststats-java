@@ -2,7 +2,7 @@ package dev.faststats.core.internal;
 
 import org.jspecify.annotations.Nullable;
 
-import java.util.logging.Filter;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -24,8 +24,8 @@ class SimpleLogger implements Logger {
     }
 
     @Override
-    public void setFilter(@Nullable final Filter filter) {
-        logger.setFilter(filter);
+    public void setFilter(@Nullable final Predicate<Level> filter) {
+        logger.setFilter(filter != null ? record -> filter.test(record.getLevel()) : null);
     }
 
     @Override

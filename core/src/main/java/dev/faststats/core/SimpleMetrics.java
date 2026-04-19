@@ -67,7 +67,7 @@ public abstract class SimpleMetrics implements Metrics {
         this.token = factory.token;
         this.metrics = config.additionalMetrics ? Set.copyOf(factory.metrics) : Set.of();
         final var debug = config.debug() || Boolean.getBoolean("faststats.debug");
-        this.logger.setFilter(record -> debug || record.getLevel().equals(Level.CONFIG));
+        this.logger.setFilter(level -> debug || level.equals(Level.CONFIG));
         this.tracker = config.errorTracking ? factory.tracker : null;
         this.flush = factory.flush;
         this.flagService = factory.flagService;
