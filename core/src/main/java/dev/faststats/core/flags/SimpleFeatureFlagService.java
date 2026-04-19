@@ -45,7 +45,8 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
             final @Token String token,
             final @Nullable Attributes attributes,
             final Duration ttl
-    ) {
+    ) throws IllegalArgumentException {
+        if (ttl.isNegative()) throw new IllegalArgumentException("TTL cannot be negative");
         this.token = token;
         this.attributes = attributes;
         this.ttl = ttl;

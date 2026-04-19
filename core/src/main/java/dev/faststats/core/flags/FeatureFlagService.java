@@ -51,10 +51,11 @@ public sealed interface FeatureFlagService permits SimpleFeatureFlagService {
      * @param attributes the global targeting attributes
      * @param ttl        the cache time-to-live for resolved flag values
      * @return a new feature flag service
+     * @throws IllegalArgumentException if the TTL is negative
      * @since 0.23.0
      */
     @Contract(value = "_, _, _ -> new", pure = true)
-    static FeatureFlagService create(@Token final String token, @Nullable final Attributes attributes, final Duration ttl) {
+    static FeatureFlagService create(@Token final String token, @Nullable final Attributes attributes, final Duration ttl) throws IllegalArgumentException {
         return new SimpleFeatureFlagService(token, attributes, ttl);
     }
 
