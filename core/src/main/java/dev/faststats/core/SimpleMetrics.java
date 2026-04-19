@@ -3,7 +3,6 @@ package dev.faststats.core;
 import com.google.gson.JsonObject;
 import dev.faststats.core.data.Metric;
 import dev.faststats.core.flags.FeatureFlagService;
-import dev.faststats.core.internal.ConfigProvider;
 import dev.faststats.core.internal.Constants;
 import dev.faststats.core.internal.Logger;
 import dev.faststats.core.internal.LoggerFactory;
@@ -22,6 +21,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Optional;
@@ -80,8 +80,8 @@ public abstract class SimpleMetrics implements Metrics {
     }
 
     @Contract(mutates = "io")
-    protected SimpleMetrics(final Factory<?, ?> factory) throws IllegalStateException {
-        this(factory, SimpleConfig.read(ConfigProvider.provider().getConfigPath().resolve("config.properties")));
+    protected SimpleMetrics(final Factory<?, ?> factory, final Path config) throws IllegalStateException {
+        this(factory, SimpleConfig.read(config));
     }
 
     @VisibleForTesting
