@@ -62,19 +62,15 @@ public abstract class SimpleMetrics implements Metrics {
     private final @Nullable Runnable flush;
     private final @Nullable FeatureFlagService flagService;
 
-    private final String SDK_NAME;
-    private final String SDK_VERSION;
-    private final String BUILD_ID;
-
-    {
+    static {
         final var properties = new Properties();
-        try (final var stream = getClass().getResourceAsStream("/META-INF/faststats.properties")) {
+        try (final var stream = SimpleMetrics.class.getClassLoader().getResourceAsStream("/META-INF/faststats.properties")) {
             if (stream != null) properties.load(stream);
         } catch (final IOException ignored) {
         }
-        this.SDK_NAME = properties.getProperty("name", "unknown");
-        this.SDK_VERSION = properties.getProperty("version", "unknown");
-        this.BUILD_ID = properties.getProperty("build-id", "unknown");
+        SDK_NAME = properties.getProperty("name", "unknown");
+        SDK_VERSION = properties.getProperty("version", "unknown");
+        BUILD_ID = properties.getProperty("build-id", "unknown");
     }
 
     @Contract(mutates = "io")
