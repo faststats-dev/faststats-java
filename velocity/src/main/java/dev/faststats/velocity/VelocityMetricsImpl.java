@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
+import dev.faststats.config.SimpleConfig;
 import dev.faststats.core.Metrics;
 import dev.faststats.core.SimpleMetrics;
 import org.jetbrains.annotations.Async;
@@ -25,7 +26,7 @@ final class VelocityMetricsImpl extends SimpleMetrics implements VelocityMetrics
             final Path config,
             final PluginContainer plugin
     ) throws IllegalStateException {
-        super(factory, config);
+        super(factory, SimpleConfig.read(config));
 
         this.server = server;
         this.plugin = plugin;

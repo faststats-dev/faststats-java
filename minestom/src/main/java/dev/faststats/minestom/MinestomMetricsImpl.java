@@ -1,6 +1,7 @@
 package dev.faststats.minestom;
 
 import com.google.gson.JsonObject;
+import dev.faststats.config.SimpleConfig;
 import dev.faststats.core.ErrorTracker;
 import dev.faststats.core.Metrics;
 import dev.faststats.core.SimpleMetrics;
@@ -15,7 +16,7 @@ final class MinestomMetricsImpl extends SimpleMetrics implements MinestomMetrics
     @Async.Schedule
     @Contract(mutates = "io")
     private MinestomMetricsImpl(final Factory factory, final Path config) throws IllegalStateException {
-        super(factory, config);
+        super(factory, SimpleConfig.read(config));
 
         startSubmitting();
     }

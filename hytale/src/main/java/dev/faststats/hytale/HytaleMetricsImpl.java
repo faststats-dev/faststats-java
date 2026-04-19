@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.hypixel.hytale.server.core.HytaleServer;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.universe.Universe;
+import dev.faststats.config.SimpleConfig;
 import dev.faststats.core.Metrics;
 import dev.faststats.core.SimpleMetrics;
 import org.jetbrains.annotations.Async;
@@ -15,7 +16,7 @@ final class HytaleMetricsImpl extends SimpleMetrics implements HytaleMetrics {
     @Async.Schedule
     @Contract(mutates = "io")
     private HytaleMetricsImpl(final Factory factory, final Path config) throws IllegalStateException {
-        super(factory, config);
+        super(factory, SimpleConfig.read(config));
 
         startSubmitting();
     }

@@ -1,6 +1,7 @@
 package dev.faststats.bukkit;
 
 import com.google.gson.JsonObject;
+import dev.faststats.config.SimpleConfig;
 import dev.faststats.core.SimpleMetrics;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.Async;
@@ -21,7 +22,7 @@ final class BukkitMetricsImpl extends SimpleMetrics implements BukkitMetrics {
     @Contract(mutates = "io")
     @SuppressWarnings({"deprecation", "Convert2MethodRef"})
     private BukkitMetricsImpl(final Factory factory, final Plugin plugin, final Path config) throws IllegalStateException {
-        super(factory, config);
+        super(factory, SimpleConfig.read(config));
 
         this.plugin = plugin;
         final var server = plugin.getServer();

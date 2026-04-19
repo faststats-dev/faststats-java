@@ -1,8 +1,8 @@
 package dev.faststats.sponge;
 
 import com.google.gson.JsonObject;
+import dev.faststats.config.SimpleConfig;
 import dev.faststats.core.Metrics;
-import dev.faststats.core.SimpleConfig;
 import dev.faststats.core.SimpleMetrics;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Async;

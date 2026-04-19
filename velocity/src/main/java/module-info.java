@@ -7,6 +7,7 @@ module dev.faststats.velocity {
     requires com.google.gson;
     requires com.google.guice;
     requires com.velocitypowered.api;
+    requires dev.faststats.config;
     requires dev.faststats.core;
     requires org.slf4j;
 

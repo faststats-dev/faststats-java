@@ -20,7 +20,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Optional;
@@ -72,11 +71,6 @@ public abstract class SimpleMetrics implements Metrics {
             logger.error("Failed to parse metrics server url: %s", e, property);
         }
         return URI.create("https://metrics.faststats.dev/v1/collect");
-    }
-
-    @Contract(mutates = "io")
-    protected SimpleMetrics(final Factory<?, ?> factory, final Path config) throws IllegalStateException {
-        this(factory, SimpleConfig.read(config));
     }
 
     @VisibleForTesting
