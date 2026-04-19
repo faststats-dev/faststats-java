@@ -255,9 +255,9 @@ public abstract class SimpleMetrics implements Metrics {
                     warn("Received unexpected response from metrics server: %s (%s)", statusCode, body);
                 }
             } catch (final HttpConnectTimeoutException t) {
-                error("Metrics submission timed out after 3 seconds: %s", null, defaultUrl);
+                error("Metrics submission timed out after 3 seconds: %s", null, url);
             } catch (final ConnectException t) {
-                error("Failed to connect to metrics server: %s", null, defaultUrl);
+                error("Failed to connect to metrics server: %s", null, url);
             } catch (final Throwable t) {
                 error("Failed to submit metrics", t);
             }
