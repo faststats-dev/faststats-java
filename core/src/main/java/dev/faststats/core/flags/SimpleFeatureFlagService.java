@@ -24,8 +24,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 final class SimpleFeatureFlagService implements FeatureFlagService {
-    private static final Logger logger = LoggerFactory.factory().getLogger(SimpleFeatureFlagService.class.getName());
-    private static final URI defaultUrl = URI.create("https://flags.faststats.dev/v1");
+    private static final Logger logger = LoggerFactory.factory().getLogger(SimpleFeatureFlagService.class);
+    private static final URI url = getFlagsServerUrl();
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(3))
@@ -35,7 +35,6 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
     private final @Token String token;
     private final @Nullable Attributes attributes;
     private final Duration ttl;
-    private final URI url;
 
     private final Map<String, Object> cache = new ConcurrentHashMap<>();
     private final Map<String, Long> fetchTimes = new ConcurrentHashMap<>();
@@ -50,17 +49,16 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
         this.token = token;
         this.attributes = attributes;
         this.ttl = ttl;
-        this.url = getFlagsServerUrl();
     }
 
-    private URI getFlagsServerUrl() {
+    private static URI getFlagsServerUrl() {
         final var property = System.getProperty("faststats.flags-server");
-        try {
-            return property != null ? new URI(property) : defaultUrl;
+        if (property != null) try {
+            return new URI(property);
         } catch (final URISyntaxException e) {
             logger.error("Failed to parse flags server url: %s", e, property);
-            return defaultUrl;
         }
+        return URI.create("https://flags.faststats.dev/v1");
     }
 
     @SuppressWarnings("unchecked")

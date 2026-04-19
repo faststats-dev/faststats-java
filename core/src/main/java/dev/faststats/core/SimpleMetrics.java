@@ -35,9 +35,7 @@ import java.util.zip.GZIPOutputStream;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public abstract class SimpleMetrics implements Metrics {
-    private static final URI defaultUrl = URI.create("https://metrics.faststats.dev/v1/collect");
-
-    protected final Logger logger = LoggerFactory.factory().getLogger(getClass().getName());
+    protected final Logger logger = LoggerFactory.factory().getLogger(getClass());
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(3))
@@ -71,12 +69,12 @@ public abstract class SimpleMetrics implements Metrics {
 
     private URI getMetricsServerUrl() {
         final var property = System.getProperty("faststats.metrics-server");
-        try {
-            return property != null ? new URI(property) : defaultUrl;
+        if (property != null) try {
+            return new URI(property);
         } catch (final URISyntaxException e) {
             logger.error("Failed to parse metrics server url: %s", e, property);
-            return defaultUrl;
         }
+        return URI.create("https://metrics.faststats.dev/v1/collect");
     }
 
     @Contract(mutates = "io")
@@ -101,7 +99,6 @@ public abstract class SimpleMetrics implements Metrics {
         this.tracker = tracker;
         this.flush = flush;
         this.url = url;
-        this.flagService = null;
     }
 
     protected String getOnboardingMessage() {
