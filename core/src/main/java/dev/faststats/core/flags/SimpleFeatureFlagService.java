@@ -92,7 +92,7 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
         requestBody.addProperty("flag", flag.getId());
 
         final var request = HttpRequest.newBuilder()
-                .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(requestBody)))
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody.toString()))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + token)
                 .timeout(Duration.ofSeconds(3))
@@ -136,7 +136,7 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
         if (!attributes.isEmpty()) requestBody.add("attributes", attributes);
 
         final var request = HttpRequest.newBuilder()
-                .POST(HttpRequest.BodyPublishers.ofString(GSON.toJson(requestBody)))
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody.toString()))
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + token)
                 .timeout(Duration.ofSeconds(3))
