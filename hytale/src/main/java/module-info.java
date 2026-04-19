@@ -10,4 +10,6 @@ module dev.faststats.hytale {
 
     requires static org.jetbrains.annotations;
     requires static org.jspecify;
+
+    provides dev.faststats.core.internal.LoggerFactory with dev.faststats.hytale.logger.HytaleLoggerFactory;
 }
