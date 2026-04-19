@@ -84,7 +84,12 @@ public sealed interface Attributes permits SimpleAttributes {
     @Contract(value = "_ -> this", mutates = "this")
     Attributes remove(String key);
 
-    // todo: add docs
+    /**
+     * Visit each stored attribute as its underlying JSON primitive value.
+     *
+     * @param action the action to invoke for each key-value pair
+     * @since 0.23.0
+     */
     void forEachPrimitive(BiConsumer<String, JsonPrimitive> action);
 
     /**
