@@ -3,7 +3,7 @@ package dev.faststats.core.internal;
 import org.intellij.lang.annotations.PrintFormat;
 import org.jspecify.annotations.Nullable;
 
-import java.util.logging.Filter;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 
 public interface Logger {
@@ -11,7 +11,7 @@ public interface Logger {
 
     boolean isLoggable(Level level);
 
-    void setFilter(@Nullable Filter filter);
+    void setFilter(@Nullable Predicate<Level> filter);
 
     void error(@PrintFormat final String message, @Nullable final Throwable throwable, @Nullable final Object... args);
 
