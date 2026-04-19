@@ -44,7 +44,7 @@ public abstract class SimpleMetrics implements Metrics {
 
     private final URI url;
     private final Set<Metric<?>> metrics;
-    private final SimpleConfig config;
+    private final Config config;
     private final @Token String token;
     private final @Nullable ErrorTracker tracker;
     private final @Nullable Runnable flush;
@@ -54,7 +54,7 @@ public abstract class SimpleMetrics implements Metrics {
     protected SimpleMetrics(final Factory<?, ?> factory, final Config config) throws IllegalStateException {
         if (factory.token == null) throw new IllegalStateException("Token must be specified");
 
-        this.config = (SimpleConfig) config;
+        this.config = config;
         this.token = factory.token;
         this.metrics = config.additionalMetrics() ? Set.copyOf(factory.metrics) : Set.of();
         final var debug = config.debug() || Boolean.getBoolean("faststats.debug");
@@ -90,7 +90,7 @@ public abstract class SimpleMetrics implements Metrics {
             final boolean debug
     ) {
         this.metrics = config.additionalMetrics() ? Set.copyOf(metrics) : Set.of();
-        this.config = (SimpleConfig) config;
+        this.config = config;
         this.logger.setLevel(debug ? Level.ALL : Level.OFF);
         this.token = token;
         this.tracker = tracker;
@@ -124,10 +124,11 @@ public abstract class SimpleMetrics implements Metrics {
     }
 
     @SuppressWarnings("PatternValidation")
-    private void startSubmitting(final long initialDelay, final long period, final TimeUnit unit) {
+    protected boolean preSubmissionStart() {
+        /*
         if (Boolean.getBoolean("faststats.first-run")) {
             logger.info("Skipping metrics submission due to first-run flag");
-            return;
+            return false;
         }
 
         if (config.firstRun()) {
@@ -140,8 +141,14 @@ public abstract class SimpleMetrics implements Metrics {
             logger.info("-".repeat(separatorLength));
 
             System.setProperty("faststats.first-run", "true");
-            if (!config.externallyManaged()) return;
+            if (!config.externallyManaged()) return false;
         }
+         */
+        return true; // todo: move to config module?
+    }
+
+    private void startSubmitting(final long initialDelay, final long period, final TimeUnit unit) {
+        if (!preSubmissionStart()) return;
 
         final var enabled = Boolean.parseBoolean(System.getProperty("faststats.enabled", "true"));
 
