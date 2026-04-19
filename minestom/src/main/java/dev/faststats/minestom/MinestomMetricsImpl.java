@@ -8,15 +8,10 @@ import net.minestom.server.Auth;
 import net.minestom.server.MinecraftServer;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 
 final class MinestomMetricsImpl extends SimpleMetrics implements MinestomMetrics {
-    private final Logger logger = LoggerFactory.getLogger(MinestomMetricsImpl.class);
-
     @Async.Schedule
     @Contract(mutates = "io")
     private MinestomMetricsImpl(final Factory factory, final Path config) throws IllegalStateException {
@@ -31,21 +26,6 @@ final class MinestomMetricsImpl extends SimpleMetrics implements MinestomMetrics
         metrics.addProperty("online_mode", !(MinecraftServer.process().auth() instanceof Auth.Offline));
         metrics.addProperty("player_count", MinecraftServer.getConnectionManager().getOnlinePlayerCount());
         metrics.addProperty("server_type", "Minestom");
-    }
-
-    @Override
-    protected void printError(final String message, @Nullable final Throwable throwable) {
-        logger.error(message, throwable);
-    }
-
-    @Override
-    protected void printInfo(final String message) {
-        logger.info(message);
-    }
-
-    @Override
-    protected void printWarning(final String message) {
-        logger.warn(message);
     }
 
     @Override

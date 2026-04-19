@@ -3,6 +3,7 @@ package dev.faststats.core;
 import com.google.gson.JsonObject;
 import dev.faststats.core.data.Metric;
 import dev.faststats.core.flags.FeatureFlagService;
+import org.intellij.lang.annotations.PrintFormat;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.MustBeInvokedByOverriders;
@@ -30,11 +31,16 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiPredicate;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import java.util.zip.GZIPOutputStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public abstract class SimpleMetrics implements Metrics {
+    protected final Logger logger = Logger.getLogger(getClass().getName());
+    private static final URI defaultUrl = URI.create("https://metrics.faststats.dev/v1/collect");
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(3))
             .version(HttpClient.Version.HTTP_1_1)
@@ -124,6 +130,7 @@ public abstract class SimpleMetrics implements Metrics {
         startSubmitting(getInitialDelay(), getPeriod(), TimeUnit.MILLISECONDS);
     }
 
+    @SuppressWarnings("PatternValidation")
     private void startSubmitting(final long initialDelay, final long period, final TimeUnit unit) {
         if (Boolean.getBoolean("faststats.first-run")) {
             info("Skipping metrics submission due to first-run flag");
@@ -136,9 +143,9 @@ public abstract class SimpleMetrics implements Metrics {
             final var split = getOnboardingMessage().split("\n");
             for (final var s : split) if (s.length() > separatorLength) separatorLength = s.length();
 
-            printInfo("-".repeat(separatorLength));
-            for (final var s : split) printInfo(s);
-            printInfo("-".repeat(separatorLength));
+            info("-".repeat(separatorLength));
+            for (final var s : split) info(s);
+            info("-".repeat(separatorLength));
 
             System.setProperty("faststats.first-run", "true");
             if (!config.externallyManaged()) return;
@@ -183,7 +190,7 @@ public abstract class SimpleMetrics implements Metrics {
         final var data = createData().toString();
         final var bytes = data.getBytes(UTF_8);
 
-        info("Uncompressed data: " + data);
+        info("Uncompressed data: %s", data);
 
         try (final var byteOutput = new ByteArrayOutputStream();
              final var output = new GZIPOutputStream(byteOutput)) {
@@ -192,7 +199,7 @@ public abstract class SimpleMetrics implements Metrics {
             output.finish();
 
             final var compressed = byteOutput.toByteArray();
-            info("Compressed size: " + compressed.length + " bytes");
+            info("Compressed size: %s bytes", compressed.length);
 
             final var url = settings.metricsUrl().resolve("/collect");
             final var request = HttpRequest.newBuilder()
@@ -212,23 +219,23 @@ public abstract class SimpleMetrics implements Metrics {
                 final var body = response.body();
 
                 if (statusCode >= 200 && statusCode < 300) {
-                    info("Metrics submitted with status code: " + statusCode + " (" + body + ")");
+                    info("Metrics submitted with status code: %s (%s)", statusCode, body);
                     getErrorTracker().map(SimpleErrorTracker.class::cast).ifPresent(SimpleErrorTracker::clear);
                     if (flush != null) flush.run();
                     return true;
                 } else if (statusCode >= 300 && statusCode < 400) {
-                    warn("Received redirect response from metrics server: " + statusCode + " (" + body + ")");
+                    warn("Received redirect response from metrics server: %s (%s)", statusCode, body);
                 } else if (statusCode >= 400 && statusCode < 500) {
-                    error("Submitted invalid request to metrics server: " + statusCode + " (" + body + ")", null);
+                    error("Submitted invalid request to metrics server: %s (%s)", null, statusCode, body);
                 } else if (statusCode >= 500 && statusCode < 600) {
-                    error("Received server error response from metrics server: " + statusCode + " (" + body + ")", null);
+                    error("Received server error response from metrics server: %s (%s)", null, statusCode, body);
                 } else {
-                    warn("Received unexpected response from metrics server: " + statusCode + " (" + body + ")");
+                    warn("Received unexpected response from metrics server: %s (%s)", statusCode, body);
                 }
             } catch (final HttpConnectTimeoutException t) {
-                error("Metrics submission timed out after 3 seconds: " + url, null);
+                error("Metrics submission timed out after 3 seconds: %s", null, defaultUrl);
             } catch (final ConnectException t) {
-                error("Failed to connect to metrics server: " + url, null);
+                error("Failed to connect to metrics server: %s", null, defaultUrl);
             } catch (final Throwable t) {
                 error("Failed to submit metrics", t);
             }
@@ -265,7 +272,7 @@ public abstract class SimpleMetrics implements Metrics {
             try {
                 metric.getData().ifPresent(element -> metrics.add(metric.getId(), element));
             } catch (final Throwable t) {
-                error("Failed to build metric data: " + metric.getId(), t);
+                error("Failed to build metric data: %s", t, metric.getId());
                 getErrorTracker().ifPresent(tracker -> tracker.trackError(t));
             }
         });
@@ -303,23 +310,26 @@ public abstract class SimpleMetrics implements Metrics {
     @Contract(mutates = "param1")
     protected abstract void appendDefaultData(JsonObject metrics);
 
-    protected void error(final String message, @Nullable final Throwable throwable) {
-        if (debug) printError("[" + getClass().getName() + "]: " + message, throwable);
+    protected void error(@PrintFormat final String message, @Nullable final Throwable throwable, @Nullable final Object... args) {
+        if (throwable != null) {
+            if (!logger.isLoggable(Level.SEVERE)) return;
+            final var logRecord = new LogRecord(Level.SEVERE, message.formatted(args));
+            logRecord.setThrown(throwable);
+            logger.log(logRecord);
+        } else log(Level.SEVERE, message, args);
     }
 
-    protected void warn(final String message) {
-        if (debug) printWarning("[" + getClass().getName() + "]: " + message);
+    protected void log(final Level level, @PrintFormat final String message, @Nullable final Object... args) {
+        logger.log(level, () -> message.formatted(args));
     }
 
-    protected void info(final String message) {
-        if (debug) printInfo("[" + getClass().getName() + "]: " + message);
+    protected void info(@PrintFormat final String message, @Nullable final Object... args) {
+        log(Level.INFO, message, args);
     }
 
-    protected abstract void printError(String message, @Nullable Throwable throwable);
-
-    protected abstract void printInfo(String message);
-
-    protected abstract void printWarning(String message);
+    protected void warn(@PrintFormat final String message, @Nullable final Object... args) {
+        log(Level.WARNING, message, args);
+    }
 
     @Override
     public void shutdown() {

@@ -15,7 +15,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 final class NukkitMetricsImpl extends SimpleMetrics implements NukkitMetrics {
-    private final Logger logger;
     private final Server server;
     private final PluginBase plugin;
 
@@ -24,7 +23,6 @@ final class NukkitMetricsImpl extends SimpleMetrics implements NukkitMetrics {
     private NukkitMetricsImpl(final Factory factory, final PluginBase plugin, final Path config) throws IllegalStateException {
         super(factory, config);
 
-        this.logger = plugin.getLogger();
         this.server = plugin.getServer();
         this.plugin = plugin;
 
@@ -38,21 +36,6 @@ final class NukkitMetricsImpl extends SimpleMetrics implements NukkitMetrics {
         metrics.addProperty("player_count", server.getOnlinePlayersCount());
         metrics.addProperty("plugin_version", plugin.getDescription().getVersion());
         metrics.addProperty("server_type", server.getName());
-    }
-
-    @Override
-    protected void printError(final String message, @Nullable final Throwable throwable) {
-        logger.error(message, throwable);
-    }
-
-    @Override
-    protected void printInfo(final String message) {
-        logger.info(message);
-    }
-
-    @Override
-    protected void printWarning(final String message) {
-        logger.warning(message);
     }
 
     private <T> Optional<T> tryOrEmpty(final Supplier<T> supplier) {

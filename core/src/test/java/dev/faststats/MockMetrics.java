@@ -24,22 +24,6 @@ public final class MockMetrics extends SimpleMetrics {
     }
 
     @Override
-    protected void printError(final String message, @Nullable final Throwable throwable) {
-        System.err.println(message);
-        if (throwable != null) throwable.printStackTrace(System.err);
-    }
-
-    @Override
-    protected void printInfo(final String message) {
-        System.out.println(message);
-    }
-
-    @Override
-    protected void printWarning(final String message) {
-        System.out.println(message);
-    }
-
-    @Override
     public JsonObject createData() {
         return super.createData();
     }

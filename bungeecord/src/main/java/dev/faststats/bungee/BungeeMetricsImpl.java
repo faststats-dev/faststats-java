@@ -7,14 +7,10 @@ import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.plugin.Plugin;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.Nullable;
 
 import java.nio.file.Path;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 final class BungeeMetricsImpl extends SimpleMetrics implements BungeeMetrics {
-    private final Logger logger;
     private final ProxyServer server;
     private final Plugin plugin;
 
@@ -23,7 +19,6 @@ final class BungeeMetricsImpl extends SimpleMetrics implements BungeeMetrics {
     private BungeeMetricsImpl(final Factory factory, final Plugin plugin, final Path config) throws IllegalStateException {
         super(factory, config);
 
-        this.logger = plugin.getLogger();
         this.server = plugin.getProxy();
         this.plugin = plugin;
 
@@ -37,21 +32,6 @@ final class BungeeMetricsImpl extends SimpleMetrics implements BungeeMetrics {
         metrics.addProperty("plugin_version", plugin.getDescription().getVersion());
         metrics.addProperty("proxy_version", server.getVersion());
         metrics.addProperty("server_type", server.getName());
-    }
-
-    @Override
-    protected void printError(final String message, @Nullable final Throwable throwable) {
-        logger.log(Level.SEVERE, message, throwable);
-    }
-
-    @Override
-    protected void printInfo(final String message) {
-        logger.info(message);
-    }
-
-    @Override
-    protected void printWarning(final String message) {
-        logger.warning(message);
     }
 
     static final class Factory extends SimpleMetrics.Factory<Plugin, BungeeMetrics.Factory> implements BungeeMetrics.Factory {

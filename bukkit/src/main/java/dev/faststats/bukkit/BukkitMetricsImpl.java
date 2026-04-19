@@ -5,12 +5,10 @@ import dev.faststats.core.SimpleMetrics;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.logging.Level;
 
 final class BukkitMetricsImpl extends SimpleMetrics implements BukkitMetrics {
     private final Plugin plugin;
@@ -79,21 +77,6 @@ final class BukkitMetricsImpl extends SimpleMetrics implements BukkitMetrics {
             error("Failed to get player count", t);
             return 0;
         }
-    }
-
-    @Override
-    protected void printError(final String message, @Nullable final Throwable throwable) {
-        plugin.getLogger().log(Level.SEVERE, message, throwable);
-    }
-
-    @Override
-    protected void printInfo(final String message) {
-        plugin.getLogger().info(message);
-    }
-
-    @Override
-    protected void printWarning(final String message) {
-        plugin.getLogger().warning(message);
     }
 
     @Override

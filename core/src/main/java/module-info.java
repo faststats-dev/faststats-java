@@ -7,6 +7,7 @@ module dev.faststats.core {
     exports dev.faststats.core;
 
     requires com.google.gson;
+    requires java.logging;
     requires java.net.http;
 
     requires static org.jetbrains.annotations;

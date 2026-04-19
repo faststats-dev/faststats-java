@@ -6,7 +6,6 @@ import dev.faststats.core.SimpleMetrics;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.Nullable;
 import org.spongepowered.api.Platform;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.plugin.PluginContainer;
@@ -31,7 +30,6 @@ final class SpongeMetricsImpl extends SimpleMetrics implements SpongeMetrics {
             # For more information, visit: https://faststats.dev/info
             """;
 
-    private final Logger logger;
     private final PluginContainer plugin;
 
     @Async.Schedule
@@ -44,10 +42,7 @@ final class SpongeMetricsImpl extends SimpleMetrics implements SpongeMetrics {
     ) throws IllegalStateException {
         super(factory, SimpleMetrics.Config.read(config, COMMENT, true, Sponge.metricsConfigManager()
                 .effectiveCollectionState(plugin).asBoolean()));
-
-        this.logger = logger;
         this.plugin = plugin;
-
         startSubmitting();
     }
 
@@ -68,21 +63,6 @@ final class SpongeMetricsImpl extends SimpleMetrics implements SpongeMetrics {
         metrics.addProperty("plugin_version", plugin.metadata().version().toString());
         metrics.addProperty("minecraft_version", Sponge.platform().minecraftVersion().name());
         metrics.addProperty("server_type", Sponge.platform().container(Platform.Component.IMPLEMENTATION).metadata().id());
-    }
-
-    @Override
-    protected void printError(final String message, @Nullable final Throwable throwable) {
-        logger.error(message, throwable);
-    }
-
-    @Override
-    protected void printInfo(final String message) {
-        logger.info(message);
-    }
-
-    @Override
-    protected void printWarning(final String message) {
-        logger.warn(message);
     }
 
     static class Factory extends SimpleMetrics.Factory<PluginContainer, SpongeMetrics.Factory> {

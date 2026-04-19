@@ -10,15 +10,12 @@ import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Supplier;
 
 final class FabricMetricsImpl extends SimpleMetrics implements FabricMetrics {
-    private final Logger logger = LoggerFactory.getLogger("FastStats");
     private final ModContainer mod;
 
     private @Nullable MinecraftServer server;
@@ -45,21 +42,6 @@ final class FabricMetricsImpl extends SimpleMetrics implements FabricMetrics {
         metrics.addProperty("player_count", server.getPlayerCount());
         metrics.addProperty("plugin_version", mod.getMetadata().getVersion().getFriendlyString());
         metrics.addProperty("server_type", "Fabric");
-    }
-
-    @Override
-    protected void printError(final String message, @Nullable final Throwable throwable) {
-        logger.error(message, throwable);
-    }
-
-    @Override
-    protected void printInfo(final String message) {
-        logger.info(message);
-    }
-
-    @Override
-    protected void printWarning(final String message) {
-        logger.warn(message);
     }
 
     private <T> Optional<T> tryOrEmpty(final Supplier<T> supplier) {

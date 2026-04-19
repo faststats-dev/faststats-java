@@ -5,17 +5,14 @@ import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import dev.faststats.core.Metrics;
-import dev.faststats.core.Settings;
 import dev.faststats.core.SimpleMetrics;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
 
 final class VelocityMetricsImpl extends SimpleMetrics implements VelocityMetrics {
-    private final Logger logger;
     private final ProxyServer server;
     private final PluginContainer plugin;
 
@@ -30,7 +27,6 @@ final class VelocityMetricsImpl extends SimpleMetrics implements VelocityMetrics
     ) throws IllegalStateException {
         super(factory, config);
 
-        this.logger = logger;
         this.server = server;
         this.plugin = plugin;
 
@@ -45,21 +41,6 @@ final class VelocityMetricsImpl extends SimpleMetrics implements VelocityMetrics
         metrics.addProperty("plugin_version", pluginVersion);
         metrics.addProperty("proxy_version", server.getVersion().getVersion());
         metrics.addProperty("server_type", server.getVersion().getName());
-    }
-
-    @Override
-    protected void printError(final String message, @Nullable final Throwable throwable) {
-        logger.error(message, throwable);
-    }
-
-    @Override
-    protected void printInfo(final String message) {
-        logger.info(message);
-    }
-
-    @Override
-    protected void printWarning(final String message) {
-        logger.warn(message);
     }
 
     static class Factory extends SimpleMetrics.Factory<Object, VelocityMetrics.Factory> {
