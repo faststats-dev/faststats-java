@@ -1,11 +1,14 @@
 package dev.faststats.core.flags;
 
-import java.util.Map;
+import com.google.gson.JsonPrimitive;
 
-record SimpleAttributes(Map<String, Object> attributes) implements Attributes {
+import java.util.Map;
+import java.util.function.BiConsumer;
+
+record SimpleAttributes(Map<String, JsonPrimitive> attributes) implements Attributes {
     @Override
     public Attributes put(final String key, final String value) {
-        attributes.put(key, value);
+        attributes.put(key, new JsonPrimitive(value));
         return this;
     }
 
@@ -18,7 +21,7 @@ record SimpleAttributes(Map<String, Object> attributes) implements Attributes {
 
     @Override
     public Attributes put(final String key, final boolean value) {
-        attributes.put(key, value);
+        attributes.put(key, new JsonPrimitive(value));
         return this;
     }
 
@@ -29,7 +32,7 @@ record SimpleAttributes(Map<String, Object> attributes) implements Attributes {
     }
 
     @Override
-    public Map<String, Object> entries() {
-        return Map.copyOf(attributes);
+    public void forEachPrimitive(final BiConsumer<String, JsonPrimitive> action) {
+        attributes.forEach(action);
     }
 }

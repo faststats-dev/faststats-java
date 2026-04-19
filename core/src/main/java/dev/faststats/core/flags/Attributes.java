@@ -1,11 +1,11 @@
 package dev.faststats.core.flags;
 
+import com.google.gson.JsonPrimitive;
 import org.jetbrains.annotations.Contract;
-import org.jetbrains.annotations.Unmodifiable;
 import org.jspecify.annotations.Nullable;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 
 /**
  * Mutable key-value attributes for feature flag targeting.
@@ -84,15 +84,8 @@ public sealed interface Attributes permits SimpleAttributes {
     @Contract(value = "_ -> this", mutates = "this")
     Attributes remove(String key);
 
-    /**
-     * Return an unmodifiable view of all attribute entries.
-     *
-     * @return unmodifiable map of attribute entries
-     * @since 0.23.0
-     */
-    @Unmodifiable
-    @Contract(pure = true)
-    Map<String, Object> entries();
+    // todo: add docs
+    void forEachPrimitive(BiConsumer<String, JsonPrimitive> action);
 
     /**
      * Create new attributes by merging two attribute sets.
@@ -106,7 +99,7 @@ public sealed interface Attributes permits SimpleAttributes {
      */
     @Contract(value = "_, _ -> new", pure = true)
     static Attributes join(@Nullable final Attributes first, @Nullable final Attributes second) {
-        final var attributes = new ConcurrentHashMap<String, Object>();
+        final var attributes = new ConcurrentHashMap<String, JsonPrimitive>();
         if (first instanceof final SimpleAttributes simple) attributes.putAll(simple.attributes());
         if (second instanceof final SimpleAttributes simple) attributes.putAll(simple.attributes());
         return new SimpleAttributes(attributes);
