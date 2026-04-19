@@ -41,8 +41,9 @@ import java.util.zip.GZIPOutputStream;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public abstract class SimpleMetrics implements Metrics {
-    protected final Logger logger = LoggerFactory.factory().getLogger(getClass().getName());
     private static final URI defaultUrl = URI.create("https://metrics.faststats.dev/v1/collect");
+
+    protected final Logger logger = LoggerFactory.factory().getLogger(getClass().getName());
 
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(3))
