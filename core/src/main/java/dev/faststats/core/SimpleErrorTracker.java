@@ -60,7 +60,7 @@ final class SimpleErrorTracker implements ErrorTracker {
         try {
             if (isIgnored(error, Collections.newSetFromMap(new IdentityHashMap<>()))) return;
             final var compiled = ErrorHelper.compile(error, null, handled, anonymizationEntries);
-            final var hashed = MurmurHash3.hash(compiled);
+            final var hashed = MurmurHash3.hash(compiled); // todo: replace with minimization and normalization algorithm
             if (collected.compute(hashed, (k, v) -> {
                 return v == null ? 1 : v + 1;
             }) > 1) return;

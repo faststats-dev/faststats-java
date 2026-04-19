@@ -27,7 +27,7 @@ final class FabricMetricsImpl extends SimpleMetrics implements FabricMetrics {
 
         this.mod = mod;
 
-        ServerLifecycleEvents.SERVER_STARTED.register(server -> {
+        ServerLifecycleEvents.SERVER_STARTED.register(server -> { // todo: client support
             this.server = server;
             startSubmitting();
         });
