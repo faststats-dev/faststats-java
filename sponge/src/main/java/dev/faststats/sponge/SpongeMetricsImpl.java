@@ -2,6 +2,7 @@ package dev.faststats.sponge;
 
 import com.google.gson.JsonObject;
 import dev.faststats.core.Metrics;
+import dev.faststats.core.SimpleConfig;
 import dev.faststats.core.SimpleMetrics;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Async;
@@ -40,7 +41,7 @@ final class SpongeMetricsImpl extends SimpleMetrics implements SpongeMetrics {
             final PluginContainer plugin,
             final Path config
     ) throws IllegalStateException {
-        super(factory, SimpleMetrics.Config.read(config, COMMENT, true, Sponge.metricsConfigManager()
+        super(factory, SimpleConfig.read(config, COMMENT, true, Sponge.metricsConfigManager()
                 .effectiveCollectionState(plugin).asBoolean()));
         this.plugin = plugin;
         startSubmitting();
