@@ -101,7 +101,7 @@ public abstract class SimpleMetrics implements Metrics {
 
     protected String getOnboardingMessage() {
         return """
-                This plugin uses FastStats to collect anonymous usage statistics.
+                This piece of software uses FastStats to collect anonymous usage statistics.
                 No personal or identifying information is ever collected.
                 To opt out, set 'enabled=false' in the metrics configuration file.
                 Learn more at: https://faststats.dev/info
@@ -392,7 +392,7 @@ public abstract class SimpleMetrics implements Metrics {
     ) implements Metrics.Config {
 
         public static final String DEFAULT_COMMENT = """
-                 FastStats (https://faststats.dev) collects anonymous usage statistics for plugin developers.
+                 FastStats (https://faststats.dev) collects anonymous usage statistics for developers.
                 # This helps developers understand how their projects are used in the real world.
                 #
                 # No IP addresses, player data, or personal information is collected.
@@ -400,9 +400,9 @@ public abstract class SimpleMetrics implements Metrics {
                 #
                 # Enabling metrics has no noticeable performance impact.
                 # Keeping metrics enabled is recommended, but you can opt out by setting
-                # 'enabled=false' in plugins/faststats/config.properties.
+                # 'enabled=false' in faststats/config.properties.
                 #
-                # If you suspect a plugin is collecting personal data or bypassing the "enabled" option,
+                # If you suspect a developer is collecting personal data or bypassing the "enabled" option,
                 # please report it at: https://faststats.dev/abuse
                 #
                 # For more information, visit: https://faststats.dev/info
