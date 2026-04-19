@@ -1,12 +1,13 @@
 package dev.faststats.core.flags;
 
-import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
 import dev.faststats.core.Token;
+import dev.faststats.core.internal.Logger;
+import dev.faststats.core.internal.LoggerFactory;
 import org.jspecify.annotations.Nullable;
 
 import java.net.URI;
@@ -23,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 final class SimpleFeatureFlagService implements FeatureFlagService {
-    private static final Gson GSON = new Gson();
+    private static final Logger logger = LoggerFactory.factory().getLogger(SimpleFeatureFlagService.class.getName());
     private static final URI defaultUrl = URI.create("https://flags.faststats.dev/v1");
 
     private final HttpClient httpClient = HttpClient.newBuilder()
@@ -56,7 +57,7 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
         try {
             return property != null ? new URI(property) : defaultUrl;
         } catch (final URISyntaxException e) {
-            //error("Failed to parse flags server url: %s", e, property); // todo: recover
+            logger.error("Failed to parse flags server url: %s", e, property);
             return defaultUrl;
         }
     }
