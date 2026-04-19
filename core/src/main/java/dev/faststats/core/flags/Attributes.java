@@ -57,10 +57,11 @@ public sealed interface Attributes permits SimpleAttributes {
      * @param key   the key
      * @param value the value
      * @return these attributes
+     * @throws IllegalArgumentException if the given value is not {@link Double#isFinite(double) finite}
      * @since 0.23.0
      */
     @Contract(value = "_, _ -> this", mutates = "this")
-    Attributes put(String key, Number value);
+    Attributes put(String key, Number value) throws IllegalArgumentException;
 
     /**
      * Set a boolean value.

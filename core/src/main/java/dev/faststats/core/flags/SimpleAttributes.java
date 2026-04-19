@@ -11,7 +11,8 @@ record SimpleAttributes(Map<String, Object> attributes) implements Attributes {
 
     @Override
     public Attributes put(final String key, final Number value) {
-        attributes.put(key, value);
+        if (!Double.isFinite(value.doubleValue())) throw new IllegalArgumentException("Value must be finite");
+        attributes.put(key, new JsonPrimitive(value));
         return this;
     }
 
