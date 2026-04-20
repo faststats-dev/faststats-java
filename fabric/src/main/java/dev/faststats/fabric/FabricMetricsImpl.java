@@ -36,6 +36,11 @@ final class FabricMetricsImpl extends SimpleMetrics implements FabricMetrics {
     }
 
     @Override
+    protected boolean preSubmissionStart() {
+        return ((SimpleConfig) getConfig()).preSubmissionStart();
+    }
+
+    @Override
     protected void appendDefaultData(final JsonObject metrics) {
         assert server != null : "Server not initialized";
         metrics.addProperty("minecraft_version", server.getServerVersion());

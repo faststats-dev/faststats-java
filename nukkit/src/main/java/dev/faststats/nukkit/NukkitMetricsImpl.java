@@ -29,6 +29,11 @@ final class NukkitMetricsImpl extends SimpleMetrics implements NukkitMetrics {
     }
 
     @Override
+    protected boolean preSubmissionStart() {
+        return ((SimpleConfig) getConfig()).preSubmissionStart();
+    }
+
+    @Override
     protected void appendDefaultData(final JsonObject metrics) {
         metrics.addProperty("minecraft_version", server.getVersion());
         metrics.addProperty("online_mode", server.xboxAuth);

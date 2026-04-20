@@ -1,7 +1,6 @@
 package dev.faststats.sponge;
 
 import com.google.gson.JsonObject;
-import dev.faststats.config.SimpleConfig;
 import dev.faststats.core.Metrics;
 import dev.faststats.core.SimpleMetrics;
 import org.apache.logging.log4j.Logger;
@@ -14,22 +13,6 @@ import org.spongepowered.plugin.PluginContainer;
 import java.nio.file.Path;
 
 final class SpongeMetricsImpl extends SimpleMetrics implements SpongeMetrics {
-    public static final String COMMENT = """
-             FastStats (https://faststats.dev) collects anonymous usage statistics.
-            # This helps developers understand how their projects are used in the real world.
-            #
-            # No IP addresses, player data, or personal information is collected.
-            # The server ID below is randomly generated and can be regenerated at any time.
-            #
-            # Enabling metrics has no noticeable performance impact.
-            # Enabling metrics is recommended, you can do so in the Sponge metrics.config,
-            # by setting the "global-state" property to "TRUE".
-            #
-            # If you suspect a developer is collecting personal data or bypassing the Sponge config,
-            # please report it at: https://faststats.dev/abuse
-            #
-            # For more information, visit: https://faststats.dev/info
-            """;
 
     private final PluginContainer plugin;
 
@@ -41,20 +24,14 @@ final class SpongeMetricsImpl extends SimpleMetrics implements SpongeMetrics {
             final PluginContainer plugin,
             final Path config
     ) throws IllegalStateException {
-        super(factory, SimpleConfig.read(config, COMMENT, true, Sponge.metricsConfigManager()
-                .effectiveCollectionState(plugin).asBoolean()));
+        super(factory, SpongeConfig.read(plugin, config));
         this.plugin = plugin;
         startSubmitting();
     }
 
     @Override
-    protected String getOnboardingMessage() {
-        return """
-                This plugin uses FastStats to collect anonymous usage statistics.
-                No personal or identifying information is ever collected.
-                It is recommended to enable metrics by setting 'global-state=TRUE' in the sponge metrics config.
-                Learn more at: https://faststats.dev/info
-                """;
+    protected boolean preSubmissionStart() {
+        return ((SpongeConfig) getConfig()).preSubmissionStart();
     }
 
     @Override

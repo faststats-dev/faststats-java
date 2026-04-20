@@ -92,17 +92,6 @@ public abstract class SimpleMetrics implements Metrics {
         this.url = url;
     }
 
-    protected String getOnboardingMessage() {
-        return """
-                This plugin uses FastStats to collect anonymous usage statistics.
-                No personal or identifying information is ever collected.
-                To opt out, set 'enabled=false' in the metrics configuration file.
-                Learn more at: https://faststats.dev/info
-                
-                Since this is your first start with FastStats, metrics submission will not start
-                until you restart the server to allow you to opt out if you prefer.""";
-    }
-
     protected long getInitialDelay() {
         return TimeUnit.SECONDS.toMillis(Long.getLong("faststats.initial-delay", 30));
     }
@@ -117,29 +106,7 @@ public abstract class SimpleMetrics implements Metrics {
         startSubmitting(getInitialDelay(), getPeriod(), TimeUnit.MILLISECONDS);
     }
 
-    @SuppressWarnings("PatternValidation")
-    protected boolean preSubmissionStart() {
-        /*
-        if (Boolean.getBoolean("faststats.first-run")) {
-            logger.info("Skipping metrics submission due to first-run flag");
-            return false;
-        }
-
-        if (config.firstRun()) {
-            var separatorLength = 0;
-            final var split = getOnboardingMessage().split("\n");
-            for (final var s : split) if (s.length() > separatorLength) separatorLength = s.length();
-
-            logger.info("-".repeat(separatorLength));
-            for (final var s : split) logger.info(s);
-            logger.info("-".repeat(separatorLength));
-
-            System.setProperty("faststats.first-run", "true");
-            if (!config.externallyManaged()) return false;
-        }
-         */
-        return true; // todo: move to config module?
-    }
+    protected abstract boolean preSubmissionStart();
 
     private void startSubmitting(final long initialDelay, final long period, final TimeUnit unit) {
         if (!preSubmissionStart()) return;

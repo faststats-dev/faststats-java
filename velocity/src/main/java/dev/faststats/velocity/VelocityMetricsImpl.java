@@ -35,6 +35,11 @@ final class VelocityMetricsImpl extends SimpleMetrics implements VelocityMetrics
     }
 
     @Override
+    protected boolean preSubmissionStart() {
+        return ((SimpleConfig) getConfig()).preSubmissionStart();
+    }
+
+    @Override
     protected void appendDefaultData(final JsonObject metrics) {
         final var pluginVersion = plugin.getDescription().getVersion().orElse("unknown");
         metrics.addProperty("online_mode", server.getConfiguration().isOnlineMode());

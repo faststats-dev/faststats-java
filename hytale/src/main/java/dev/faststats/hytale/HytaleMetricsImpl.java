@@ -22,6 +22,11 @@ final class HytaleMetricsImpl extends SimpleMetrics implements HytaleMetrics {
     }
 
     @Override
+    protected boolean preSubmissionStart() {
+        return ((SimpleConfig) getConfig()).preSubmissionStart();
+    }
+
+    @Override
     protected void appendDefaultData(final JsonObject metrics) {
         metrics.addProperty("server_version", HytaleServer.get().getServerName());
         metrics.addProperty("player_count", Universe.get().getPlayerCount());

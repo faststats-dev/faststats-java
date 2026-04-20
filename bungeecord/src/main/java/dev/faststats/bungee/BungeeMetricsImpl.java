@@ -27,6 +27,11 @@ final class BungeeMetricsImpl extends SimpleMetrics implements BungeeMetrics {
     }
 
     @Override
+    protected boolean preSubmissionStart() {
+        return ((SimpleConfig) getConfig()).preSubmissionStart();
+    }
+
+    @Override
     protected void appendDefaultData(final JsonObject metrics) {
         metrics.addProperty("online_mode", server.getConfig().isOnlineMode());
         metrics.addProperty("player_count", server.getOnlineCount());

@@ -1,9 +1,11 @@
-package dev.faststats.config;
+package dev.faststats.sponge;
 
 import dev.faststats.core.Config;
 import dev.faststats.core.internal.LoggerFactory;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
+import org.spongepowered.api.Sponge;
+import org.spongepowered.plugin.PluginContainer;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -19,7 +21,7 @@ import java.util.logging.Level;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @ApiStatus.Internal
-public record SimpleConfig(
+public record SpongeConfig(
         UUID serverId,
         boolean additionalMetrics,
         boolean debug,
@@ -28,7 +30,7 @@ public record SimpleConfig(
         boolean firstRun
 ) implements Config {
 
-    public static final String COMMENT = """
+    private static final String COMMENT = """
              FastStats (https://faststats.dev) collects anonymous usage statistics.
             # This helps developers understand how their projects are used in the real world.
             #
@@ -36,9 +38,10 @@ public record SimpleConfig(
             # The server ID below is randomly generated and can be regenerated at any time.
             #
             # Enabling metrics has no noticeable performance impact.
-            # Keeping metrics enabled is recommended, but you can opt out by setting 'enabled=false'.
+            # Enabling metrics is recommended, you can do so in the Sponge metrics.config,
+            # by setting the "global-state" property to "TRUE".
             #
-            # If you suspect a developer is collecting personal data or bypassing the "enabled" option,
+            # If you suspect a developer is collecting personal data or bypassing the Sponge config,
             # please report it at: https://faststats.dev/abuse
             #
             # For more information, visit: https://faststats.dev/info
@@ -46,14 +49,12 @@ public record SimpleConfig(
     private static final String ONBOARDING_MESSAGE = """
             This plugin uses FastStats to collect anonymous usage statistics.
             No personal or identifying information is ever collected.
-            To opt out, set 'enabled=false' in the metrics configuration file.
+            It is recommended to enable metrics by setting 'global-state=TRUE' in the sponge metrics config.
             Learn more at: https://faststats.dev/info
-            
-            Since this is your first start with FastStats, metrics submission will not start
-            until you restart the server to allow you to opt out if you prefer.""";
+            """;
 
     @Contract(mutates = "io")
-    public static SimpleConfig read(final Path file) throws RuntimeException {
+    public static SpongeConfig read(final PluginContainer plugin, final Path file) throws RuntimeException {
         final var properties = readOrEmpty(file);
         final var firstRun = properties.isEmpty();
         final var saveConfig = new AtomicBoolean(firstRun);
@@ -80,7 +81,6 @@ public record SimpleConfig(
             });
         };
 
-        final var enabled = predicate.test("enabled", true);
         final var errorTracking = predicate.test("submitErrors", true);
         final var additionalMetrics = predicate.test("submitAdditionalMetrics", true);
         final var debug = predicate.test("debug", false);
@@ -92,7 +92,6 @@ public record SimpleConfig(
                 final var store = new Properties();
 
                 store.setProperty("serverId", serverId.toString());
-                store.setProperty("enabled", Boolean.toString(enabled));
                 store.setProperty("submitErrors", Boolean.toString(errorTracking));
                 store.setProperty("submitAdditionalMetrics", Boolean.toString(additionalMetrics));
                 store.setProperty("debug", Boolean.toString(debug));
@@ -103,7 +102,8 @@ public record SimpleConfig(
             throw new RuntimeException("Failed to save metrics config", e);
         }
 
-        return new SimpleConfig(serverId, additionalMetrics, debug, enabled, errorTracking, firstRun);
+        final var enabled = Sponge.metricsConfigManager().effectiveCollectionState(plugin).asBoolean();
+        return new SpongeConfig(serverId, additionalMetrics, debug, enabled, errorTracking, firstRun);
     }
 
     private static Optional<Properties> readOrEmpty(final Path file) throws RuntimeException {
@@ -137,3 +137,5 @@ public record SimpleConfig(
         return true;
     }
 }
+
+

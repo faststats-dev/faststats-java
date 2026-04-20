@@ -63,6 +63,11 @@ final class BukkitMetricsImpl extends SimpleMetrics implements BukkitMetrics {
     }
 
     @Override
+    protected boolean preSubmissionStart() {
+        return ((SimpleConfig) getConfig()).preSubmissionStart();
+    }
+
+    @Override
     protected void appendDefaultData(final JsonObject metrics) {
         metrics.addProperty("minecraft_version", minecraftVersion);
         metrics.addProperty("online_mode", checkOnlineMode());
