@@ -1,16 +1,15 @@
 package dev.faststats.sponge;
 
 import com.google.gson.JsonObject;
-import dev.faststats.core.Metrics;
-import dev.faststats.core.SimpleMetrics;
+import dev.faststats.FastStatsContext;
+import dev.faststats.Metrics;
+import dev.faststats.SimpleMetrics;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
 import org.spongepowered.api.Platform;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.plugin.PluginContainer;
-
-import java.nio.file.Path;
 
 final class SpongeMetricsImpl extends SimpleMetrics implements SpongeMetrics {
 
@@ -21,10 +20,9 @@ final class SpongeMetricsImpl extends SimpleMetrics implements SpongeMetrics {
     private SpongeMetricsImpl(
             final Factory factory,
             final Logger logger,
-            final PluginContainer plugin,
-            final Path config
+            final PluginContainer plugin
     ) throws IllegalStateException {
-        super(factory, SpongeConfig.read(plugin, config));
+        super(factory);
         this.plugin = plugin;
         startSubmitting();
     }
@@ -43,19 +41,15 @@ final class SpongeMetricsImpl extends SimpleMetrics implements SpongeMetrics {
         metrics.addProperty("server_type", Sponge.platform().container(Platform.Component.IMPLEMENTATION).metadata().id());
     }
 
-    static class Factory extends SimpleMetrics.Factory<PluginContainer, SpongeMetrics.Factory> {
-        protected final Logger logger;
-        protected final Path dataDirectory;
-
-        public Factory(final Logger logger, final Path dataDirectory) {
-            this.logger = logger;
-            this.dataDirectory = dataDirectory;
+    static class Factory extends SimpleMetrics.Factory<SpongeMetrics.Factory> {
+        public Factory(final FastStatsContext context) {
+            super(context);
         }
 
         @Override
-        public Metrics create(final PluginContainer plugin) throws IllegalStateException, IllegalArgumentException {
-            final var faststats = dataDirectory.resolve("faststats");
-            return new SpongeMetricsImpl(this, logger, plugin, faststats.resolve("config.properties"));
+        public Metrics create() throws IllegalStateException, IllegalArgumentException {
+            final var context = (SpongeContext) this.context;
+            return new SpongeMetricsImpl(this, context.logger, context.plugin);
         }
     }
 }

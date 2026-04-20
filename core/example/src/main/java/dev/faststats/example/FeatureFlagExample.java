@@ -1,8 +1,8 @@
 package dev.faststats.example;
 
-import dev.faststats.core.flags.Attributes;
-import dev.faststats.core.flags.FeatureFlag;
-import dev.faststats.core.flags.FeatureFlagService;
+import dev.faststats.Attributes;
+import dev.faststats.FeatureFlag;
+import dev.faststats.FeatureFlagService;
 
 import java.time.Duration;
 import java.time.Instant;

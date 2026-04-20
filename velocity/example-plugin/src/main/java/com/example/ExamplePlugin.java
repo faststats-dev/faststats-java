@@ -5,33 +5,37 @@ import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.Plugin;
-import dev.faststats.core.ErrorTracker;
-import dev.faststats.core.Metrics;
-import dev.faststats.core.data.Metric;
-import dev.faststats.velocity.VelocityMetrics;
+import com.velocitypowered.api.plugin.annotation.DataDirectory;
+import com.velocitypowered.api.proxy.ProxyServer;
+import dev.faststats.ErrorTracker;
+import dev.faststats.Metrics;
+import dev.faststats.data.Metric;
+import dev.faststats.velocity.VelocityContext;
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+
+import java.nio.file.Path;
 
 @Plugin(id = "example", name = "Example Plugin", version = "1.0.0",
         url = "https://example.com", authors = {"Your Name"})
 public class ExamplePlugin {
-    private final VelocityMetrics.Factory metricsFactory;
+    private final VelocityContext context;
     private @Nullable Metrics metrics = null;
 
     @Inject
-    public ExamplePlugin(final VelocityMetrics.Factory factory) {
-        this.metricsFactory = factory;
+    public ExamplePlugin(final ProxyServer server, final Logger logger, @DataDirectory final Path dataDirectory) {
+        this.context = new VelocityContext(server, logger, dataDirectory, "YOUR_TOKEN_HERE");
     }
 
     @Subscribe
     public void onProxyInitialize(final ProxyInitializeEvent event) {
-        this.metrics = metricsFactory
+        this.metrics = context.metrics()
                 // Custom metrics require a corresponding data source in your project settings
                 .addMetric(Metric.number("example_metric", () -> 42))
 
                 // Error tracking must be enabled in the project settings
                 .errorTracker(ErrorTracker.contextAware())
 
-                .token("YOUR_TOKEN_HERE") // required -> token can be found in the settings of your project
                 .create(this);
     }
 

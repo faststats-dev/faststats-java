@@ -3,13 +3,12 @@ package dev.faststats.nukkit;
 import cn.nukkit.Server;
 import cn.nukkit.plugin.PluginBase;
 import com.google.gson.JsonObject;
+import dev.faststats.Metrics;
+import dev.faststats.SimpleMetrics;
 import dev.faststats.config.SimpleConfig;
-import dev.faststats.core.Metrics;
-import dev.faststats.core.SimpleMetrics;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
 
-import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -19,8 +18,8 @@ final class NukkitMetricsImpl extends SimpleMetrics implements NukkitMetrics {
 
     @Async.Schedule
     @Contract(mutates = "io")
-    private NukkitMetricsImpl(final Factory factory, final PluginBase plugin, final Path config) throws IllegalStateException {
-        super(factory, SimpleConfig.read(config));
+    private NukkitMetricsImpl(final Factory factory, final PluginBase plugin) throws IllegalStateException {
+        super(factory);
 
         this.server = plugin.getServer();
         this.plugin = plugin;
@@ -50,12 +49,14 @@ final class NukkitMetricsImpl extends SimpleMetrics implements NukkitMetrics {
         }
     }
 
-    static final class Factory extends SimpleMetrics.Factory<PluginBase, NukkitMetrics.Factory> implements NukkitMetrics.Factory {
+    static final class Factory extends SimpleMetrics.Factory<NukkitMetrics.Factory> implements NukkitMetrics.Factory {
+        Factory(final NukkitContext context) {
+            super(context);
+        }
+
         @Override
-        public Metrics create(final PluginBase plugin) throws IllegalStateException {
-            final var dataFolder = Path.of(plugin.getServer().getPluginPath(), "faststats");
-            final var config = dataFolder.resolve("config.properties");
-            return new NukkitMetricsImpl(this, plugin, config);
+        public Metrics create() throws IllegalStateException {
+            return new NukkitMetricsImpl(this, ((NukkitContext) context).plugin);
         }
     }
 }

@@ -1,6 +1,5 @@
 package dev.faststats;
 
-import dev.faststats.core.ErrorTracker;
 import org.junit.jupiter.api.Test;
 
 import java.net.URL;

@@ -1,15 +1,13 @@
 package dev.faststats.bungee;
 
 import com.google.gson.JsonObject;
+import dev.faststats.Metrics;
+import dev.faststats.SimpleMetrics;
 import dev.faststats.config.SimpleConfig;
-import dev.faststats.core.Metrics;
-import dev.faststats.core.SimpleMetrics;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.plugin.Plugin;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
-
-import java.nio.file.Path;
 
 final class BungeeMetricsImpl extends SimpleMetrics implements BungeeMetrics {
     private final ProxyServer server;
@@ -17,8 +15,8 @@ final class BungeeMetricsImpl extends SimpleMetrics implements BungeeMetrics {
 
     @Async.Schedule
     @Contract(mutates = "io")
-    private BungeeMetricsImpl(final Factory factory, final Plugin plugin, final Path config) throws IllegalStateException {
-        super(factory, SimpleConfig.read(config));
+    private BungeeMetricsImpl(final Factory factory, final Plugin plugin) throws IllegalStateException {
+        super(factory);
 
         this.server = plugin.getProxy();
         this.plugin = plugin;
@@ -40,12 +38,14 @@ final class BungeeMetricsImpl extends SimpleMetrics implements BungeeMetrics {
         metrics.addProperty("server_type", server.getName());
     }
 
-    static final class Factory extends SimpleMetrics.Factory<Plugin, BungeeMetrics.Factory> implements BungeeMetrics.Factory {
+    static final class Factory extends SimpleMetrics.Factory<BungeeMetrics.Factory> implements BungeeMetrics.Factory {
+        public Factory(final BungeeContext context) {
+            super(context);
+        }
+
         @Override
-        public Metrics create(final Plugin plugin) throws IllegalStateException {
-            final var dataFolder = plugin.getProxy().getPluginsFolder().toPath().resolve("faststats");
-            final var config = dataFolder.resolve("config.properties");
-            return new BungeeMetricsImpl(this, plugin, config);
+        public Metrics create() throws IllegalStateException {
+            return new BungeeMetricsImpl(this, ((BungeeContext) context).plugin);
         }
     }
 }

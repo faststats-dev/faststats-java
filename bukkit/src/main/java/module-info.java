@@ -6,7 +6,7 @@ module dev.faststats.bukkit {
 
     requires com.google.gson;
     requires dev.faststats.config;
-    requires dev.faststats.core;
+    requires dev.faststats;
     requires java.logging;
     requires org.bukkit;
 

@@ -3,7 +3,7 @@ package dev.faststats.velocity;
 import com.google.inject.Inject;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
-import dev.faststats.core.Metrics;
+import dev.faststats.Metrics;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
@@ -15,6 +15,10 @@ import java.nio.file.Path;
  */
 public sealed interface VelocityMetrics extends Metrics permits VelocityMetricsImpl {
     final class Factory extends VelocityMetricsImpl.Factory {
+        public Factory(final VelocityContext context, final ProxyServer server, final Logger logger, @DataDirectory final Path dataDirectory) {
+            super(context, server, logger, dataDirectory);
+        }
+
         /**
          * Creates a new metrics factory for Velocity.
          *

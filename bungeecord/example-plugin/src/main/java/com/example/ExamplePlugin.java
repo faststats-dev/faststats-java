@@ -1,17 +1,18 @@
 package com.example;
 
-import dev.faststats.bungee.BungeeMetrics;
-import dev.faststats.core.ErrorTracker;
-import dev.faststats.core.Metrics;
-import dev.faststats.core.data.Metric;
+import dev.faststats.ErrorTracker;
+import dev.faststats.Metrics;
+import dev.faststats.bungee.BungeeContext;
+import dev.faststats.data.Metric;
 import net.md_5.bungee.api.plugin.Plugin;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ExamplePlugin extends Plugin {
     private final AtomicInteger gameCount = new AtomicInteger();
+    private final BungeeContext context = new BungeeContext(this, "YOUR_TOKEN_HERE");
 
-    private final Metrics metrics = BungeeMetrics.factory()
+    private final Metrics metrics = context.metrics()
             // Custom metrics require a corresponding data source in your project settings
             .addMetric(Metric.number("game_count", gameCount::get))
             .addMetric(Metric.string("server_version", () -> "1.0.0"))
@@ -23,7 +24,6 @@ public class ExamplePlugin extends Plugin {
             // This is useful for cleaning up cached data
             .onFlush(() -> gameCount.set(0)) // reset game count on flush
 
-            .token("YOUR_TOKEN_HERE") // required -> token can be found in the settings of your project
             .create(this);
 
     @Override

@@ -1,6 +1,6 @@
 package dev.faststats.example;
 
-import dev.faststats.core.ErrorTracker;
+import dev.faststats.ErrorTracker;
 
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.AccessDeniedException;

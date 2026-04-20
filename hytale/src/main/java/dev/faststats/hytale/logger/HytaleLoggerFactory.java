@@ -1,8 +1,8 @@
 package dev.faststats.hytale.logger;
 
-public final class HytaleLoggerFactory implements dev.faststats.core.internal.LoggerFactory {
+public final class HytaleLoggerFactory implements dev.faststats.internal.LoggerFactory {
     @Override
-    public dev.faststats.core.internal.Logger getLogger(final String name) {
+    public dev.faststats.internal.Logger getLogger(final String name) {
         return new HytaleLogger(name);
     }
 }

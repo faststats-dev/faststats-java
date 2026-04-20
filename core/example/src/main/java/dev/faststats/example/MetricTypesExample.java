@@ -1,6 +1,6 @@
 package dev.faststats.example;
 
-import dev.faststats.core.data.Metric;
+import dev.faststats.data.Metric;
 
 public final class MetricTypesExample {
     // Single value metrics

@@ -4,7 +4,7 @@ import org.jspecify.annotations.NullMarked;
 module dev.faststats.config {
     exports dev.faststats.config;
 
-    requires dev.faststats.core;
+    requires dev.faststats;
     requires java.logging;
 
     requires static org.jetbrains.annotations;

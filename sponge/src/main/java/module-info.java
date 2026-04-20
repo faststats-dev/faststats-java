@@ -6,7 +6,7 @@ module dev.faststats.sponge {
 
     requires com.google.gson;
     requires com.google.guice;
-    requires dev.faststats.core;
+    requires dev.faststats;
     requires java.logging;
 
     requires static org.jetbrains.annotations;

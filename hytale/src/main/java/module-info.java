@@ -6,11 +6,11 @@ module dev.faststats.hytale {
 
     requires com.google.gson;
     requires dev.faststats.config;
-    requires dev.faststats.core;
+    requires dev.faststats;
     requires java.logging;
 
     requires static org.jetbrains.annotations;
     requires static org.jspecify;
 
-    provides dev.faststats.core.internal.LoggerFactory with dev.faststats.hytale.logger.HytaleLoggerFactory;
+    provides dev.faststats.internal.LoggerFactory with dev.faststats.hytale.logger.HytaleLoggerFactory;
 }

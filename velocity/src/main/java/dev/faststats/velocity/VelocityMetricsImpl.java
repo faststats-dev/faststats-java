@@ -4,9 +4,11 @@ import com.google.gson.JsonObject;
 import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
+import dev.faststats.Config;
+import dev.faststats.FastStatsContext;
+import dev.faststats.Metrics;
+import dev.faststats.SimpleMetrics;
 import dev.faststats.config.SimpleConfig;
-import dev.faststats.core.Metrics;
-import dev.faststats.core.SimpleMetrics;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
 import org.slf4j.Logger;
@@ -23,10 +25,10 @@ final class VelocityMetricsImpl extends SimpleMetrics implements VelocityMetrics
             final Factory factory,
             final Logger logger,
             final ProxyServer server,
-            final Path config,
+            final Config config,
             final PluginContainer plugin
     ) throws IllegalStateException {
-        super(factory, SimpleConfig.read(config));
+        super(factory, config);
 
         this.server = server;
         this.plugin = plugin;
@@ -49,12 +51,17 @@ final class VelocityMetricsImpl extends SimpleMetrics implements VelocityMetrics
         metrics.addProperty("server_type", server.getVersion().getName());
     }
 
-    static class Factory extends SimpleMetrics.Factory<Object, VelocityMetrics.Factory> {
+    static class Factory extends SimpleMetrics.Factory<VelocityMetrics.Factory> {
         protected final Logger logger;
         protected final Path dataDirectory;
         protected final ProxyServer server;
 
         public Factory(final ProxyServer server, final Logger logger, @DataDirectory final Path dataDirectory) {
+            this(null, server, logger, dataDirectory);
+        }
+
+        public Factory(final FastStatsContext context, final ProxyServer server, final Logger logger, @DataDirectory final Path dataDirectory) {
+            super(context);
             this.logger = logger;
             this.dataDirectory = dataDirectory;
             this.server = server;
@@ -70,13 +77,16 @@ final class VelocityMetricsImpl extends SimpleMetrics implements VelocityMetrics
          * @throws IllegalStateException    if the token is not specified
          * @throws IllegalArgumentException if the given object is not a valid plugin
          * @see #token(String)
-         * @since 0.1.0
+         * @since 0.23.0
          */
         @Override
         public Metrics create(final Object plugin) throws IllegalStateException, IllegalArgumentException {
             final var faststats = dataDirectory.resolveSibling("faststats");
             final var container = server.getPluginManager().ensurePluginContainer(plugin);
-            return new VelocityMetricsImpl(this, logger, server, faststats.resolve("config.properties"), container);
+            final var config = hasContext()
+                    ? getConfigOrThrow()
+                    : SimpleConfig.read(faststats.resolve("config.properties"));
+            return new VelocityMetricsImpl(this, logger, server, config, container);
         }
     }
 }

@@ -1,18 +1,16 @@
 package dev.faststats.fabric;
 
 import com.google.gson.JsonObject;
+import dev.faststats.Metrics;
+import dev.faststats.SimpleMetrics;
 import dev.faststats.config.SimpleConfig;
-import dev.faststats.core.Metrics;
-import dev.faststats.core.SimpleMetrics;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
-import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -23,8 +21,8 @@ final class FabricMetricsImpl extends SimpleMetrics implements FabricMetrics {
 
     @Async.Schedule
     @Contract(mutates = "io")
-    private FabricMetricsImpl(final Factory factory, final ModContainer mod, final Path config) throws IllegalStateException {
-        super(factory, SimpleConfig.read(config));
+    private FabricMetricsImpl(final Factory factory, final ModContainer mod) throws IllegalStateException {
+        super(factory);
 
         this.mod = mod;
 
@@ -58,18 +56,14 @@ final class FabricMetricsImpl extends SimpleMetrics implements FabricMetrics {
         }
     }
 
-    static final class Factory extends SimpleMetrics.Factory<String, FabricMetrics.Factory> implements FabricMetrics.Factory {
+    static final class Factory extends SimpleMetrics.Factory<FabricMetrics.Factory> implements FabricMetrics.Factory {
+        public Factory(final FabricContext context) {
+            super(context);
+        }
+
         @Override
-        public Metrics create(final String modId) throws IllegalStateException, IllegalArgumentException {
-            final var fabric = FabricLoader.getInstance();
-            final var mod = fabric.getModContainer(modId).orElseThrow(() -> {
-                return new IllegalArgumentException("Mod not found: " + modId);
-            });
-
-            final var dataFolder = fabric.getConfigDir().resolve("faststats");
-            final var config = dataFolder.resolve("config.properties");
-
-            return new FabricMetricsImpl(this, mod, config);
+        public Metrics create() throws IllegalStateException, IllegalArgumentException {
+            return new FabricMetricsImpl(this, ((FabricContext) context).mod);
         }
     }
 }

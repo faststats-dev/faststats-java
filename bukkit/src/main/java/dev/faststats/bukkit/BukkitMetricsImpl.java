@@ -1,13 +1,12 @@
 package dev.faststats.bukkit;
 
 import com.google.gson.JsonObject;
+import dev.faststats.SimpleMetrics;
 import dev.faststats.config.SimpleConfig;
-import dev.faststats.core.SimpleMetrics;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
 
-import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -21,8 +20,8 @@ final class BukkitMetricsImpl extends SimpleMetrics implements BukkitMetrics {
     @Async.Schedule
     @Contract(mutates = "io")
     @SuppressWarnings({"deprecation", "Convert2MethodRef"})
-    private BukkitMetricsImpl(final Factory factory, final Plugin plugin, final Path config) throws IllegalStateException {
-        super(factory, SimpleConfig.read(config));
+    private BukkitMetricsImpl(final Factory factory, final Plugin plugin) throws IllegalStateException {
+        super(factory);
 
         this.plugin = plugin;
         final var server = plugin.getServer();
@@ -102,20 +101,14 @@ final class BukkitMetricsImpl extends SimpleMetrics implements BukkitMetrics {
         }
     }
 
-    static final class Factory extends SimpleMetrics.Factory<Plugin, BukkitMetrics.Factory> implements BukkitMetrics.Factory {
-        @Override
-        public BukkitMetrics create(final Plugin plugin) throws IllegalStateException {
-            final var dataFolder = getPluginsFolder(plugin).resolve("faststats");
-            final var config = dataFolder.resolve("config.properties");
-            return new BukkitMetricsImpl(this, plugin, config);
+    static final class Factory extends SimpleMetrics.Factory<BukkitMetrics.Factory> implements BukkitMetrics.Factory {
+        public Factory(final BukkitContext context) {
+            super(context);
         }
 
-        private static Path getPluginsFolder(final Plugin plugin) {
-            try {
-                return plugin.getServer().getPluginsFolder().toPath();
-            } catch (final NoSuchMethodError e) {
-                return plugin.getDataFolder().getParentFile().toPath();
-            }
+        @Override
+        public BukkitMetrics create() throws IllegalStateException {
+            return new BukkitMetricsImpl(this, ((BukkitContext) context).plugin);
         }
     }
 }

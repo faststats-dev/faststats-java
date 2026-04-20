@@ -1,11 +1,10 @@
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-module dev.faststats.core {
-    exports dev.faststats.core.data;
-    exports dev.faststats.core.flags;
-    exports dev.faststats.core.internal;
-    exports dev.faststats.core;
+module dev.faststats {
+    exports dev.faststats.data;
+    exports dev.faststats.internal;
+    exports dev.faststats;
 
     requires com.google.gson;
     requires java.logging;
@@ -14,5 +13,5 @@ module dev.faststats.core {
     requires static org.jetbrains.annotations;
     requires static org.jspecify;
 
-    uses dev.faststats.core.internal.LoggerFactory;
+    uses dev.faststats.internal.LoggerFactory;
 }

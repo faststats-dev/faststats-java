@@ -1,7 +1,7 @@
 package dev.faststats.config;
 
-import dev.faststats.core.Config;
-import dev.faststats.core.internal.LoggerFactory;
+import dev.faststats.Config;
+import dev.faststats.internal.LoggerFactory;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 
