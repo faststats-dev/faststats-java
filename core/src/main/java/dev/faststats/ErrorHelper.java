@@ -153,7 +153,7 @@ final class ErrorHelper {
 
         for (var i = 0; i < framesToCheck; i++) {
             final var frame = stackTrace[firstNonLibraryIndex + i];
-            if (isLibraryClass(frame.getClassName())) continue;
+            if (isLibraryFrame(frame.getClassName())) continue;
             if (!isFromLoader(frame, loader)) return isSameLoader(loader, error.getCause(), visited);
         }
 
@@ -162,17 +162,17 @@ final class ErrorHelper {
 
     private static int findFirstNonLibraryFrameIndex(final StackTraceElement[] stackTrace) {
         for (var i = 0; i < stackTrace.length; i++) {
-            if (!isLibraryClass(stackTrace[i].getClassName())) return i;
+            if (!isLibraryFrame(stackTrace[i].getClassName())) return i;
         }
         return -1;
     }
 
-    private static boolean isLibraryClass(final String className) {
-        return className.startsWith("java.")
-                || className.startsWith("javax.")
-                || className.startsWith("sun.")
-                || className.startsWith("com.sun.")
-                || className.startsWith("jdk.");
+    static boolean isLibraryFrame(final String frame) {
+        return frame.startsWith("java.")
+                || frame.startsWith("javax.")
+                || frame.startsWith("sun.")
+                || frame.startsWith("com.sun.")
+                || frame.startsWith("jdk.");
     }
 
     private static boolean isFromLoader(final StackTraceElement frame, final ClassLoader loader) {
