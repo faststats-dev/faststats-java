@@ -149,7 +149,7 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
             try {
                 final var body = JsonParser.parseString(response.body());
 
-                if (response.statusCode() < 200 && response.statusCode() >= 300)
+                if (response.statusCode() < 200 || response.statusCode() >= 300)
                     throw new IllegalStateException("Unexpected response status: %s (%s)".formatted(response.statusCode(), body));
 
                 final var value = getValue(flag, body);
