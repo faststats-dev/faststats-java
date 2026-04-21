@@ -21,8 +21,8 @@ import java.nio.charset.StandardCharsets;
  * </p>
  */
 final class MurmurHash3 {
-    public static String hash(final JsonObject object) {
-        final var hash = MurmurHash3.hash(object.toString());
+    public static String hash(final String data) {
+        final var hash = MurmurHash3.hash128(data);
         return Long.toHexString(hash[0]) + Long.toHexString(hash[1]);
     }
 
@@ -38,7 +38,7 @@ final class MurmurHash3 {
      * @see <a href="https://en.wikipedia.org/wiki/MurmurHash">MurmurHash on Wikipedia</a>
      */
     @Contract(value = "_ -> new", pure = true)
-    private static long[] hash(final String data) {
+    private static long[] hash128(final String data) {
         final var bytes = data.getBytes(StandardCharsets.UTF_8);
         var h1 = 0L;
         var h2 = 0L;
