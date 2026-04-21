@@ -7,6 +7,8 @@ import java.util.IdentityHashMap;
 import java.util.Set;
 
 final class StackTraceFingerprint {
+    private static final int STACK_TRACE_LIMIT = 5;
+
     private StackTraceFingerprint() {
     }
 
@@ -21,21 +23,19 @@ final class StackTraceFingerprint {
         return builder.toString();
     }
 
-    private static void append(@Nullable final Throwable error, final StringBuilder builder,
-                               final Set<Throwable> visited) {
+    private static void append(@Nullable final Throwable error, final StringBuilder builder, final Set<Throwable> visited) {
         if (error == null || !visited.add(error)) return;
-
-        append(builder, error.getClass().getName() + ": " + error.getMessage());
+        
+        if (!builder.isEmpty()) builder.append('\n');
+        builder.append("e").append(error.getClass().getName());
+        
+        var frames = 0;
         for (final var element : error.getStackTrace()) {
-            if (ErrorHelper.isLibraryClass(element.getClassName())) continue;
-            append(builder, " " + element.getClassName() + "." + element.getMethodName());
+            if (ErrorHelper.isLibraryFrame(element.getClassName())) continue;
+            builder.append("\nf").append(element.getClassName()).append('.').append(element.getMethodName());
+            if (++frames >= STACK_TRACE_LIMIT) break;
         }
 
         append(error.getCause(), builder, visited);
-    }
-
-    private static void append(final StringBuilder builder, final String value) {
-        if (!builder.isEmpty()) builder.append('\n');
-        builder.append(value);
     }
 }

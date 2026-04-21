@@ -59,11 +59,11 @@ final class SimpleErrorTracker implements ErrorTracker {
     public void trackError(final Throwable error, final boolean handled) {
         try {
             if (isIgnored(error, Collections.newSetFromMap(new IdentityHashMap<>()))) return;
-            final var compiled = ErrorHelper.compile(error, null, handled, anonymizationEntries);
-            final var hashed = MurmurHash3.hash(compiled); // todo: replace with minimization and normalization algorithm
+            final var hashed = StackTraceFingerprint.hash(error); // todo: report duplicate errors with different messages
             if (collected.compute(hashed, (k, v) -> {
                 return v == null ? 1 : v + 1;
             }) > 1) return;
+            final var compiled = ErrorHelper.compile(error, null, handled, anonymizationEntries);
             reports.put(hashed, compiled);
         } catch (final NoClassDefFoundError ignored) {
         }
