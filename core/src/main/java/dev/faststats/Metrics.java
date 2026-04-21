@@ -68,7 +68,7 @@ public interface Metrics {
      *
      * @since 0.23.0
      */
-    interface Factory<F extends Factory<F>> {
+    interface Factory {
         /**
          * Adds a metric to the metrics submission.
          * <p>
@@ -80,7 +80,7 @@ public interface Metrics {
          * @since 0.23.0
          */
         @Contract(mutates = "this")
-        F addMetric(Metric<?> metric) throws IllegalArgumentException;
+        Factory addMetric(Metric<?> metric) throws IllegalArgumentException;
 
         /**
          * Sets the flush callback for this metrics instance.
@@ -92,7 +92,7 @@ public interface Metrics {
          * @since 0.23.0
          */
         @Contract(mutates = "this")
-        F onFlush(Runnable flush);
+        Factory onFlush(Runnable flush);
 
         /**
          * Sets the error tracker for this metrics instance.
@@ -104,7 +104,7 @@ public interface Metrics {
          * @since 0.23.0
          */
         @Contract(mutates = "this")
-        F errorTracker(ErrorTracker tracker);
+        Factory errorTracker(ErrorTracker tracker);
 
         /**
          * Creates a new metrics instance.

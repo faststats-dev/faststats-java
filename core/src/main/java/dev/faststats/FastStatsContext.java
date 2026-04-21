@@ -39,7 +39,7 @@ public interface FastStatsContext {
      * @since 0.23.0
      */
     @Contract(value = "-> new", pure = true)
-    Metrics.Factory<?> metrics();
+    Metrics.Factory metrics();
 
     /**
      * Creates a new feature flag service backed by this context token.

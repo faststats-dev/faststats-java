@@ -1,6 +1,8 @@
 package dev.faststats.minestom;
 
+import dev.faststats.ErrorTracker;
 import dev.faststats.Metrics;
+import dev.faststats.data.Metric;
 import net.minestom.server.Auth;
 import net.minestom.server.MinecraftServer;
 
@@ -19,6 +21,17 @@ public sealed interface MinestomMetrics extends Metrics permits MinestomMetricsI
     @Override
     void ready();
 
-    interface Factory extends Metrics.Factory<Factory> {
+    sealed interface Factory extends Metrics.Factory permits MinestomMetricsImpl.Factory {
+        @Override
+        Factory addMetric(Metric<?> metric) throws IllegalArgumentException;
+
+        @Override
+        Factory onFlush(Runnable flush);
+
+        @Override
+        Factory errorTracker(ErrorTracker tracker);
+
+        @Override
+        MinestomMetrics create() throws IllegalStateException;
     }
 }

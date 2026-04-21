@@ -2,9 +2,9 @@ package dev.faststats.minestom;
 
 import com.google.gson.JsonObject;
 import dev.faststats.ErrorTracker;
-import dev.faststats.Metrics;
 import dev.faststats.SimpleMetrics;
 import dev.faststats.config.SimpleConfig;
+import dev.faststats.data.Metric;
 import net.minestom.server.Auth;
 import net.minestom.server.MinecraftServer;
 import org.jetbrains.annotations.Async;
@@ -46,13 +46,28 @@ final class MinestomMetricsImpl extends SimpleMetrics implements MinestomMetrics
         });
     }
 
-    static final class Factory extends SimpleMetrics.Factory<MinestomMetrics.Factory> implements MinestomMetrics.Factory {
-        Factory(final MinestomContext context) {
+    static final class Factory extends SimpleMetrics.Factory implements MinestomMetrics.Factory {
+        public Factory(final MinestomContext context) {
             super(context);
         }
 
         @Override
-        public Metrics create() throws IllegalStateException {
+        public Factory addMetric(final Metric<?> metric) throws IllegalArgumentException {
+            return (Factory) super.addMetric(metric);
+        }
+
+        @Override
+        public Factory onFlush(final Runnable flush) {
+            return (Factory) super.onFlush(flush);
+        }
+
+        @Override
+        public Factory errorTracker(final ErrorTracker tracker) {
+            return (Factory) super.errorTracker(tracker);
+        }
+
+        @Override
+        public MinestomMetrics create() throws IllegalStateException {
             return new MinestomMetricsImpl(this);
         }
     }

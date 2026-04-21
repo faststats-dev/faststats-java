@@ -9,7 +9,7 @@ import net.md_5.bungee.api.plugin.Plugin;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
 
-final class BungeeMetricsImpl extends SimpleMetrics implements BungeeMetrics {
+final class BungeeMetricsImpl extends SimpleMetrics {
     private final ProxyServer server;
     private final Plugin plugin;
 
@@ -38,7 +38,7 @@ final class BungeeMetricsImpl extends SimpleMetrics implements BungeeMetrics {
         metrics.addProperty("server_type", server.getName());
     }
 
-    static final class Factory extends SimpleMetrics.Factory<BungeeMetrics.Factory> implements BungeeMetrics.Factory {
+    static final class Factory extends SimpleMetrics.Factory {
         public Factory(final BungeeContext context) {
             super(context);
         }

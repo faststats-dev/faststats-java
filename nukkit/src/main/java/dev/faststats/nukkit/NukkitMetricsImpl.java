@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Contract;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-final class NukkitMetricsImpl extends SimpleMetrics implements NukkitMetrics {
+final class NukkitMetricsImpl extends SimpleMetrics {
     private final Server server;
     private final PluginBase plugin;
 
@@ -49,7 +49,7 @@ final class NukkitMetricsImpl extends SimpleMetrics implements NukkitMetrics {
         }
     }
 
-    static final class Factory extends SimpleMetrics.Factory<NukkitMetrics.Factory> implements NukkitMetrics.Factory {
+    static final class Factory extends SimpleMetrics.Factory {
         Factory(final NukkitContext context) {
             super(context);
         }

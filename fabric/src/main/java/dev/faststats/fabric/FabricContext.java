@@ -1,5 +1,6 @@
 package dev.faststats.fabric;
 
+import dev.faststats.Metrics;
 import dev.faststats.SimpleContext;
 import dev.faststats.Token;
 import dev.faststats.config.SimpleConfig;
@@ -22,7 +23,7 @@ public final class FabricContext extends SimpleContext {
     }
 
     @Override
-    public FabricMetrics.Factory metrics() {
+    public Metrics.Factory metrics() {
         return new FabricMetricsImpl.Factory(this);
     }
 }

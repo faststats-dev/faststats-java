@@ -52,7 +52,7 @@ public abstract class SimpleMetrics implements Metrics {
 
     @Contract(mutates = "io")
     @SuppressWarnings("PatternValidation")
-    protected SimpleMetrics(final Factory<?> factory, final Config config) throws IllegalStateException {
+    protected SimpleMetrics(final Factory factory, final Config config) throws IllegalStateException {
         this.config = config;
         this.token = factory.context.getToken();
         this.metrics = config.additionalMetrics() ? Set.copyOf(factory.metrics) : Set.of();
@@ -64,7 +64,7 @@ public abstract class SimpleMetrics implements Metrics {
     }
 
     @Contract(mutates = "io")
-    protected SimpleMetrics(final Factory<?> factory) throws IllegalStateException {
+    protected SimpleMetrics(final Factory factory) throws IllegalStateException {
         this(factory, factory.context.getConfig());
     }
 
@@ -283,7 +283,7 @@ public abstract class SimpleMetrics implements Metrics {
         }
     }
 
-    public abstract static class Factory<F extends Metrics.Factory<F>> implements Metrics.Factory<F> {
+    public abstract static class Factory implements Metrics.Factory {
         private final Set<Metric<?>> metrics = new HashSet<>(0);
         protected final FastStatsContext context;
         private @Nullable ErrorTracker tracker;
@@ -294,24 +294,21 @@ public abstract class SimpleMetrics implements Metrics {
         }
 
         @Override
-        @SuppressWarnings("unchecked")
-        public F addMetric(final Metric<?> metric) throws IllegalArgumentException {
+        public Factory addMetric(final Metric<?> metric) throws IllegalArgumentException {
             if (!metrics.add(metric)) throw new IllegalArgumentException("Metric already added: " + metric.getId());
-            return (F) this;
+            return this;
         }
 
         @Override
-        @SuppressWarnings("unchecked")
-        public F onFlush(final Runnable flush) {
+        public Factory onFlush(final Runnable flush) {
             this.flush = flush;
-            return (F) this;
+            return this;
         }
 
         @Override
-        @SuppressWarnings("unchecked")
-        public F errorTracker(final ErrorTracker tracker) {
+        public Factory errorTracker(final ErrorTracker tracker) {
             this.tracker = tracker;
-            return (F) this;
+            return this;
         }
     }
 }

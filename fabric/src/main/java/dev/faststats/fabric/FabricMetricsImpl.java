@@ -14,7 +14,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-final class FabricMetricsImpl extends SimpleMetrics implements FabricMetrics {
+final class FabricMetricsImpl extends SimpleMetrics {
     private final ModContainer mod;
 
     private @Nullable MinecraftServer server;
@@ -56,7 +56,7 @@ final class FabricMetricsImpl extends SimpleMetrics implements FabricMetrics {
         }
     }
 
-    static final class Factory extends SimpleMetrics.Factory<FabricMetrics.Factory> implements FabricMetrics.Factory {
+    static final class Factory extends SimpleMetrics.Factory {
         public Factory(final FabricContext context) {
             super(context);
         }

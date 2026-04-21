@@ -10,7 +10,7 @@ import dev.faststats.config.SimpleConfig;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
 
-final class HytaleMetricsImpl extends SimpleMetrics implements HytaleMetrics {
+final class HytaleMetricsImpl extends SimpleMetrics {
     @Async.Schedule
     @Contract(mutates = "io")
     private HytaleMetricsImpl(final Factory factory) throws IllegalStateException {
@@ -31,7 +31,7 @@ final class HytaleMetricsImpl extends SimpleMetrics implements HytaleMetrics {
         metrics.addProperty("server_type", "Hytale");
     }
 
-    static final class Factory extends SimpleMetrics.Factory<HytaleMetrics.Factory> implements HytaleMetrics.Factory {
+    static final class Factory extends SimpleMetrics.Factory {
         public Factory(final HytaleContext context) {
             super(context);
         }

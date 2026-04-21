@@ -1,8 +1,11 @@
 package dev.faststats.bukkit;
 
 import com.google.gson.JsonObject;
+import dev.faststats.ErrorTracker;
+import dev.faststats.FastStatsContext;
 import dev.faststats.SimpleMetrics;
 import dev.faststats.config.SimpleConfig;
+import dev.faststats.data.Metric;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
@@ -101,9 +104,28 @@ final class BukkitMetricsImpl extends SimpleMetrics implements BukkitMetrics {
         }
     }
 
-    static final class Factory extends SimpleMetrics.Factory<BukkitMetrics.Factory> implements BukkitMetrics.Factory {
+    public static final class Factory extends SimpleMetrics.Factory implements BukkitMetrics.Factory {
         public Factory(final BukkitContext context) {
             super(context);
+        }
+
+        Factory(final FastStatsContext context) {
+            super(context);
+        }
+
+        @Override
+        public Factory addMetric(final Metric<?> metric) throws IllegalArgumentException {
+            return (Factory) super.addMetric(metric);
+        }
+
+        @Override
+        public Factory onFlush(final Runnable flush) {
+            return (Factory) super.onFlush(flush);
+        }
+
+        @Override
+        public Factory errorTracker(final ErrorTracker tracker) {
+            return (Factory) super.errorTracker(tracker);
         }
 
         @Override

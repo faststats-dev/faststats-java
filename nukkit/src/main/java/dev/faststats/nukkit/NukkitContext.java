@@ -1,6 +1,7 @@
 package dev.faststats.nukkit;
 
 import cn.nukkit.plugin.PluginBase;
+import dev.faststats.Metrics;
 import dev.faststats.SimpleContext;
 import dev.faststats.Token;
 import dev.faststats.config.SimpleConfig;
@@ -21,7 +22,7 @@ public final class NukkitContext extends SimpleContext {
     }
 
     @Override
-    public NukkitMetrics.Factory metrics() {
+    public Metrics.Factory metrics() {
         return new NukkitMetricsImpl.Factory(this);
     }
 }
