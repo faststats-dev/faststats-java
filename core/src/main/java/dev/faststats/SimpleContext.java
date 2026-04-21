@@ -10,7 +10,14 @@ public abstract class SimpleContext implements FastStatsContext {
     private final Config config;
     private final @Token String token;
 
-    // todo: add docs
+    /**
+     * Creates a new context that stores the shared configuration and token for all FastStats services.
+     *
+     * @param config the shared configuration
+     * @param token  the FastStats project token
+     * @throws IllegalArgumentException if the token is invalid
+     * @since 0.23.0
+     */
     protected SimpleContext(final Config config, @Token final String token) throws IllegalArgumentException {
         if (!token.matches(Token.PATTERN)) {
             throw new IllegalArgumentException("Invalid token '" + token + "', must match '" + Token.PATTERN + "'");
