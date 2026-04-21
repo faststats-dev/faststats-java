@@ -51,17 +51,21 @@ final class VelocityMetricsImpl extends SimpleMetrics implements VelocityMetrics
         metrics.addProperty("server_type", server.getVersion().getName());
     }
 
-    static class Factory extends SimpleMetrics.Factory<VelocityMetrics.Factory> {
+    static class Factory extends SimpleMetrics.Factory {
         protected final Logger logger;
         protected final Path dataDirectory;
         protected final ProxyServer server;
+        protected final PluginContainer plugin;
 
-        public Factory(final ProxyServer server, final Logger logger, @DataDirectory final Path dataDirectory) {
-            this(null, server, logger, dataDirectory);
-        }
-
-        public Factory(final FastStatsContext context, final ProxyServer server, final Logger logger, @DataDirectory final Path dataDirectory) {
+        public Factory(
+                final FastStatsContext context,
+                final PluginContainer plugin,
+                final ProxyServer server,
+                final Logger logger,
+                @DataDirectory final Path dataDirectory
+        ) {
             super(context);
+            this.plugin = plugin;
             this.logger = logger;
             this.dataDirectory = dataDirectory;
             this.server = server;
@@ -72,21 +76,13 @@ final class VelocityMetricsImpl extends SimpleMetrics implements VelocityMetrics
          * <p>
          * Metrics submission will start automatically.
          *
-         * @param plugin the plugin instance
          * @return the metrics instance
          * @throws IllegalStateException    if the token is not specified
-         * @throws IllegalArgumentException if the given object is not a valid plugin
-         * @see #token(String)
          * @since 0.23.0
          */
         @Override
-        public Metrics create(final Object plugin) throws IllegalStateException, IllegalArgumentException {
-            final var faststats = dataDirectory.resolveSibling("faststats");
-            final var container = server.getPluginManager().ensurePluginContainer(plugin);
-            final var config = hasContext()
-                    ? getConfigOrThrow()
-                    : SimpleConfig.read(faststats.resolve("config.properties"));
-            return new VelocityMetricsImpl(this, logger, server, config, container);
+        public Metrics create() throws IllegalStateException {
+            return new VelocityMetricsImpl(this, logger, server, context.getConfig(), plugin);
         }
     }
 }

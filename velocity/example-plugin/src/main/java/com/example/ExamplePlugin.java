@@ -5,16 +5,11 @@ import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.Plugin;
-import com.velocitypowered.api.plugin.annotation.DataDirectory;
-import com.velocitypowered.api.proxy.ProxyServer;
 import dev.faststats.ErrorTracker;
 import dev.faststats.Metrics;
 import dev.faststats.data.Metric;
 import dev.faststats.velocity.VelocityContext;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-
-import java.nio.file.Path;
 
 @Plugin(id = "example", name = "Example Plugin", version = "1.0.0",
         url = "https://example.com", authors = {"Your Name"})
@@ -23,8 +18,8 @@ public class ExamplePlugin {
     private @Nullable Metrics metrics = null;
 
     @Inject
-    public ExamplePlugin(final ProxyServer server, final Logger logger, @DataDirectory final Path dataDirectory) {
-        this.context = new VelocityContext(server, logger, dataDirectory, "YOUR_TOKEN_HERE");
+    public ExamplePlugin(final VelocityContext.Builder contextBuilder) {
+        this.context = contextBuilder.build("YOUR_TOKEN_HERE");
     }
 
     @Subscribe
@@ -36,7 +31,7 @@ public class ExamplePlugin {
                 // Error tracking must be enabled in the project settings
                 .errorTracker(ErrorTracker.contextAware())
 
-                .create(this);
+                .create();
     }
 
     @Subscribe

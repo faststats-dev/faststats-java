@@ -41,7 +41,7 @@ final class SpongeMetricsImpl extends SimpleMetrics implements SpongeMetrics {
         metrics.addProperty("server_type", Sponge.platform().container(Platform.Component.IMPLEMENTATION).metadata().id());
     }
 
-    static class Factory extends SimpleMetrics.Factory<SpongeMetrics.Factory> {
+    static class Factory extends SimpleMetrics.Factory {
         public Factory(final FastStatsContext context) {
             super(context);
         }
