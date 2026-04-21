@@ -16,7 +16,7 @@ public class ExamplePlugin extends JavaPlugin {
             // Error tracking must be enabled in the project settings
             .errorTracker(ErrorTracker.contextAware())
 
-            .create(this);
+            .create();
 
     public ExamplePlugin(final JavaPluginInit init) {
         super(init);

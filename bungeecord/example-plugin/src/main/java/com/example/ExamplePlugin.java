@@ -24,7 +24,7 @@ public class ExamplePlugin extends Plugin {
             // This is useful for cleaning up cached data
             .onFlush(() -> gameCount.set(0)) // reset game count on flush
 
-            .create(this);
+            .create();
 
     @Override
     public void onDisable() {

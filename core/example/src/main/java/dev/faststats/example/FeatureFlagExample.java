@@ -1,6 +1,7 @@
 package dev.faststats.example;
 
 import dev.faststats.Attributes;
+import dev.faststats.FastStatsContext;
 import dev.faststats.FeatureFlag;
 import dev.faststats.FeatureFlagService;
 
@@ -8,8 +9,7 @@ import java.time.Duration;
 import java.time.Instant;
 
 public final class FeatureFlagExample {
-    public static final FeatureFlagService SERVICE = FeatureFlagService.create(
-            "YOUR_TOKEN_HERE", // token can be found in the settings of your project
+    public static final FeatureFlagService SERVICE = getContext().featureFlags(
             Attributes.create() // Define global attributes
                     .put("version", "1.2.3")
                     .put("java_version", System.getProperty("java.version"))
@@ -59,5 +59,9 @@ public final class FeatureFlagExample {
                 // react to the updated server value
             }
         });
+    }
+
+    private static FastStatsContext getContext() {
+        return null;
     }
 }
