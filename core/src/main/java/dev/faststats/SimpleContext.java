@@ -31,21 +31,21 @@ public abstract class SimpleContext implements FastStatsContext {
 
     @Override
     public final FeatureFlagService featureFlags() {
-        return new SimpleFeatureFlagService(token, null, Duration.ofMinutes(5));
+        return new SimpleFeatureFlagService(config, token, null, Duration.ofMinutes(5));
     }
 
     @Override
     public final FeatureFlagService featureFlags(final Attributes attributes) {
-        return new SimpleFeatureFlagService(token, attributes, Duration.ofMinutes(5));
+        return new SimpleFeatureFlagService(config, token, attributes, Duration.ofMinutes(5));
     }
 
     @Override
     public final FeatureFlagService featureFlags(final Duration ttl) {
-        return new SimpleFeatureFlagService(token, null, ttl);
+        return new SimpleFeatureFlagService(config, token, null, ttl);
     }
 
     @Override
     public final FeatureFlagService featureFlags(@Nullable final Attributes attributes, final Duration ttl) {
-        return new SimpleFeatureFlagService(token, attributes, ttl);
+        return new SimpleFeatureFlagService(config, token, attributes, ttl);
     }
 }

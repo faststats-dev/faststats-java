@@ -41,6 +41,7 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
     private final Map<String, CompletableFuture<?>> fetchesInProgress = new ConcurrentHashMap<>();
 
     SimpleFeatureFlagService(
+            final Config config,
             final @Token String token,
             final @Nullable Attributes attributes,
             final Duration ttl
@@ -49,7 +50,7 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
         this.token = token;
         this.attributes = attributes;
         this.ttl = ttl;
-        this.serverId = UUID.randomUUID(); // todo: DI somehow
+        this.serverId = config.serverId();
     }
 
     private static URI getFlagsServerUrl() {
