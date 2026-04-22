@@ -42,7 +42,7 @@ public interface FastStatsContext {
     Metrics.Factory metrics();
 
     /**
-     * Creates a new feature flag service backed by this context token.
+     * Creates a new feature flag service backed by the context's token.
      *
      * @return the feature flag service
      * @since 0.23.0
@@ -51,7 +51,7 @@ public interface FastStatsContext {
     FeatureFlagService featureFlags();
 
     /**
-     * Creates a new feature flag service backed by this context token and attributes.
+     * Creates a new feature flag service backed by the context's token and attributes.
      *
      * @param attributes the global targeting attributes
      * @return the feature flag service
@@ -61,7 +61,7 @@ public interface FastStatsContext {
     FeatureFlagService featureFlags(final Attributes attributes);
 
     /**
-     * Creates a new feature flag service backed by this context token, and TTL.
+     * Creates a new feature flag service backed by the context's token, and TTL.
      *
      * @param ttl the cache time-to-live for resolved flag values
      * @return the feature flag service
@@ -72,7 +72,7 @@ public interface FastStatsContext {
     FeatureFlagService featureFlags(final Duration ttl);
 
     /**
-     * Creates a new feature flag service backed by this context token, attributes, and TTL.
+     * Creates a new feature flag service backed by the context's token, attributes, and TTL.
      *
      * @param attributes the global targeting attributes
      * @param ttl        the cache time-to-live for resolved flag values
