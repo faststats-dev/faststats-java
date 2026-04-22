@@ -57,7 +57,7 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
         } catch (final URISyntaxException e) {
             logger.error("Failed to parse flags server url: %s", e, property);
         }
-        return URI.create("https://flags.faststats.dev/v1");
+        return URI.create("https://flags.faststats.dev");
     }
 
     @SuppressWarnings("unchecked")
@@ -66,11 +66,11 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
     }
 
     <T> CompletableFuture<T> optIn(final SimpleFeatureFlag<T> flag) {
-        return sendOptRequest(flag, "/opt-in");
+        return sendOptRequest(flag, "/v1/opt-in");
     }
 
     <T> CompletableFuture<T> optOut(final SimpleFeatureFlag<T> flag) {
-        return sendOptRequest(flag, "/opt-out");
+        return sendOptRequest(flag, "/v1/opt-out");
     }
 
     private <T> CompletableFuture<T> sendOptRequest(final SimpleFeatureFlag<T> flag, final String path) {
@@ -112,7 +112,7 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
                 .header("Content-Type", "application/json")
                 .header("Authorization", "Bearer " + token)
                 .timeout(Duration.ofSeconds(3))
-                .uri(url.resolve("/check"))
+                .uri(url.resolve("/v1/check"))
                 .build();
 
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(response -> {
