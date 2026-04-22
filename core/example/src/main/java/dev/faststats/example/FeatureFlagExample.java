@@ -6,7 +6,6 @@ import dev.faststats.FeatureFlag;
 import dev.faststats.FeatureFlagService;
 
 import java.time.Duration;
-import java.time.Instant;
 
 public final class FeatureFlagExample {
     public static final FeatureFlagService SERVICE = getContext().featureFlags(
@@ -44,8 +43,10 @@ public final class FeatureFlagExample {
         });
 
         // Refresh stale values explicitly when your code decides it is needed
-        if (COMPRESSION.getExpiration().filter(Instant.now()::isAfter).isPresent()) {
-            COMPRESSION.fetch();
+        if (COMPRESSION.isExpired()) {
+            COMPRESSION.fetch().thenAccept(string -> {
+                // do stuff with the value
+            });
         }
 
         // Opt-in/out (requires allow_specific_opt_in on server)
