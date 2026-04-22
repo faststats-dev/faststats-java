@@ -74,6 +74,20 @@ public sealed interface FeatureFlag<T> permits SimpleFeatureFlag {
     Optional<Instant> getExpiration();
 
     /**
+     * Returns whether the current cached value is expired.
+     * <p>
+     * A value is expired when no fetch has completed yet or when the
+     * configured TTL has elapsed since the last fetch.
+     *
+     * @return {@code true} if the cached value is absent or stale
+     * @see #getExpiration()
+     * @see #isValid()
+     * @since 0.23.0
+     */
+    @Contract(pure = true)
+    boolean isExpired();
+
+    /**
      * Returns whether the current cached value is still valid.
      * <p>
      * A value is valid when it is cached and its configured TTL has not yet
