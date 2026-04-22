@@ -32,7 +32,6 @@ final class SimpleFeatureFlag<T> implements FeatureFlag<T> {
         } else if (defaultValue instanceof final Boolean bool) {
             this.type = Type.BOOLEAN;
         } else throw new IllegalArgumentException("Unsupported type: " + defaultValue.getClass().getName());
-        service.fetch(this);
     }
 
     @Override
