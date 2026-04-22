@@ -14,7 +14,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,8 +33,6 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
     private final @Nullable Attributes attributes;
     private final Duration ttl;
 
-    private final Map<String, Object> cache = new ConcurrentHashMap<>();
-    private final Map<String, Long> fetchTimes = new ConcurrentHashMap<>();
     private final Map<String, CompletableFuture<?>> fetchesInProgress = new ConcurrentHashMap<>();
 
     SimpleFeatureFlagService(
@@ -60,18 +57,6 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
             logger.error("Failed to parse flags server url: %s", e, property);
         }
         return URI.create("https://flags.faststats.dev/v1");
-    }
-
-    @SuppressWarnings("unchecked")
-    <T> Optional<T> get(final SimpleFeatureFlag<T> flag) {
-        return Optional.ofNullable((T) cache.get(flag.getId()));
-    }
-
-    @SuppressWarnings("unchecked")
-    <T> CompletableFuture<T> whenReady(final SimpleFeatureFlag<T> flag) {
-        final var cached = cache.get(flag.getId());
-        if (cached == null || isExpired(flag)) return fetch(flag);
-        return CompletableFuture.completedFuture((T) cached);
     }
 
     @SuppressWarnings("unchecked")
@@ -110,22 +95,6 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
         });
     }
 
-    Optional<Instant> getExpiration(final SimpleFeatureFlag<?> flag) {
-        final var lastFetch = fetchTimes.get(flag.getId());
-        if (lastFetch == null) return Optional.empty();
-        return Optional.of(Instant.ofEpochMilli(lastFetch).plus(ttl));
-    }
-
-    boolean isValid(final SimpleFeatureFlag<?> flag) {
-        return cache.containsKey(flag.getId()) && !isExpired(flag);
-    }
-
-    boolean isExpired(final SimpleFeatureFlag<?> flag) {
-        final var lastFetch = fetchTimes.get(flag.getId());
-        if (lastFetch == null) return true;
-        return System.currentTimeMillis() - lastFetch > ttl.toMillis();
-    }
-
     private <T> CompletableFuture<T> createFetch(final SimpleFeatureFlag<T> flag) {
         final var requestBody = new JsonObject();
         requestBody.addProperty("serverId", serverId.toString());
@@ -152,8 +121,8 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
                     throw new IllegalStateException("Unexpected response status: %s (%s)".formatted(response.statusCode(), body));
 
                 final var value = getValue(flag, body);
-                cache.put(flag.getId(), value);
-                fetchTimes.put(flag.getId(), System.currentTimeMillis());
+                flag.setLastFetch(System.currentTimeMillis());
+                flag.setValue(value);
                 return value;
             } catch (final JsonParseException e) {
                 throw new IllegalStateException("Unexpected response body: %s (%s)".formatted(response.body(), response.statusCode()), e);
@@ -219,7 +188,5 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
     public void shutdown() {
         fetchesInProgress.values().forEach(fetch -> fetch.cancel(true));
         fetchesInProgress.clear();
-        fetchTimes.clear();
-        cache.clear();
     }
 }

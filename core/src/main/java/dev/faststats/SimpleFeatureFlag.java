@@ -15,6 +15,9 @@ final class SimpleFeatureFlag<T> implements FeatureFlag<T> {
     private final @Nullable Attributes attributes;
     private final Type type;
 
+    private volatile @Nullable T value;
+    private volatile @Nullable Long lastFetch;
+
     SimpleFeatureFlag(
             final String id,
             final T defaultValue,
@@ -54,24 +57,43 @@ final class SimpleFeatureFlag<T> implements FeatureFlag<T> {
         };
     }
 
+    public void setValue(@Nullable final T value) {
+        this.value = value;
+    }
+
+    public void setLastFetch(@Nullable final Long lastFetch) {
+        this.lastFetch = lastFetch;
+    }
+
     @Override
     public Optional<T> getCached() {
-        return service.get(this);
+        return Optional.ofNullable(value);
     }
 
     @Override
     public Optional<Instant> getExpiration() {
-        return service.getExpiration(this);
+        final var lastFetch = this.lastFetch;
+        if (lastFetch == null) return Optional.empty();
+        return Optional.of(Instant.ofEpochMilli(lastFetch).plus(service.getTTL()));
     }
 
     @Override
     public boolean isValid() {
-        return service.isValid(this);
+        return value != null && !isExpired();
+    }
+
+    @Override
+    public boolean isExpired() {
+        final var lastFetch = this.lastFetch;
+        if (lastFetch == null) return true;
+        return System.currentTimeMillis() - lastFetch > service.getTTL().toMillis();
     }
 
     @Override
     public CompletableFuture<T> whenReady() {
-        return service.whenReady(this);
+        final var cached = value;
+        if (cached == null || isExpired()) return fetch();
+        return CompletableFuture.completedFuture(cached);
     }
 
     @Override
