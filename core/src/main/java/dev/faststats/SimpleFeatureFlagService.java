@@ -75,7 +75,7 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
 
     private <T> CompletableFuture<T> sendOptRequest(final SimpleFeatureFlag<T> flag, final String path) {
         final var requestBody = new JsonObject();
-        requestBody.addProperty("serverId", serverId.toString());
+        requestBody.addProperty("identifier", serverId.toString());
         requestBody.addProperty("flag", flag.getId());
 
         final var request = HttpRequest.newBuilder()
@@ -99,7 +99,7 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
 
     private <T> CompletableFuture<T> createFetch(final SimpleFeatureFlag<T> flag) {
         final var requestBody = new JsonObject();
-        requestBody.addProperty("serverId", serverId.toString());
+        requestBody.addProperty("identifier", serverId.toString());
         requestBody.addProperty("key", flag.getId());
 
         final var attributes = new JsonObject();
