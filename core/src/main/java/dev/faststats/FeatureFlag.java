@@ -128,6 +128,7 @@ public sealed interface FeatureFlag<T> permits SimpleFeatureFlag {
      * logged when debug logging is enabled.
      *
      * @return a future completing with the latest server value
+     * @see #whenReady()
      * @since 0.23.0
      */
     @Contract(mutates = "this")
