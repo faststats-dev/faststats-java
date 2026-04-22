@@ -21,7 +21,7 @@ subprojects {
         plugin("java-library")
     }
 
-    val noPublish = project.name.startsWith("example") || project.name != "config"
+    val noPublish = project.name.startsWith("example") || project.name == "config"
     if (noPublish) {
         apply { plugin("com.gradleup.shadow") }
     } else {
