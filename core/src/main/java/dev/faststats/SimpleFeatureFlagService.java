@@ -88,9 +88,9 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
 
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenCompose(response -> {
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                logger.error("Feature flag opt request failed with status %s", null, response.statusCode());
+                logger.error("Feature flag opt request failed with status %s (%s)", null, response.statusCode(), response.body());
                 return CompletableFuture.failedFuture(new IllegalStateException(
-                        "Feature flag opt request failed with status " + response.statusCode()
+                        "Feature flag opt request failed with status %s (%s)".formatted(response.statusCode(), response.body())
                 ));
             }
             return fetch(flag);
@@ -115,6 +115,7 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
                 .uri(url.resolve("/v1/check"))
                 .build();
 
+        logger.info("Fetching %s: %s", request.uri(), requestBody.toString());
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenApply(response -> {
             try {
                 final var body = JsonParser.parseString(response.body());
@@ -125,6 +126,7 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
                 }
 
                 final var value = getValue(flag, body);
+                logger.info("Fetch returned body: %s (value: %s)", body, value);
                 flag.setLastFetch(System.currentTimeMillis());
                 flag.setValue(value);
                 return value;
