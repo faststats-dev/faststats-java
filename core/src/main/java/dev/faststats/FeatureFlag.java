@@ -144,6 +144,7 @@ public sealed interface FeatureFlag<T> permits SimpleFeatureFlag {
      * cache has been reset and the follow-up fetch finishes.
      *
      * @return a future completing with the updated flag value
+     * @see #fetch()
      * @since 0.23.0
      */
     @Contract(mutates = "this")
@@ -159,6 +160,7 @@ public sealed interface FeatureFlag<T> permits SimpleFeatureFlag {
      * cache has been reset and the follow-up fetch finishes.
      *
      * @return a future completing with the updated flag value
+     * @see #fetch()
      * @since 0.23.0
      */
     @Contract(mutates = "this")
