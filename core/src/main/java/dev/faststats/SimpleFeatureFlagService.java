@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
+import dev.faststats.internal.Logger;
 import dev.faststats.internal.LoggerFactory;
 import org.jspecify.annotations.Nullable;
 
@@ -21,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 final class SimpleFeatureFlagService implements FeatureFlagService {
+    private static final Logger logger = LoggerFactory.factory().getLogger(SimpleFeatureFlagService.class);
     private static final URI url = getFlagsServerUrl();
 
     private final HttpClient httpClient = HttpClient.newBuilder()
@@ -53,7 +55,6 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
         if (property != null) try {
             return new URI(property);
         } catch (final URISyntaxException e) {
-            final var logger = LoggerFactory.factory().getLogger(SimpleFeatureFlagService.class);
             logger.error("Failed to parse flags server url: %s", e, property);
         }
         return URI.create("https://flags.faststats.dev/v1");
@@ -87,6 +88,7 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
 
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenCompose(response -> {
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                logger.error("Feature flag opt request failed with status %s", null, response.statusCode());
                 return CompletableFuture.failedFuture(new IllegalStateException(
                         "Feature flag opt request failed with status " + response.statusCode()
                 ));
@@ -117,14 +119,17 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
             try {
                 final var body = JsonParser.parseString(response.body());
 
-                if (response.statusCode() < 200 || response.statusCode() >= 300)
+                if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                    logger.warn("Unexpected response status: %s (%s)", response.statusCode(), body);
                     throw new IllegalStateException("Unexpected response status: %s (%s)".formatted(response.statusCode(), body));
+                }
 
                 final var value = getValue(flag, body);
                 flag.setLastFetch(System.currentTimeMillis());
                 flag.setValue(value);
                 return value;
             } catch (final JsonParseException e) {
+                logger.error("Unexpected response body: %s (%s)", e, response.body(), response.statusCode());
                 throw new IllegalStateException("Unexpected response body: %s (%s)".formatted(response.body(), response.statusCode()), e);
             }
         }).whenComplete((ignored, throwable) -> fetchesInProgress.remove(flag.getId()));
@@ -132,10 +137,14 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
 
     @SuppressWarnings("unchecked")
     private static <T> T getValue(final SimpleFeatureFlag<T> flag, final JsonElement body) {
-        if (!(body instanceof final JsonObject object))
+        if (!(body instanceof final JsonObject object)) {
+            logger.warn("Unexpected JSON response: %s", body);
             throw new IllegalStateException("Unexpected JSON response: " + body);
-        if (!(object.get("value") instanceof final JsonPrimitive primitive))
+        }
+        if (!(object.get("value") instanceof final JsonPrimitive primitive)) {
+            logger.warn("Missing or invalid 'value' in JSON response: %s", body);
             throw new IllegalStateException("Missing or invalid 'value' in JSON response: " + body);
+        }
 
         return (T) switch (flag.getType()) {
             case STRING -> primitive.getAsString();
