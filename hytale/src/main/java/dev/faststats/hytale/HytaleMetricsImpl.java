@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Contract;
 final class HytaleMetricsImpl extends SimpleMetrics {
     @Async.Schedule
     @Contract(mutates = "io")
-    private HytaleMetricsImpl(final Factory factory) throws IllegalStateException {
+    HytaleMetricsImpl(final Factory factory) throws IllegalStateException {
         super(factory);
 
         startSubmitting();
@@ -21,7 +21,7 @@ final class HytaleMetricsImpl extends SimpleMetrics {
 
     @Override
     protected boolean preSubmissionStart() {
-        return ((SimpleConfig) getConfig()).preSubmissionStart();
+        return ((SimpleConfig) context.getConfig()).preSubmissionStart();
     }
 
     @Override
@@ -29,16 +29,5 @@ final class HytaleMetricsImpl extends SimpleMetrics {
         metrics.addProperty("server_version", HytaleServer.get().getServerName());
         metrics.addProperty("player_count", Universe.get().getPlayerCount());
         metrics.addProperty("server_type", "Hytale");
-    }
-
-    static final class Factory extends SimpleMetrics.Factory {
-        public Factory(final HytaleContext context) {
-            super(context);
-        }
-
-        @Override
-        public Metrics create() throws IllegalStateException {
-            return new HytaleMetricsImpl(this);
-        }
     }
 }

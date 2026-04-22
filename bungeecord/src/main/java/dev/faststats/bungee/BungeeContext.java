@@ -2,6 +2,7 @@ package dev.faststats.bungee;
 
 import dev.faststats.Metrics;
 import dev.faststats.SimpleContext;
+import dev.faststats.SimpleMetrics;
 import dev.faststats.Token;
 import dev.faststats.config.SimpleConfig;
 import net.md_5.bungee.api.plugin.Plugin;
@@ -21,6 +22,11 @@ public final class BungeeContext extends SimpleContext {
 
     @Override
     public Metrics.Factory metrics() {
-        return new BungeeMetricsImpl.Factory(this);
+        return new SimpleMetrics.Factory(this) {
+            @Override
+            public Metrics create() throws IllegalStateException {
+                return new BungeeMetricsImpl(this, plugin);
+            }
+        };
     }
 }

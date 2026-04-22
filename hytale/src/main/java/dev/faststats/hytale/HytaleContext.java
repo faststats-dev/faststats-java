@@ -3,6 +3,7 @@ package dev.faststats.hytale;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import dev.faststats.Metrics;
 import dev.faststats.SimpleContext;
+import dev.faststats.SimpleMetrics;
 import dev.faststats.Token;
 import dev.faststats.config.SimpleConfig;
 
@@ -18,6 +19,12 @@ public final class HytaleContext extends SimpleContext {
 
     @Override
     public Metrics.Factory metrics() {
-        return new HytaleMetricsImpl.Factory(this);
+        return new SimpleMetrics.Factory(this) {
+            @Override
+            public Metrics create() throws IllegalStateException {
+                // todo: add client support?
+                return new HytaleMetricsImpl(this);
+            }
+        };
     }
 }

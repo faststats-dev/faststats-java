@@ -1,7 +1,6 @@
 package dev.faststats.bungee;
 
 import com.google.gson.JsonObject;
-import dev.faststats.Metrics;
 import dev.faststats.SimpleMetrics;
 import dev.faststats.config.SimpleConfig;
 import net.md_5.bungee.api.ProxyServer;
@@ -15,7 +14,7 @@ final class BungeeMetricsImpl extends SimpleMetrics {
 
     @Async.Schedule
     @Contract(mutates = "io")
-    private BungeeMetricsImpl(final Factory factory, final Plugin plugin) throws IllegalStateException {
+    BungeeMetricsImpl(final Factory factory, final Plugin plugin) throws IllegalStateException {
         super(factory);
 
         this.server = plugin.getProxy();
@@ -26,7 +25,7 @@ final class BungeeMetricsImpl extends SimpleMetrics {
 
     @Override
     protected boolean preSubmissionStart() {
-        return ((SimpleConfig) getConfig()).preSubmissionStart();
+        return ((SimpleConfig) context.getConfig()).preSubmissionStart();
     }
 
     @Override
@@ -36,16 +35,5 @@ final class BungeeMetricsImpl extends SimpleMetrics {
         metrics.addProperty("plugin_version", plugin.getDescription().getVersion());
         metrics.addProperty("proxy_version", server.getVersion());
         metrics.addProperty("server_type", server.getName());
-    }
-
-    static final class Factory extends SimpleMetrics.Factory {
-        public Factory(final BungeeContext context) {
-            super(context);
-        }
-
-        @Override
-        public Metrics create() throws IllegalStateException {
-            return new BungeeMetricsImpl(this, ((BungeeContext) context).plugin);
-        }
     }
 }

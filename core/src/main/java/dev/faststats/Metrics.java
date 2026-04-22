@@ -13,16 +13,6 @@ import java.util.Optional;
  */
 public interface Metrics {
     /**
-     * Get the token used to authenticate with the metrics server and identify the project.
-     *
-     * @return the metrics token
-     * @since 0.23.0
-     */
-    @Token
-    @Contract(pure = true)
-    String getToken();
-
-    /**
      * Get the error tracker for this metrics instance.
      *
      * @return the error tracker
@@ -30,15 +20,6 @@ public interface Metrics {
      */
     @Contract(pure = true)
     Optional<ErrorTracker> getErrorTracker();
-
-    /**
-     * Get the metrics configuration.
-     *
-     * @return the metrics configuration
-     * @since 0.23.0
-     */
-    @Contract(pure = true)
-    Config getConfig();
 
     /**
      * Performs additional post-startup tasks.

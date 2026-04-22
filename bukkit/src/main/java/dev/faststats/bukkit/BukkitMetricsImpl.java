@@ -2,7 +2,6 @@ package dev.faststats.bukkit;
 
 import com.google.gson.JsonObject;
 import dev.faststats.ErrorTracker;
-import dev.faststats.FastStatsContext;
 import dev.faststats.SimpleMetrics;
 import dev.faststats.config.SimpleConfig;
 import dev.faststats.data.Metric;
@@ -66,7 +65,7 @@ final class BukkitMetricsImpl extends SimpleMetrics implements BukkitMetrics {
 
     @Override
     protected boolean preSubmissionStart() {
-        return ((SimpleConfig) getConfig()).preSubmissionStart();
+        return ((SimpleConfig) context.getConfig()).preSubmissionStart();
     }
 
     @Override
@@ -105,11 +104,7 @@ final class BukkitMetricsImpl extends SimpleMetrics implements BukkitMetrics {
     }
 
     public static final class Factory extends SimpleMetrics.Factory implements BukkitMetrics.Factory {
-        public Factory(final BukkitContext context) {
-            super(context);
-        }
-
-        Factory(final FastStatsContext context) {
+        Factory(final BukkitContext context) {
             super(context);
         }
 

@@ -43,36 +43,24 @@ public abstract class SimpleMetrics implements Metrics {
             .build();
     private @Nullable ScheduledExecutorService executor = null;
 
-    private final URI url;
-    private final Set<Metric<?>> metrics;
-    private final Config config;
-    private final @Token String token;
     private final @Nullable ErrorTracker tracker;
     private final @Nullable Runnable flush;
+    private final Set<Metric<?>> metrics;
+    private final URI url;
 
-    @Contract(mutates = "io")
-    @SuppressWarnings("PatternValidation")
-    protected SimpleMetrics(final Factory factory, final Config config) throws IllegalStateException {
-        this.config = config;
-        this.token = factory.context.getToken();
-        this.metrics = config.additionalMetrics() ? Set.copyOf(factory.metrics) : Set.of();
-        final var debug = config.debug() || Boolean.getBoolean("faststats.debug");
-        this.logger.setFilter(level -> debug || level.equals(Level.CONFIG));
-        this.tracker = config.errorTracking() ? factory.tracker : null;
-        this.flush = factory.flush;
-        this.url = getMetricsServerUrl();
-    }
+    protected final FastStatsContext context;
 
     @Contract(mutates = "io")
     protected SimpleMetrics(final Factory factory) throws IllegalStateException {
-        this(factory, factory.context.getConfig());
+        this(factory, getMetricsServerUrl());
     }
 
-    private URI getMetricsServerUrl() {
+    private static URI getMetricsServerUrl() {
         final var property = System.getProperty("faststats.metrics-server");
         if (property != null) try {
             return new URI(property);
         } catch (final URISyntaxException e) {
+            final var logger = LoggerFactory.factory().getLogger(SimpleMetrics.class);
             logger.error("Failed to parse metrics server url: %s", e, property);
         }
         return URI.create("https://metrics.faststats.dev/v1/collect");
@@ -80,20 +68,15 @@ public abstract class SimpleMetrics implements Metrics {
 
     @VisibleForTesting
     protected SimpleMetrics(
-            final Config config,
-            final Set<Metric<?>> metrics,
-            @Token final String token,
-            @Nullable final ErrorTracker tracker,
-            @Nullable final Runnable flush,
-            final URI url,
-            final boolean debug
+            final Factory factory,
+            final URI url
     ) {
-        this.metrics = config.additionalMetrics() ? Set.copyOf(metrics) : Set.of();
-        this.config = config;
-        this.logger.setLevel(debug ? Level.ALL : Level.OFF);
-        this.token = token;
-        this.tracker = tracker;
-        this.flush = flush;
+        this.context = factory.context;
+        this.metrics = context.getConfig().additionalMetrics() ? Set.copyOf(factory.metrics) : Set.of();
+        final var debug = context.getConfig().debug() || Boolean.getBoolean("faststats.debug");
+        this.logger.setFilter(level -> debug || level.equals(Level.CONFIG));
+        this.tracker = context.getConfig().errorTracking() ? factory.tracker : null;
+        this.flush = factory.flush;
         this.url = url;
     }
 
@@ -118,7 +101,7 @@ public abstract class SimpleMetrics implements Metrics {
 
         final var enabled = Boolean.parseBoolean(System.getProperty("faststats.enabled", "true"));
 
-        if (!config.enabled() || !enabled) {
+        if (!context.getConfig().enabled() || !enabled) {
             logger.warn("Metrics disabled, not starting submission");
             return;
         }
@@ -142,6 +125,7 @@ public abstract class SimpleMetrics implements Metrics {
         return executor != null && !executor.isShutdown();
     }
 
+    @VisibleForTesting
     public boolean submit() {
         try {
             return submitNow();
@@ -170,7 +154,7 @@ public abstract class SimpleMetrics implements Metrics {
                     .POST(HttpRequest.BodyPublishers.ofByteArray(compressed))
                     .header("Content-Encoding", "gzip")
                     .header("Content-Type", "application/octet-stream")
-                    .header("Authorization", "Bearer " + token)
+                    .header("Authorization", "Bearer " + context.getToken())
                     .header("User-Agent", "FastStats Metrics " + Constants.SDK_NAME + "/" + Constants.SDK_VERSION)
                     .timeout(Duration.ofSeconds(3))
                     .uri(url)
@@ -241,7 +225,7 @@ public abstract class SimpleMetrics implements Metrics {
             }
         });
 
-        data.addProperty("identifier", config.serverId().toString());
+        data.addProperty("identifier", context.getConfig().serverId().toString());
         data.add("data", metrics);
 
         getErrorTracker().map(SimpleErrorTracker.class::cast)
@@ -252,18 +236,8 @@ public abstract class SimpleMetrics implements Metrics {
     }
 
     @Override
-    public @Token String getToken() {
-        return token;
-    }
-
-    @Override
     public Optional<ErrorTracker> getErrorTracker() {
         return Optional.ofNullable(tracker);
-    }
-
-    @Override
-    public dev.faststats.Config getConfig() {
-        return config;
     }
 
     @Contract(mutates = "param1")

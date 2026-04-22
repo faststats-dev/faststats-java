@@ -14,7 +14,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @NullMarked
 public final class AnonymizationTest {
     private static MockMetrics createMetrics(final ErrorTracker tracker) {
-        return new MockMetrics(UUID.randomUUID(), "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", tracker, false);
+        final var context = new MockContext(UUID.randomUUID(), "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", false);
+        return (MockMetrics) context.metrics().errorTracker(tracker).create();
     }
 
     private static JsonObject getError(final MockMetrics metrics) {

@@ -21,7 +21,7 @@ final class MinestomMetricsImpl extends SimpleMetrics implements MinestomMetrics
 
     @Override
     protected boolean preSubmissionStart() {
-        return ((SimpleConfig) getConfig()).preSubmissionStart();
+        return ((SimpleConfig) context.getConfig()).preSubmissionStart();
     }
 
     @Override
@@ -46,8 +46,8 @@ final class MinestomMetricsImpl extends SimpleMetrics implements MinestomMetrics
         });
     }
 
-    static final class Factory extends SimpleMetrics.Factory implements MinestomMetrics.Factory {
-        public Factory(final MinestomContext context) {
+    public static final class Factory extends SimpleMetrics.Factory implements MinestomMetrics.Factory {
+        Factory(final MinestomContext context) {
             super(context);
         }
 

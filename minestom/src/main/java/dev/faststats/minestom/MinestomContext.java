@@ -12,7 +12,7 @@ import java.nio.file.Path;
  * @since 0.23.0
  */
 public final class MinestomContext extends SimpleContext {
-    public MinestomContext(@Token final String token) {
+    MinestomContext(@Token final String token) {
         super(SimpleConfig.read(Path.of("faststats", "config.properties")), token);
     }
 

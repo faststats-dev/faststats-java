@@ -3,7 +3,6 @@ package dev.faststats.nukkit;
 import cn.nukkit.Server;
 import cn.nukkit.plugin.PluginBase;
 import com.google.gson.JsonObject;
-import dev.faststats.Metrics;
 import dev.faststats.SimpleMetrics;
 import dev.faststats.config.SimpleConfig;
 import org.jetbrains.annotations.Async;
@@ -18,7 +17,7 @@ final class NukkitMetricsImpl extends SimpleMetrics {
 
     @Async.Schedule
     @Contract(mutates = "io")
-    private NukkitMetricsImpl(final Factory factory, final PluginBase plugin) throws IllegalStateException {
+    public NukkitMetricsImpl(final Factory factory, final PluginBase plugin) throws IllegalStateException {
         super(factory);
 
         this.server = plugin.getServer();
@@ -29,7 +28,7 @@ final class NukkitMetricsImpl extends SimpleMetrics {
 
     @Override
     protected boolean preSubmissionStart() {
-        return ((SimpleConfig) getConfig()).preSubmissionStart();
+        return ((SimpleConfig) context.getConfig()).preSubmissionStart();
     }
 
     @Override
@@ -46,17 +45,6 @@ final class NukkitMetricsImpl extends SimpleMetrics {
             return Optional.of(supplier.get());
         } catch (final NoSuchMethodError | Exception e) {
             return Optional.empty();
-        }
-    }
-
-    static final class Factory extends SimpleMetrics.Factory {
-        Factory(final NukkitContext context) {
-            super(context);
-        }
-
-        @Override
-        public Metrics create() throws IllegalStateException {
-            return new NukkitMetricsImpl(this, ((NukkitContext) context).plugin);
         }
     }
 }

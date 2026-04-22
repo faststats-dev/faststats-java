@@ -3,6 +3,7 @@ package dev.faststats.nukkit;
 import cn.nukkit.plugin.PluginBase;
 import dev.faststats.Metrics;
 import dev.faststats.SimpleContext;
+import dev.faststats.SimpleMetrics;
 import dev.faststats.Token;
 import dev.faststats.config.SimpleConfig;
 
@@ -23,6 +24,11 @@ public final class NukkitContext extends SimpleContext {
 
     @Override
     public Metrics.Factory metrics() {
-        return new NukkitMetricsImpl.Factory(this);
+        return new SimpleMetrics.Factory(this) {
+            @Override
+            public Metrics create() throws IllegalStateException {
+                return new NukkitMetricsImpl(this, ((NukkitContext) context).plugin);
+            }
+        };
     }
 }

@@ -2,6 +2,7 @@ package dev.faststats.fabric;
 
 import dev.faststats.Metrics;
 import dev.faststats.SimpleContext;
+import dev.faststats.SimpleMetrics;
 import dev.faststats.Token;
 import dev.faststats.config.SimpleConfig;
 import net.fabricmc.loader.api.FabricLoader;
@@ -24,6 +25,15 @@ public final class FabricContext extends SimpleContext {
 
     @Override
     public Metrics.Factory metrics() {
-        return new FabricMetricsImpl.Factory(this);
+        return new SimpleMetrics.Factory(this) {
+            @Override
+            public Metrics create() throws IllegalStateException {
+                final var mod = ((FabricContext) context).mod;
+                return switch (FabricLoader.getInstance().getEnvironmentType()) {
+                    case CLIENT -> new FabricMetricsClientImpl(this, mod);
+                    case SERVER -> new FabricMetricsServerImpl(this, mod);
+                };
+            }
+        };
     }
 }

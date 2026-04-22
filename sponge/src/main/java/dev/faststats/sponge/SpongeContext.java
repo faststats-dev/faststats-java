@@ -1,9 +1,10 @@
 package dev.faststats.sponge;
 
 import com.google.inject.Inject;
+import dev.faststats.Metrics;
 import dev.faststats.SimpleContext;
+import dev.faststats.SimpleMetrics;
 import dev.faststats.Token;
-import org.apache.logging.log4j.Logger;
 import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.plugin.PluginContainer;
 
@@ -16,22 +17,24 @@ import java.nio.file.Path;
  */
 public final class SpongeContext extends SimpleContext {
     final PluginContainer plugin;
-    final Logger logger;
 
-    public SpongeContext(
+    private SpongeContext(
             final PluginContainer plugin,
-            final Logger logger,
             @ConfigDir(sharedRoot = true) final Path dataDirectory,
             @Token final String token
     ) {
         super(SpongeConfig.read(plugin, dataDirectory.resolve("faststats").resolve("config.properties")), token);
         this.plugin = plugin;
-        this.logger = logger;
     }
 
     @Override
-    public SpongeMetrics.Factory metrics() {
-        return new SpongeMetrics.Factory(this);
+    public Metrics.Factory metrics() {
+        return new SimpleMetrics.Factory(this) {
+            @Override
+            public Metrics create() throws IllegalStateException {
+                return new SpongeMetricsImpl(this);
+            }
+        };
     }
 
     /**
@@ -41,14 +44,12 @@ public final class SpongeContext extends SimpleContext {
      */
     public static final class Builder {
         private final PluginContainer plugin;
-        private final Logger logger;
         private final Path dataDirectory;
 
         /**
          * Creates a new Sponge context builder.
          *
          * @param plugin        the plugin container
-         * @param logger        the plugin logger
          * @param dataDirectory the shared Sponge config directory
          * @apiNote This instance can be injected into your plugin.
          * @since 0.23.0
@@ -56,11 +57,9 @@ public final class SpongeContext extends SimpleContext {
         @Inject
         public Builder(
                 final PluginContainer plugin,
-                final Logger logger,
                 @ConfigDir(sharedRoot = true) final Path dataDirectory
         ) {
             this.plugin = plugin;
-            this.logger = logger;
             this.dataDirectory = dataDirectory;
         }
 
@@ -73,7 +72,7 @@ public final class SpongeContext extends SimpleContext {
          * @since 0.23.0
          */
         public SpongeContext build(@Token final String token) throws IllegalArgumentException {
-            return new SpongeContext(plugin, logger, dataDirectory, token);
+            return new SpongeContext(plugin, dataDirectory, token);
         }
     }
 }
