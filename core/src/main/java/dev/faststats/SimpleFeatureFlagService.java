@@ -5,7 +5,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
-import dev.faststats.internal.Logger;
 import dev.faststats.internal.LoggerFactory;
 import org.jspecify.annotations.Nullable;
 
@@ -23,7 +22,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 final class SimpleFeatureFlagService implements FeatureFlagService {
-    private static final Logger logger = LoggerFactory.factory().getLogger(SimpleFeatureFlagService.class);
     private static final URI url = getFlagsServerUrl();
 
     private final HttpClient httpClient = HttpClient.newBuilder()
@@ -58,6 +56,7 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
         if (property != null) try {
             return new URI(property);
         } catch (final URISyntaxException e) {
+            final var logger = LoggerFactory.factory().getLogger(SimpleFeatureFlagService.class);
             logger.error("Failed to parse flags server url: %s", e, property);
         }
         return URI.create("https://flags.faststats.dev/v1");
