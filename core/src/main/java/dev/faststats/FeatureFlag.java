@@ -118,6 +118,14 @@ public sealed interface FeatureFlag<T> permits SimpleFeatureFlag {
      * Force a fresh fetch of the flag value from the server.
      * <p>
      * Unlike {@link #whenReady()}, this always performs a server request.
+     * <p>
+     * The returned future may complete exceptionally if the request fails, the
+     * server returns a non-successful response, or the response body cannot be
+     * parsed as the requested flag type. The most common non-successful response
+     * is an unknown flag identifier.
+     * <p>
+     * Failed fetches do not update the cached value. Failure details are only
+     * logged when debug logging is enabled.
      *
      * @return a future completing with the latest server value
      * @since 0.23.0
