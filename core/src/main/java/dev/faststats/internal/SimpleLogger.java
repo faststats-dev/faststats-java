@@ -33,6 +33,7 @@ class SimpleLogger implements Logger {
         if (throwable != null) {
             if (!logger.isLoggable(Level.SEVERE)) return;
             final var logRecord = new LogRecord(Level.SEVERE, message.formatted(args));
+            logRecord.setLoggerName(logger.getName());
             logRecord.setThrown(throwable);
             logger.log(logRecord);
         } else log(Level.SEVERE, message, args);
