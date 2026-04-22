@@ -49,11 +49,11 @@ public sealed interface FeatureFlag<T> permits SimpleFeatureFlag {
     /**
      * Get the current cached flag value.
      * <p>
-     * This method is non-blocking and never performs a network request. It
-     * returns {@link Optional#empty()} until a value has been fetched and
+     * It returns {@link Optional#empty() empty} until a value has been fetched and
      * stored locally.
      *
      * @return the cached value, if present
+     * @see #fetch()
      * @since 0.23.0
      */
     @Contract(pure = true)
