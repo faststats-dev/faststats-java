@@ -87,13 +87,11 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
                 .build();
 
         return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenCompose(response -> {
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                logger.error("Feature flag opt request failed with status %s (%s)", null, response.statusCode(), response.body());
-                return CompletableFuture.failedFuture(new IllegalStateException(
-                        "Feature flag opt request failed with status %s (%s)".formatted(response.statusCode(), response.body())
-                ));
-            }
-            return fetch(flag);
+            if (response.statusCode() >= 200 && response.statusCode() < 300) return fetch(flag);
+            logger.error("Feature flag opt request failed with status %s (%s)", null, response.statusCode(), response.body());
+            return CompletableFuture.failedFuture(new IllegalStateException(
+                    "Feature flag opt request failed with status %s (%s)".formatted(response.statusCode(), response.body())
+            ));
         });
     }
 
