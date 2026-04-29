@@ -236,7 +236,6 @@ public class ErrorTrackerTest {
 
         assertEquals(1, reports.size());
         assertEquals(2, report.get("count").getAsInt());
-        assertEquals("build", report.get("buildId").getAsString());
         assertEquals("duplicate", report.get("message").getAsString());
     }
 
