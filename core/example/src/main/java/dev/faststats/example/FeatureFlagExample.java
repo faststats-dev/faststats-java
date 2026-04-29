@@ -48,18 +48,6 @@ public final class FeatureFlagExample {
                 // do stuff with the value
             });
         }
-
-        // Opt-in/out (requires allow_specific_opt_in on server)
-        NEW_COMMANDS.optIn().thenAccept(updatedValue -> {
-            if (updatedValue) {
-                // react to the updated server value
-            }
-        });
-        NEW_COMMANDS.optOut().thenAccept(updatedValue -> {
-            if (!updatedValue) {
-                // react to the updated server value
-            }
-        });
     }
 
     private static FastStatsContext getContext() {

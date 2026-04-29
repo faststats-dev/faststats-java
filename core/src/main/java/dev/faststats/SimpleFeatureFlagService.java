@@ -65,36 +65,6 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
         return (CompletableFuture<T>) fetchesInProgress.computeIfAbsent(flag.getId(), ignored -> createFetch(flag));
     }
 
-    <T> CompletableFuture<T> optIn(final SimpleFeatureFlag<T> flag) {
-        return sendOptRequest(flag, "/v1/opt-in");
-    }
-
-    <T> CompletableFuture<T> optOut(final SimpleFeatureFlag<T> flag) {
-        return sendOptRequest(flag, "/v1/opt-out");
-    }
-
-    private <T> CompletableFuture<T> sendOptRequest(final SimpleFeatureFlag<T> flag, final String path) {
-        final var requestBody = new JsonObject();
-        requestBody.addProperty("identifier", serverId.toString());
-        requestBody.addProperty("flag", flag.getId());
-
-        final var request = HttpRequest.newBuilder()
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody.toString()))
-                .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + token)
-                .timeout(Duration.ofSeconds(3))
-                .uri(url.resolve(path))
-                .build();
-
-        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString()).thenCompose(response -> {
-            if (response.statusCode() >= 200 && response.statusCode() < 300) return fetch(flag);
-            logger.error("Feature flag opt request failed with status %s (%s)", null, response.statusCode(), response.body());
-            return CompletableFuture.failedFuture(new IllegalStateException(
-                    "Feature flag opt request failed with status %s (%s)".formatted(response.statusCode(), response.body())
-            ));
-        });
-    }
-
     private <T> CompletableFuture<T> createFetch(final SimpleFeatureFlag<T> flag) {
         final var requestBody = new JsonObject();
         requestBody.addProperty("identifier", serverId.toString());

@@ -135,39 +135,6 @@ public sealed interface FeatureFlag<T> permits SimpleFeatureFlag {
     CompletableFuture<T> fetch();
 
     /**
-     * Request that the server opt in to this flag, then invalidate the local
-     * value and fetch the current server value again.
-     * <p>
-     * This sends a {@code POST /v1/flag/opt-in} request. The server determines
-     * the resulting flag value based on its own conditions.
-     * <p>
-     * The returned future completes with the updated value after the local
-     * cache has been reset and the follow-up fetch finishes.
-     *
-     * @return a future completing with the updated flag value
-     * @see #fetch()
-     * @since 0.23.0
-     */
-    @Contract(mutates = "this")
-    CompletableFuture<T> optIn();
-
-    /**
-     * Request that the server opt out of this flag, then invalidate the local
-     * value and fetch the current server value again.
-     * <p>
-     * This sends a {@code POST /v1/flag/opt-out} request.
-     * <p>
-     * The returned future completes with the updated value after the local
-     * cache has been reset and the follow-up fetch finishes.
-     *
-     * @return a future completing with the updated flag value
-     * @see #fetch()
-     * @since 0.23.0
-     */
-    @Contract(mutates = "this")
-    CompletableFuture<T> optOut();
-
-    /**
      * Get the default value for this flag.
      *
      * @return the default value
