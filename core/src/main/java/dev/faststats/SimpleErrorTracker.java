@@ -126,7 +126,7 @@ final class SimpleErrorTracker implements ErrorTracker {
     }
 
     private JsonObject fillEntry(final JsonObject entry, final String hash, final int count) {
-        entry.addProperty("hash", hash);
+        entry.addProperty("group_hash", hash);
         entry.addProperty("buildId", Constants.BUILD_ID);
         if (count > 1) entry.addProperty("count", count);
         return entry;
