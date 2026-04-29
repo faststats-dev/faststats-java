@@ -229,7 +229,7 @@ public abstract class SimpleMetrics implements Metrics {
         data.add("data", metrics);
 
         getErrorTracker().map(SimpleErrorTracker.class::cast)
-                .map(tracker -> tracker.getData(Constants.BUILD_ID))
+                .map(SimpleErrorTracker::getData)
                 .filter(errors -> !errors.isEmpty())
                 .ifPresent(errors -> data.add("errors", errors));
         return data;

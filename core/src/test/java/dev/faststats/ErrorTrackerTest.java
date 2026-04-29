@@ -130,7 +130,7 @@ public class ErrorTrackerTest {
 
         tracker.trackError("connect jdbc:postgresql://localhost:5432/secret@db from 192.168.1.20");
 
-        final var report = tracker.getData("build").get(0).getAsJsonObject();
+        final var report = tracker.getData().get(0).getAsJsonObject();
         final var message = report.get("message").getAsString();
         final var header = report.getAsJsonArray("stack").get(0).getAsString();
 
@@ -145,7 +145,7 @@ public class ErrorTrackerTest {
 
         tracker.trackError("failed with session=abc123 from 10.0.0.1");
 
-        final var message = tracker.getData("build")
+        final var message = tracker.getData()
                 .get(0)
                 .getAsJsonObject()
                 .get("message")
@@ -160,7 +160,7 @@ public class ErrorTrackerTest {
 
         tracker.trackError(new RuntimeException((String) null));
 
-        final var report = tracker.getData("build").get(0).getAsJsonObject();
+        final var report = tracker.getData().get(0).getAsJsonObject();
         assertFalse(report.has("message"));
         assertEquals("java.lang.RuntimeException", report.getAsJsonArray("stack").get(0).getAsString());
     }
@@ -186,7 +186,7 @@ public class ErrorTrackerTest {
 
         tracker.trackError(top, false);
 
-        final var report = tracker.getData("build").get(0).getAsJsonObject();
+        final var report = tracker.getData().get(0).getAsJsonObject();
         final var stack = report.getAsJsonArray("stack");
 
         assertEquals(RuntimeException.class.getName(), report.get("error").getAsString());
@@ -209,7 +209,7 @@ public class ErrorTrackerTest {
 
         tracker.trackError(first);
 
-        final var stack = tracker.getData("build").get(0).getAsJsonObject().getAsJsonArray("stack");
+        final var stack = tracker.getData().get(0).getAsJsonObject().getAsJsonArray("stack");
         var firstCauseCount = 0;
         var secondCauseCount = 0;
         for (final var element : stack) {
@@ -231,7 +231,7 @@ public class ErrorTrackerTest {
         tracker.trackError(first);
         tracker.trackError(second);
 
-        final var reports = tracker.getData("build");
+        final var reports = tracker.getData();
         final var report = reports.get(0).getAsJsonObject();
 
         assertEquals(1, reports.size());
@@ -249,11 +249,11 @@ public class ErrorTrackerTest {
         tracker.clear();
 
         assertFalse(tracker.needsFlushing());
-        assertEquals(0, tracker.getData("build").size());
+        assertEquals(0, tracker.getData().size());
 
         tracker.trackError(createStableError());
 
-        final var report = tracker.getData("build").get(0).getAsJsonObject();
+        final var report = tracker.getData().get(0).getAsJsonObject();
         assertEquals("duplicate", report.get("message").getAsString());
         assertNull(report.get("count"));
     }
@@ -265,7 +265,7 @@ public class ErrorTrackerTest {
 
         tracker.trackError(new RuntimeException("wrapper", new IllegalArgumentException("ignore me")));
 
-        assertEquals(0, tracker.getData("build").size());
+        assertEquals(0, tracker.getData().size());
         assertFalse(tracker.needsFlushing());
     }
 
@@ -284,7 +284,7 @@ public class ErrorTrackerTest {
 
         tracker.trackError(error);
 
-        final var stack = tracker.getData("build").get(0).getAsJsonObject().getAsJsonArray("stack");
+        final var stack = tracker.getData().get(0).getAsJsonObject().getAsJsonArray("stack");
         assertEquals("java.lang.StackOverflowError: recursive", stack.get(0).getAsString());
         assertEquals("  at example.Recursive.a(Recursive.java:1)", stack.get(1).getAsString());
         assertEquals("  at example.Recursive.b(Recursive.java:2)", stack.get(2).getAsString());
@@ -299,7 +299,7 @@ public class ErrorTrackerTest {
 
         tracker.trackError(message);
 
-        final var report = tracker.getData("build").get(0).getAsJsonObject();
+        final var report = tracker.getData().get(0).getAsJsonObject();
         final var serialized = report.get("message").getAsString();
         assertEquals(503, serialized.length());
         assertTrue(serialized.endsWith("..."));
@@ -325,7 +325,7 @@ public class ErrorTrackerTest {
             thread.join(1000);
 
             assertTrue(handled.await(1, TimeUnit.SECONDS));
-            final var report = tracker.getData("build").get(0).getAsJsonObject();
+            final var report = tracker.getData().get(0).getAsJsonObject();
             assertEquals("async failure", report.get("message").getAsString());
             assertFalse(report.get("handled").getAsBoolean());
         } finally {
