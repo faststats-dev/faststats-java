@@ -1,87 +1,30 @@
 package dev.faststats.fabric;
 
 import com.google.gson.JsonObject;
-import dev.faststats.core.Metrics;
-import dev.faststats.core.SimpleMetrics;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.loader.api.FabricLoader;
+import dev.faststats.SimpleMetrics;
+import dev.faststats.config.SimpleConfig;
 import net.fabricmc.loader.api.ModContainer;
-import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.nio.file.Path;
-import java.util.Optional;
-import java.util.function.Supplier;
-
-final class FabricMetricsImpl extends SimpleMetrics implements FabricMetrics {
-    private final Logger logger = LoggerFactory.getLogger("FastStats");
-    private final ModContainer mod;
-
-    private @Nullable MinecraftServer server;
+abstract class FabricMetricsImpl extends SimpleMetrics {
+    protected final ModContainer mod;
 
     @Async.Schedule
     @Contract(mutates = "io")
-    private FabricMetricsImpl(final Factory factory, final ModContainer mod, final Path config) throws IllegalStateException {
-        super(factory, config);
+    FabricMetricsImpl(final Factory factory, final ModContainer mod) throws IllegalStateException {
+        super(factory);
 
         this.mod = mod;
-
-        ServerLifecycleEvents.SERVER_STARTED.register(server -> {
-            this.server = server;
-            startSubmitting();
-        });
-        ServerLifecycleEvents.SERVER_STOPPING.register(server -> shutdown());
     }
 
     @Override
-    protected void appendDefaultData(final JsonObject metrics) {
-        assert server != null : "Server not initialized";
-        metrics.addProperty("minecraft_version", server.getServerVersion());
-        metrics.addProperty("online_mode", server.usesAuthentication());
-        metrics.addProperty("player_count", server.getPlayerCount());
+    protected boolean preSubmissionStart() {
+        return ((SimpleConfig) context.getConfig()).preSubmissionStart();
+    }
+
+    protected void appendFabricData(final JsonObject metrics, final String serverType) {
         metrics.addProperty("plugin_version", mod.getMetadata().getVersion().getFriendlyString());
-        metrics.addProperty("server_type", "Fabric");
-    }
-
-    @Override
-    protected void printError(final String message, @Nullable final Throwable throwable) {
-        logger.error(message, throwable);
-    }
-
-    @Override
-    protected void printInfo(final String message) {
-        logger.info(message);
-    }
-
-    @Override
-    protected void printWarning(final String message) {
-        logger.warn(message);
-    }
-
-    private <T> Optional<T> tryOrEmpty(final Supplier<T> supplier) {
-        try {
-            return Optional.of(supplier.get());
-        } catch (final NoSuchMethodError | Exception e) {
-            return Optional.empty();
-        }
-    }
-
-    static final class Factory extends SimpleMetrics.Factory<String, FabricMetrics.Factory> implements FabricMetrics.Factory {
-        @Override
-        public Metrics create(final String modId) throws IllegalStateException, IllegalArgumentException {
-            final var fabric = FabricLoader.getInstance();
-            final var mod = fabric.getModContainer(modId).orElseThrow(() -> {
-                return new IllegalArgumentException("Mod not found: " + modId);
-            });
-
-            final var dataFolder = fabric.getConfigDir().resolve("faststats");
-            final var config = dataFolder.resolve("config.properties");
-
-            return new FabricMetricsImpl(this, mod, config);
-        }
+        metrics.addProperty("server_type", serverType);
     }
 }

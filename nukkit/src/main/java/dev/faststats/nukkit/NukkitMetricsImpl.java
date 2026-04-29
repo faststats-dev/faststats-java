@@ -2,33 +2,33 @@ package dev.faststats.nukkit;
 
 import cn.nukkit.Server;
 import cn.nukkit.plugin.PluginBase;
-import cn.nukkit.utils.Logger;
 import com.google.gson.JsonObject;
-import dev.faststats.core.Metrics;
-import dev.faststats.core.SimpleMetrics;
+import dev.faststats.SimpleMetrics;
+import dev.faststats.config.SimpleConfig;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.Nullable;
 
-import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-final class NukkitMetricsImpl extends SimpleMetrics implements NukkitMetrics {
-    private final Logger logger;
+final class NukkitMetricsImpl extends SimpleMetrics {
     private final Server server;
     private final PluginBase plugin;
 
     @Async.Schedule
     @Contract(mutates = "io")
-    private NukkitMetricsImpl(final Factory factory, final PluginBase plugin, final Path config) throws IllegalStateException {
-        super(factory, config);
+    public NukkitMetricsImpl(final Factory factory, final PluginBase plugin) throws IllegalStateException {
+        super(factory);
 
-        this.logger = plugin.getLogger();
         this.server = plugin.getServer();
         this.plugin = plugin;
 
         startSubmitting();
+    }
+
+    @Override
+    protected boolean preSubmissionStart() {
+        return ((SimpleConfig) context.getConfig()).preSubmissionStart();
     }
 
     @Override
@@ -40,35 +40,11 @@ final class NukkitMetricsImpl extends SimpleMetrics implements NukkitMetrics {
         metrics.addProperty("server_type", server.getName());
     }
 
-    @Override
-    protected void printError(final String message, @Nullable final Throwable throwable) {
-        logger.error(message, throwable);
-    }
-
-    @Override
-    protected void printInfo(final String message) {
-        logger.info(message);
-    }
-
-    @Override
-    protected void printWarning(final String message) {
-        logger.warning(message);
-    }
-
     private <T> Optional<T> tryOrEmpty(final Supplier<T> supplier) {
         try {
             return Optional.of(supplier.get());
         } catch (final NoSuchMethodError | Exception e) {
             return Optional.empty();
-        }
-    }
-
-    static final class Factory extends SimpleMetrics.Factory<PluginBase, NukkitMetrics.Factory> implements NukkitMetrics.Factory {
-        @Override
-        public Metrics create(final PluginBase plugin) throws IllegalStateException {
-            final var dataFolder = Path.of(plugin.getServer().getPluginPath(), "faststats");
-            final var config = dataFolder.resolve("config.properties");
-            return new NukkitMetricsImpl(this, plugin, config);
         }
     }
 }

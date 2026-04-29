@@ -1,16 +1,16 @@
 package dev.faststats.bukkit;
 
 import com.google.gson.JsonObject;
-import dev.faststats.core.SimpleMetrics;
+import dev.faststats.ErrorTracker;
+import dev.faststats.SimpleMetrics;
+import dev.faststats.config.SimpleConfig;
+import dev.faststats.data.Metric;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.Nullable;
 
-import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.logging.Level;
 
 final class BukkitMetricsImpl extends SimpleMetrics implements BukkitMetrics {
     private final Plugin plugin;
@@ -22,8 +22,8 @@ final class BukkitMetricsImpl extends SimpleMetrics implements BukkitMetrics {
     @Async.Schedule
     @Contract(mutates = "io")
     @SuppressWarnings({"deprecation", "Convert2MethodRef"})
-    private BukkitMetricsImpl(final Factory factory, final Plugin plugin, final Path config) throws IllegalStateException {
-        super(factory, config);
+    private BukkitMetricsImpl(final Factory factory, final Plugin plugin) throws IllegalStateException {
+        super(factory);
 
         this.plugin = plugin;
         final var server = plugin.getServer();
@@ -64,6 +64,11 @@ final class BukkitMetricsImpl extends SimpleMetrics implements BukkitMetrics {
     }
 
     @Override
+    protected boolean preSubmissionStart() {
+        return ((SimpleConfig) context.getConfig()).preSubmissionStart();
+    }
+
+    @Override
     protected void appendDefaultData(final JsonObject metrics) {
         metrics.addProperty("minecraft_version", minecraftVersion);
         metrics.addProperty("online_mode", checkOnlineMode());
@@ -76,24 +81,9 @@ final class BukkitMetricsImpl extends SimpleMetrics implements BukkitMetrics {
         try {
             return plugin.getServer().getOnlinePlayers().size();
         } catch (final Throwable t) {
-            error("Failed to get player count", t);
+            logger.error("Failed to get player count", t);
             return 0;
         }
-    }
-
-    @Override
-    protected void printError(final String message, @Nullable final Throwable throwable) {
-        plugin.getLogger().log(Level.SEVERE, message, throwable);
-    }
-
-    @Override
-    protected void printInfo(final String message) {
-        plugin.getLogger().info(message);
-    }
-
-    @Override
-    protected void printWarning(final String message) {
-        plugin.getLogger().warning(message);
     }
 
     @Override
@@ -113,20 +103,29 @@ final class BukkitMetricsImpl extends SimpleMetrics implements BukkitMetrics {
         }
     }
 
-    static final class Factory extends SimpleMetrics.Factory<Plugin, BukkitMetrics.Factory> implements BukkitMetrics.Factory {
-        @Override
-        public BukkitMetrics create(final Plugin plugin) throws IllegalStateException {
-            final var dataFolder = getPluginsFolder(plugin).resolve("faststats");
-            final var config = dataFolder.resolve("config.properties");
-            return new BukkitMetricsImpl(this, plugin, config);
+    public static final class Factory extends SimpleMetrics.Factory implements BukkitMetrics.Factory {
+        Factory(final BukkitContext context) {
+            super(context);
         }
 
-        private static Path getPluginsFolder(final Plugin plugin) {
-            try {
-                return plugin.getServer().getPluginsFolder().toPath();
-            } catch (final NoSuchMethodError e) {
-                return plugin.getDataFolder().getParentFile().toPath();
-            }
+        @Override
+        public Factory addMetric(final Metric<?> metric) throws IllegalArgumentException {
+            return (Factory) super.addMetric(metric);
+        }
+
+        @Override
+        public Factory onFlush(final Runnable flush) {
+            return (Factory) super.onFlush(flush);
+        }
+
+        @Override
+        public Factory errorTracker(final ErrorTracker tracker) {
+            return (Factory) super.errorTracker(tracker);
+        }
+
+        @Override
+        public BukkitMetrics create() throws IllegalStateException {
+            return new BukkitMetricsImpl(this, ((BukkitContext) context).plugin);
         }
     }
 }

@@ -17,14 +17,16 @@ val javaVersionsOverride = mapOf(
 val defaultJavaVersion = 17
 
 subprojects {
-    apply(plugin = "java")
-    apply(plugin = "java-library")
+    apply {
+        plugin("java")
+        plugin("java-library")
+    }
 
-    val example = project.name.startsWith("example")
-    if (example) {
-        apply(plugin = "com.gradleup.shadow")
+    val noPublish = project.name.startsWith("example") || project.name == "config"
+    if (noPublish) {
+        apply { plugin("com.gradleup.shadow") }
     } else {
-        apply(plugin = "maven-publish")
+        apply { plugin("maven-publish") }
     }
 
     group = "dev.faststats.metrics"
@@ -94,7 +96,7 @@ subprojects {
     }
 
     afterEvaluate {
-        if (example) return@afterEvaluate
+        if (noPublish) return@afterEvaluate
         extensions.configure<PublishingExtension> {
             publications.create<MavenPublication>("maven") {
                 artifactId = project.name

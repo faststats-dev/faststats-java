@@ -5,7 +5,8 @@ module dev.faststats.minestom {
     exports dev.faststats.minestom;
 
     requires com.google.gson;
-    requires dev.faststats.core;
+    requires dev.faststats.config;
+    requires dev.faststats;
     requires net.minestom.server;
     requires org.slf4j;
 

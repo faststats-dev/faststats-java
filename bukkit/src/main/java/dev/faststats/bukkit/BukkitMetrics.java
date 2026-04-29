@@ -1,9 +1,10 @@
 package dev.faststats.bukkit;
 
-import dev.faststats.core.Metrics;
+import dev.faststats.ErrorTracker;
+import dev.faststats.Metrics;
+import dev.faststats.data.Metric;
 import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.Plugin;
-import org.jetbrains.annotations.Contract;
 
 /**
  * Bukkit metrics implementation.
@@ -11,17 +12,6 @@ import org.jetbrains.annotations.Contract;
  * @since 0.1.0
  */
 public sealed interface BukkitMetrics extends Metrics permits BukkitMetricsImpl {
-    /**
-     * Creates a new metrics factory for Bukkit.
-     *
-     * @return the metrics factory
-     * @since 0.1.0
-     */
-    @Contract(pure = true)
-    static Factory factory() {
-        return new BukkitMetricsImpl.Factory();
-    }
-
     /**
      * Registers additional exception handlers on Paper-based implementations.
      *
@@ -32,8 +22,17 @@ public sealed interface BukkitMetrics extends Metrics permits BukkitMetricsImpl 
     @Override
     void ready() throws IllegalPluginAccessException;
 
-    interface Factory extends Metrics.Factory<Plugin, Factory> {
+    sealed interface Factory extends Metrics.Factory permits BukkitMetricsImpl.Factory {
         @Override
-        BukkitMetrics create(Plugin object) throws IllegalStateException;
+        Factory addMetric(Metric<?> metric) throws IllegalArgumentException;
+
+        @Override
+        Factory onFlush(Runnable flush);
+
+        @Override
+        Factory errorTracker(ErrorTracker tracker);
+
+        @Override
+        BukkitMetrics create() throws IllegalStateException;
     }
 }

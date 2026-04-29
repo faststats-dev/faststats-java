@@ -1,28 +1,27 @@
 package dev.faststats.minestom;
 
 import com.google.gson.JsonObject;
-import dev.faststats.core.ErrorTracker;
-import dev.faststats.core.Metrics;
-import dev.faststats.core.SimpleMetrics;
+import dev.faststats.ErrorTracker;
+import dev.faststats.SimpleMetrics;
+import dev.faststats.config.SimpleConfig;
+import dev.faststats.data.Metric;
 import net.minestom.server.Auth;
 import net.minestom.server.MinecraftServer;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.nio.file.Path;
 
 final class MinestomMetricsImpl extends SimpleMetrics implements MinestomMetrics {
-    private final Logger logger = LoggerFactory.getLogger(MinestomMetricsImpl.class);
-
     @Async.Schedule
     @Contract(mutates = "io")
-    private MinestomMetricsImpl(final Factory factory, final Path config) throws IllegalStateException {
-        super(factory, config);
+    private MinestomMetricsImpl(final Factory factory) throws IllegalStateException {
+        super(factory);
 
         startSubmitting();
+    }
+
+    @Override
+    protected boolean preSubmissionStart() {
+        return ((SimpleConfig) context.getConfig()).preSubmissionStart();
     }
 
     @Override
@@ -31,21 +30,6 @@ final class MinestomMetricsImpl extends SimpleMetrics implements MinestomMetrics
         metrics.addProperty("online_mode", !(MinecraftServer.process().auth() instanceof Auth.Offline));
         metrics.addProperty("player_count", MinecraftServer.getConnectionManager().getOnlinePlayerCount());
         metrics.addProperty("server_type", "Minestom");
-    }
-
-    @Override
-    protected void printError(final String message, @Nullable final Throwable throwable) {
-        logger.error(message, throwable);
-    }
-
-    @Override
-    protected void printInfo(final String message) {
-        logger.info(message);
-    }
-
-    @Override
-    protected void printWarning(final String message) {
-        logger.warn(message);
     }
 
     @Override
@@ -62,11 +46,29 @@ final class MinestomMetricsImpl extends SimpleMetrics implements MinestomMetrics
         });
     }
 
-    static final class Factory extends SimpleMetrics.Factory<MinecraftServer, MinestomMetrics.Factory> implements MinestomMetrics.Factory {
+    public static final class Factory extends SimpleMetrics.Factory implements MinestomMetrics.Factory {
+        Factory(final MinestomContext context) {
+            super(context);
+        }
+
         @Override
-        public Metrics create(final MinecraftServer server) throws IllegalStateException {
-            final var config = Path.of("faststats", "config.properties");
-            return new MinestomMetricsImpl(this, config);
+        public Factory addMetric(final Metric<?> metric) throws IllegalArgumentException {
+            return (Factory) super.addMetric(metric);
+        }
+
+        @Override
+        public Factory onFlush(final Runnable flush) {
+            return (Factory) super.onFlush(flush);
+        }
+
+        @Override
+        public Factory errorTracker(final ErrorTracker tracker) {
+            return (Factory) super.errorTracker(tracker);
+        }
+
+        @Override
+        public MinestomMetrics create() throws IllegalStateException {
+            return new MinestomMetricsImpl(this);
         }
     }
 }

@@ -1,33 +1,31 @@
 package dev.faststats.bungee;
 
 import com.google.gson.JsonObject;
-import dev.faststats.core.Metrics;
-import dev.faststats.core.SimpleMetrics;
+import dev.faststats.SimpleMetrics;
+import dev.faststats.config.SimpleConfig;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.plugin.Plugin;
 import org.jetbrains.annotations.Async;
 import org.jetbrains.annotations.Contract;
-import org.jspecify.annotations.Nullable;
 
-import java.nio.file.Path;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-final class BungeeMetricsImpl extends SimpleMetrics implements BungeeMetrics {
-    private final Logger logger;
+final class BungeeMetricsImpl extends SimpleMetrics {
     private final ProxyServer server;
     private final Plugin plugin;
 
     @Async.Schedule
     @Contract(mutates = "io")
-    private BungeeMetricsImpl(final Factory factory, final Plugin plugin, final Path config) throws IllegalStateException {
-        super(factory, config);
+    BungeeMetricsImpl(final Factory factory, final Plugin plugin) throws IllegalStateException {
+        super(factory);
 
-        this.logger = plugin.getLogger();
         this.server = plugin.getProxy();
         this.plugin = plugin;
 
         startSubmitting();
+    }
+
+    @Override
+    protected boolean preSubmissionStart() {
+        return ((SimpleConfig) context.getConfig()).preSubmissionStart();
     }
 
     @Override
@@ -37,29 +35,5 @@ final class BungeeMetricsImpl extends SimpleMetrics implements BungeeMetrics {
         metrics.addProperty("plugin_version", plugin.getDescription().getVersion());
         metrics.addProperty("proxy_version", server.getVersion());
         metrics.addProperty("server_type", server.getName());
-    }
-
-    @Override
-    protected void printError(final String message, @Nullable final Throwable throwable) {
-        logger.log(Level.SEVERE, message, throwable);
-    }
-
-    @Override
-    protected void printInfo(final String message) {
-        logger.info(message);
-    }
-
-    @Override
-    protected void printWarning(final String message) {
-        logger.warning(message);
-    }
-
-    static final class Factory extends SimpleMetrics.Factory<Plugin, BungeeMetrics.Factory> implements BungeeMetrics.Factory {
-        @Override
-        public Metrics create(final Plugin plugin) throws IllegalStateException {
-            final var dataFolder = plugin.getProxy().getPluginsFolder().toPath().resolve("faststats");
-            final var config = dataFolder.resolve("config.properties");
-            return new BungeeMetricsImpl(this, plugin, config);
-        }
     }
 }
