@@ -2,6 +2,7 @@ package dev.faststats;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import dev.faststats.internal.Constants;
 import org.jspecify.annotations.Nullable;
 
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -108,29 +109,27 @@ final class SimpleErrorTracker implements ErrorTracker {
         return this;
     }
 
-    public JsonArray getData(final String buildId) {
+    public JsonArray getData() {
         final var report = new JsonArray(reports.size());
 
         reports.forEach((hash, object) -> {
-            final var copy = object.deepCopy();
-            copy.addProperty("hash", hash);
-            copy.addProperty("buildId", buildId);
             final var count = collected.getOrDefault(hash, 1);
-            if (count > 1) copy.addProperty("count", count);
-            report.add(copy);
+            report.add(fillEntry(object.deepCopy(), hash, count));
         });
 
         collected.forEach((hash, count) -> {
             if (count <= 0 || reports.containsKey(hash)) return;
-            final var entry = new JsonObject();
-
-            entry.addProperty("hash", hash);
-            if (count > 1) entry.addProperty("count", count);
-
-            report.add(entry);
+            report.add(fillEntry(new JsonObject(), hash, count));
         });
 
         return report;
+    }
+
+    private JsonObject fillEntry(final JsonObject entry, final String hash, final int count) {
+        entry.addProperty("hash", hash);
+        entry.addProperty("buildId", Constants.BUILD_ID);
+        if (count > 1) entry.addProperty("count", count);
+        return entry;
     }
 
     public void clear() {
