@@ -5,6 +5,6 @@ dependencies {
 
     testImplementation("com.google.code.gson:gson:2.14.0")
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation(platform("org.junit:junit-bom:6.1.0-M1"))
+    testImplementation(platform("org.junit:junit-bom:6.1.0-RC1"))
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
