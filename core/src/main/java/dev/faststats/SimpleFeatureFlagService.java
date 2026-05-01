@@ -9,6 +9,7 @@ import dev.faststats.internal.Logger;
 import dev.faststats.internal.LoggerFactory;
 import org.jspecify.annotations.Nullable;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -118,8 +119,30 @@ final class SimpleFeatureFlagService implements FeatureFlagService {
 
         return (T) switch (flag.getType()) {
             case STRING -> primitive.getAsString();
-            case NUMBER -> primitive.getAsNumber();
-            case BOOLEAN -> primitive.getAsBoolean();
+            case NUMBER -> getAsNumber(primitive);
+            case BOOLEAN -> getAsBoolean(primitive);
+        };
+    }
+
+    private static Number getAsNumber(final JsonPrimitive primitive) {
+        try {
+            if (primitive.isNumber()) return primitive.getAsNumber();
+            return new BigDecimal(primitive.getAsString());
+        } catch (final NumberFormatException e) {
+            logger.warn("Expected a number but got: %s", primitive.getAsString());
+            throw new IllegalStateException("Expected a number but got: " + primitive.getAsString(), e);
+        }
+    }
+
+    private static boolean getAsBoolean(final JsonPrimitive primitive) {
+        if (primitive.isBoolean()) return primitive.getAsBoolean();
+        return switch (primitive.getAsString()) {
+            case "true" -> true;
+            case "false" -> false;
+            default -> {
+                logger.warn("Expected a boolean but got: %s", primitive.getAsString());
+                throw new IllegalStateException("Expected a boolean but got: " + primitive.getAsString());
+            }
         };
     }
 
