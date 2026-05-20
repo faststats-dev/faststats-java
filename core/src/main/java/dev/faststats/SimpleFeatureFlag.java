@@ -102,6 +102,16 @@ final class SimpleFeatureFlag<T> implements FeatureFlag<T> {
     }
 
     @Override
+    public CompletableFuture<T> optIn() {
+        return service.optIn(this);
+    }
+
+    @Override
+    public CompletableFuture<T> optOut() {
+        return service.optOut(this);
+    }
+
+    @Override
     public T getDefaultValue() {
         return defaultValue;
     }
