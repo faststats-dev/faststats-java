@@ -6,6 +6,7 @@ import dev.faststats.SimpleMetrics;
 import dev.faststats.Token;
 import dev.faststats.config.SimpleConfig;
 import net.md_5.bungee.api.plugin.Plugin;
+import org.jetbrains.annotations.Contract;
 
 /**
  * BungeeCord FastStats context.
@@ -21,6 +22,7 @@ public final class BungeeContext extends SimpleContext {
     }
 
     @Override
+    @Contract(value = " -> new", pure = true)
     public Metrics.Factory metrics() {
         return new SimpleMetrics.Factory(this) {
             @Override

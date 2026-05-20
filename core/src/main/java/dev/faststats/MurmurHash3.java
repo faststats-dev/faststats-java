@@ -1,6 +1,5 @@
 package dev.faststats;
 
-import com.google.gson.JsonObject;
 import org.jetbrains.annotations.Contract;
 
 import java.nio.charset.StandardCharsets;

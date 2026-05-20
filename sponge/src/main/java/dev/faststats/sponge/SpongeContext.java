@@ -5,6 +5,7 @@ import dev.faststats.Metrics;
 import dev.faststats.SimpleContext;
 import dev.faststats.SimpleMetrics;
 import dev.faststats.Token;
+import org.jetbrains.annotations.Contract;
 import org.spongepowered.api.config.ConfigDir;
 import org.spongepowered.plugin.PluginContainer;
 
@@ -28,6 +29,7 @@ public final class SpongeContext extends SimpleContext {
     }
 
     @Override
+    @Contract(value = " -> new", pure = true)
     public Metrics.Factory metrics() {
         return new SimpleMetrics.Factory(this) {
             @Override

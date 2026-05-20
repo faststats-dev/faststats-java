@@ -6,6 +6,7 @@ import dev.faststats.SimpleContext;
 import dev.faststats.SimpleMetrics;
 import dev.faststats.Token;
 import dev.faststats.config.SimpleConfig;
+import org.jetbrains.annotations.Contract;
 
 /**
  * Hytale FastStats context.
@@ -18,6 +19,7 @@ public final class HytaleContext extends SimpleContext {
     }
 
     @Override
+    @Contract(value = " -> new", pure = true)
     public Metrics.Factory metrics() {
         return new SimpleMetrics.Factory(this) {
             @Override

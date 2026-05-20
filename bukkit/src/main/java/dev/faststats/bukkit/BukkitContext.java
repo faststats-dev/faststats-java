@@ -4,6 +4,7 @@ import dev.faststats.SimpleContext;
 import dev.faststats.Token;
 import dev.faststats.config.SimpleConfig;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.Contract;
 
 import java.nio.file.Path;
 
@@ -14,13 +15,14 @@ import java.nio.file.Path;
  */
 public final class BukkitContext extends SimpleContext {
     final Plugin plugin;
-    
+
     public BukkitContext(final Plugin plugin, @Token final String token) {
         super(SimpleConfig.read(getConfigPath(plugin)), token);
         this.plugin = plugin;
     }
 
     @Override
+    @Contract(value = " -> new", pure = true)
     public BukkitMetrics.Factory metrics() {
         return new BukkitMetricsImpl.Factory(this);
     }

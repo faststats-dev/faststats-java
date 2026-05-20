@@ -9,6 +9,7 @@ import dev.faststats.SimpleContext;
 import dev.faststats.SimpleMetrics;
 import dev.faststats.Token;
 import dev.faststats.config.SimpleConfig;
+import org.jetbrains.annotations.Contract;
 
 import java.nio.file.Path;
 
@@ -33,6 +34,7 @@ public final class VelocityContext extends SimpleContext {
     }
 
     @Override
+    @Contract(value = " -> new", pure = true)
     public Metrics.Factory metrics() {
         return new SimpleMetrics.Factory(this) {
             @Override

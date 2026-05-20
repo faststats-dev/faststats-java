@@ -3,6 +3,7 @@ package dev.faststats.minestom;
 import dev.faststats.SimpleContext;
 import dev.faststats.Token;
 import dev.faststats.config.SimpleConfig;
+import org.jetbrains.annotations.Contract;
 
 import java.nio.file.Path;
 
@@ -17,6 +18,7 @@ public final class MinestomContext extends SimpleContext {
     }
 
     @Override
+    @Contract(value = " -> new", pure = true)
     public MinestomMetrics.Factory metrics() {
         return new MinestomMetricsImpl.Factory(this);
     }

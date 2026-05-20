@@ -3,8 +3,6 @@ package dev.faststats.hytale;
 import com.google.gson.JsonObject;
 import com.hypixel.hytale.server.core.HytaleServer;
 import com.hypixel.hytale.server.core.universe.Universe;
-import dev.faststats.Config;
-import dev.faststats.Metrics;
 import dev.faststats.SimpleMetrics;
 import dev.faststats.config.SimpleConfig;
 import org.jetbrains.annotations.Async;
