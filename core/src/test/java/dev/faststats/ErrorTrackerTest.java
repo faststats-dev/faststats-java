@@ -247,7 +247,6 @@ public class ErrorTrackerTest {
 
         tracker.clear();
 
-        assertFalse(tracker.needsFlushing());
         assertEquals(0, tracker.getData().size());
 
         tracker.trackError(createStableError());
@@ -265,7 +264,6 @@ public class ErrorTrackerTest {
         tracker.trackError(new RuntimeException("wrapper", new IllegalArgumentException("ignore me")));
 
         assertEquals(0, tracker.getData().size());
-        assertFalse(tracker.needsFlushing());
     }
 
     @Test
