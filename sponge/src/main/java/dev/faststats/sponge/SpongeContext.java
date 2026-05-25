@@ -30,7 +30,7 @@ public final class SpongeContext extends SimpleContext {
 
     @Override
     @Contract(value = " -> new", pure = true)
-    public Metrics.Factory metrics() {
+    public Metrics.Factory metricsFactory() {
         return new SimpleMetrics.Factory(this) {
             @Override
             public Metrics create() throws IllegalStateException {

@@ -21,7 +21,7 @@ public class ExamplePlugin {
     @Listener
     public void onServerStart(final StartedEngineEvent<Server> event) {
         final var context = contextBuilder.build("YOUR_TOKEN_HERE");
-        this.metrics = context.metrics()
+        this.metrics = context.metricsFactory()
                 // Custom metrics require a corresponding data source in your project settings
                 .addMetric(Metric.number("example_metric", () -> 42))
 

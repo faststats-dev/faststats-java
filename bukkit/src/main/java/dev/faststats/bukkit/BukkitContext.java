@@ -23,7 +23,7 @@ public final class BukkitContext extends SimpleContext {
 
     @Override
     @Contract(value = " -> new", pure = true)
-    public BukkitMetrics.Factory metrics() {
+    public BukkitMetrics.Factory metricsFactory() {
         return new BukkitMetricsImpl.Factory(this);
     }
 

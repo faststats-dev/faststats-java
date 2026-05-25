@@ -12,7 +12,7 @@ public final class ExamplePlugin extends JavaPlugin {
     private final AtomicInteger gameCount = new AtomicInteger();
     private final BukkitContext context = new BukkitContext(this, "YOUR_TOKEN_HERE");
 
-    private final BukkitMetrics metrics = context.metrics()
+    private final BukkitMetrics metrics = context.metricsFactory()
             // Custom metrics require a corresponding data source in your project settings
             .addMetric(Metric.number("game_count", gameCount::get))
             .addMetric(Metric.string("server_version", () -> "1.0.0"))

@@ -11,7 +11,7 @@ public final class MockContext extends SimpleContext {
     }
 
     @Override
-    public Metrics.Factory metrics() {
+    public Metrics.Factory metricsFactory() {
         return new SimpleMetrics.Factory(this) {
             @Override
             public Metrics create() throws IllegalStateException {

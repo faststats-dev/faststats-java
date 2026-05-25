@@ -10,7 +10,7 @@ public class MetricsTest {
     @Test
     public void testCreateData() {
         final var context = new MockContext(UUID.randomUUID(), "24f9fc423ed06194065a42d00995c600", true);
-        final var metrics = (SimpleMetrics) context.metrics().create();
+        final var metrics = (SimpleMetrics) context.metricsFactory().create();
         assumeTrue(metrics.submit(), "For this test to run, the server must be running");
     }
 }

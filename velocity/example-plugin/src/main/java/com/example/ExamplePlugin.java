@@ -24,7 +24,7 @@ public class ExamplePlugin {
 
     @Subscribe
     public void onProxyInitialize(final ProxyInitializeEvent event) {
-        this.metrics = context.metrics()
+        this.metrics = context.metricsFactory()
                 // Custom metrics require a corresponding data source in your project settings
                 .addMetric(Metric.number("example_metric", () -> 42))
 

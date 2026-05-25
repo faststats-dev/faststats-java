@@ -19,7 +19,7 @@ public final class MinestomContext extends SimpleContext {
 
     @Override
     @Contract(value = " -> new", pure = true)
-    public MinestomMetrics.Factory metrics() {
+    public MinestomMetrics.Factory metricsFactory() {
         return new MinestomMetricsImpl.Factory(this);
     }
 }

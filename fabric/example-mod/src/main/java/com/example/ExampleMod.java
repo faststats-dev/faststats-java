@@ -11,7 +11,7 @@ public class ExampleMod implements ModInitializer {
             "example-mod", // your mod id as defined in fabric.mod.json
             "YOUR_TOKEN_HERE"
     );
-    private final Metrics metrics = context.metrics()
+    private final Metrics metrics = context.metricsFactory()
             // Custom metrics require a corresponding data source in your project settings
             .addMetric(Metric.number("example_metric", () -> 42))
 

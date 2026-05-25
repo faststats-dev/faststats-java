@@ -9,7 +9,7 @@ import dev.faststats.hytale.HytaleContext;
 
 public class ExamplePlugin extends JavaPlugin {
     private final HytaleContext context = new HytaleContext(this, "YOUR_TOKEN_HERE");
-    private final Metrics metrics = context.metrics()
+    private final Metrics metrics = context.metricsFactory()
             // Custom metrics require a corresponding data source in your project settings
             .addMetric(Metric.number("example_metric", () -> 42))
 
