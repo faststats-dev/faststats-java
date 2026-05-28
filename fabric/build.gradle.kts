@@ -8,6 +8,6 @@ dependencies {
     api(project(":core"))
     mappings(loom.officialMojangMappings())
     minecraft("com.mojang:minecraft:1.21.11")
-    modCompileOnly("net.fabricmc.fabric-api:fabric-api:0.139.4+1.21.11")
+    modCompileOnly("net.fabricmc.fabric-api:fabric-api:0.150.0+26.2")
     modImplementation("net.fabricmc:fabric-loader:0.19.2")
 }
