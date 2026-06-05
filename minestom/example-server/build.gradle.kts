@@ -1,5 +1,5 @@
 dependencies {
-    implementation("net.minestom:minestom:2026.05.11-1.21.11")
+    implementation("net.minestom:minestom:2026.06.05-26.1.2")
     implementation(project(":minestom"))
 }
 
