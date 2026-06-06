@@ -9,6 +9,7 @@ val javaVersionsOverride = mapOf(
     ":fabric" to 25,
     ":fabric:example-mod" to 25,
     ":forge" to 21,
+    ":forge:example-mod" to 21,
     ":hytale" to 25,
     ":hytale:example-plugin" to 25,
     ":minestom" to 25,
