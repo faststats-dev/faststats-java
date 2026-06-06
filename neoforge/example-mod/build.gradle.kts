@@ -12,6 +12,7 @@ configurations.configureEach {
 
 dependencies {
     implementation(project(":neoforge"))
+    compileOnly("net.neoforged.fancymodloader:loader:10.0.36")
 }
 
 tasks.jar {
