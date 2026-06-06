@@ -61,6 +61,15 @@ public sealed interface FastStatsContext permits SimpleContext {
     Optional<ErrorTrackerService> errorTrackerService();
 
     /**
+     * Gets the performance analyzer bound to this context.
+     *
+     * @return the context performance analyzer, if one was configured
+     * @since 0.26.0
+     */
+    @Contract(pure = true)
+    Optional<PerformanceAnalyzer> performanceAnalyzer();
+
+    /**
      * Performs additional post-startup tasks for configured context services.
      *
      * @since 0.24.0

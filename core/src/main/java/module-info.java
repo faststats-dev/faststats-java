@@ -9,6 +9,8 @@ module dev.faststats {
     requires com.google.gson;
     requires java.logging;
     requires java.net.http;
+    requires java.sql;
+    requires jdk.jfr;
 
     requires static org.jetbrains.annotations;
     requires static org.jspecify;

@@ -28,7 +28,7 @@ abstract class SubmissionService {
     protected final Logger logger = LoggerFactory.factory().getLogger(getClass());
     protected final SimpleContext context;
 
-    SubmissionService(final SimpleContext context) {
+    protected SubmissionService(final SimpleContext context) {
         this.context = context;
         logger.setFilter(level -> context.getConfig().debug());
     }

@@ -216,13 +216,21 @@ final class ErrorHelper {
     private static @Nullable String getAnonymizedMessage(final Throwable error, final List<Map.Entry<Pattern, String>> customPatterns) {
         final var message = error.getMessage();
         if (message == null) return null;
-        var truncated = message.length() > MAX_MESSAGE_LENGTH
-                ? message.substring(0, MAX_MESSAGE_LENGTH) + "..."
-                : message;
+        return applyAnonymization(truncate(message), customPatterns);
+    }
+
+    static String applyAnonymization(final String message, final List<Map.Entry<Pattern, String>> customPatterns) {
+        var truncated = message;
         for (final var entry : customPatterns) {
             truncated = entry.getKey().matcher(truncated).replaceAll(entry.getValue());
         }
         return truncated;
+    }
+
+    private static String truncate(final String message) {
+        return message.length() > MAX_MESSAGE_LENGTH
+                ? message.substring(0, MAX_MESSAGE_LENGTH) + "..."
+                : message;
     }
 
     private static List<Map.Entry<Pattern, String>> defaultAnonymizationEntries() {

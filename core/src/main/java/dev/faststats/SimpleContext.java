@@ -27,6 +27,7 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
     private @Nullable Metrics metrics;
     private @Nullable FeatureFlagService featureFlagService;
     private @Nullable SimpleErrorTrackerService errorTrackerService;
+    private @Nullable PerformanceAnalyzer performanceAnalyzer;
 
     /**
      * Creates a new context that stores the shared configuration and token for all FastStats services.
@@ -60,11 +61,15 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
         this.metrics = config.submitMetrics() && factory.metrics != null ? factory.metrics.apply(metricsFactory()) : null;
         this.errorTrackerService = config.errorTracking() && factory.errorTracker != null ? new SimpleErrorTrackerService(this, factory.errorTracker) : null;
         this.featureFlagService = factory.featureFlagService != null ? factory.featureFlagService.apply(new SimpleFeatureFlagService.Factory(this)) : null;
+        this.performanceAnalyzer = config.submitMetrics() && factory.performanceAnalyzer != null
+                ? factory.performanceAnalyzer.apply(new SimplePerformanceAnalyzer.Factory(this))
+                : null;
 
-        final var features = new HashSet<String>(3);
+        final var features = new HashSet<String>(4);
         features.add("metrics=" + (metrics != null ? "yes" : "no"));
         features.add("error-tracking=" + (errorTrackerService != null ? "yes" : "no"));
         features.add("feature-flags=" + (featureFlagService != null ? "yes" : "no"));
+        features.add("performance=" + (performanceAnalyzer != null ? "yes" : "no"));
 
         logger.info("Created FastStats context for %s using %s (%s)",
                 getProjectName(), sdkInfo.getUserAgent(),
@@ -134,6 +139,12 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
     }
 
     @Override
+    @Contract(pure = true)
+    public final Optional<PerformanceAnalyzer> performanceAnalyzer() {
+        return Optional.ofNullable(performanceAnalyzer);
+    }
+
+    @Override
     public void ready() {
         if (ready) {
             logger.warn("%s#ready() was called twice; ignoring.", getClass().getSimpleName());
@@ -152,6 +163,7 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
         if (!ready) return;
         if (errorTrackerService != null) errorTrackerService.shutdown();
         if (featureFlagService instanceof final SimpleFeatureFlagService service) service.shutdown();
+        if (performanceAnalyzer != null) performanceAnalyzer.shutdown();
         if (metrics instanceof final SimpleMetrics simpleMetrics) simpleMetrics.shutdown();
         ready = false;
     }
@@ -176,6 +188,7 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
         private @Nullable Function<Metrics.Factory, Metrics> metrics = null;
         private @Nullable Function<FeatureFlagService.Factory, FeatureFlagService> featureFlagService;
         private @Nullable ErrorTracker errorTracker;
+        private @Nullable Function<PerformanceAnalyzer.Factory, PerformanceAnalyzer> performanceAnalyzer;
 
         /**
          * Configures the global/internal error tracker for the context.
@@ -213,6 +226,19 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
         @Contract(value = "_ -> this", mutates = "this")
         public F featureFlagService(final Function<FeatureFlagService.Factory, FeatureFlagService> featureFlagService) {
             this.featureFlagService = featureFlagService;
+            return self();
+        }
+
+        /**
+         * Configures and creates the performance analyzer for the context.
+         *
+         * @param performanceAnalyzer a function that receives a new analyzer factory and returns the built analyzer
+         * @return this factory
+         * @since 0.26.0
+         */
+        @Contract(value = "_ -> this", mutates = "this")
+        public F performanceAnalyzer(final Function<PerformanceAnalyzer.Factory, PerformanceAnalyzer> performanceAnalyzer) {
+            this.performanceAnalyzer = performanceAnalyzer;
             return self();
         }
 
