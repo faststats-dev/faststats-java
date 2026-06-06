@@ -8,10 +8,13 @@ val javaVersionsOverride = mapOf(
     ":bukkit:example-plugin" to 21,
     ":fabric" to 25,
     ":fabric:example-mod" to 25,
+    ":forge" to 21,
     ":hytale" to 25,
     ":hytale:example-plugin" to 25,
     ":minestom" to 25,
     ":minestom:example-server" to 25,
+    ":neoforge" to 21,
+    ":quilt" to 25,
     ":velocity" to 21,
     ":velocity:example-plugin" to 21
 )
