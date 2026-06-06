@@ -14,6 +14,7 @@ val javaVersionsOverride = mapOf(
     ":minestom" to 25,
     ":minestom:example-server" to 25,
     ":neoforge" to 21,
+    ":neoforge:example-mod" to 21,
     ":quilt" to 25,
     ":velocity" to 21,
     ":velocity:example-plugin" to 21

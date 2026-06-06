@@ -1,0 +1,10 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "MIT"
+
+[[mods]]
+modId = "example_mod"
+version = "1.0.0"
+displayName = "Example Mod"
+authors = "Your Name"
+description = "Example FastStats NeoForge mod"
