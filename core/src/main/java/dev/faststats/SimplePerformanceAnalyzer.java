@@ -302,7 +302,7 @@ final class SimplePerformanceAnalyzer extends SubmissionService implements Perfo
     final class SimpleTimeRecording implements TimeRecording {
         private final String name;
         private final long start = System.nanoTime();
-        private boolean stopped;
+        private volatile boolean stopped;
 
         private SimpleTimeRecording(final String name) {
             if (name.isBlank()) throw new IllegalArgumentException("name must not be blank");
@@ -322,7 +322,7 @@ final class SimplePerformanceAnalyzer extends SubmissionService implements Perfo
 
         @Override
         public boolean isClosed() {
-            return false;
+            return stopped;
         }
 
         @Override

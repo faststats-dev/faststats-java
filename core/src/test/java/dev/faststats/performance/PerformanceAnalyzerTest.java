@@ -57,12 +57,11 @@ public final class PerformanceAnalyzerTest {
                         .create())
                 .create();
         final var analyzer = context.performanceAnalyzer().orElseThrow();
-        try (final var recorder = analyzer.recordJfrSnapshot()) {
-            recorder.recording().setName("faststats-test");
-            assertTrue(recorder.isClosed());
-        } finally {
-            context.shutdown();
-        }
+        final var recorder = analyzer.recordJfrSnapshot();
+        recorder.recording().setName("faststats-test");
+        recorder.close();
+        assertTrue(recorder.isClosed());
+        context.shutdown();
     }
 
     @Test

@@ -1,9 +1,9 @@
 package dev.faststats.example;
 
 import dev.faststats.FastStatsContext;
-import dev.faststats.SimpleContext;
 import dev.faststats.JfrPerformanceOptions;
 import dev.faststats.PerformanceAnalyzer;
+import dev.faststats.SimpleContext;
 import dev.faststats.SqlPerformanceOptions;
 
 import javax.sql.DataSource;
@@ -11,16 +11,25 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.util.Set;
 
+import static dev.faststats.FlightEvents.EXECUTION_SAMPLE;
+import static dev.faststats.FlightEvents.JAVA_MONITOR_ENTER;
+import static dev.faststats.FlightEvents.SOCKET_READ;
+import static dev.faststats.FlightEvents.SOCKET_WRITE;
+
 public final class PerformanceAnalyzerExample {
     public static final FastStatsContext CONTEXT = getContextFactory()
             .performanceAnalyzer(factory -> factory
-                    .sql(new SqlPerformanceOptions(Duration.ofMillis(150), 128, true))
-                    .jfr(new JfrPerformanceOptions(
-                            Duration.ofSeconds(5),
-                            Set.of("jdk.ExecutionSample", "jdk.JavaMonitorEnter", "jdk.SocketRead", "jdk.SocketWrite"),
-                            5_000,
-                            PerformanceAnalyzerExample.class.getClassLoader()
-                    ))
+                    .sql(SqlPerformanceOptions.factory()
+                            .slowQueryThreshold(Duration.ofMillis(150))
+                            .maxQueryShapes(128)
+                            .includeUpdateCounts(true)
+                            .create())
+                    .jfr(JfrPerformanceOptions.factory()
+                            .duration(Duration.ofSeconds(5))
+                            .eventNames(Set.of(EXECUTION_SAMPLE, JAVA_MONITOR_ENTER, SOCKET_READ, SOCKET_WRITE))
+                            .maxEvents(5_000)
+                            .attributionLoader(PerformanceAnalyzerExample.class.getClassLoader())
+                            .create())
                     .create())
             .create();
 
