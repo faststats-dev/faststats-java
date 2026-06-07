@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import jdk.jfr.Configuration;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
+import jdk.jfr.consumer.RecordedThread;
 import jdk.jfr.consumer.RecordingFile;
 import org.jspecify.annotations.Nullable;
 
@@ -22,7 +23,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -153,7 +157,7 @@ final class SimplePerformanceAnalyzer extends SubmissionService implements Perfo
                 final var event = recordingFile.readEvent();
                 if (!jfrOptions.eventNames().contains(event.getEventType().getName())) continue;
                 if (!isAttributed(event)) continue;
-                jfrStats.computeIfAbsent(event.getEventType().getName(), JfrStats::new).record(event.getDuration());
+                jfrStats.computeIfAbsent(event.getEventType().getName(), JfrStats::new).record(event);
             }
         }
     }
@@ -199,7 +203,9 @@ final class SimplePerformanceAnalyzer extends SubmissionService implements Perfo
         if (!sql.isEmpty()) performance.add("sql", sql);
 
         final var jfr = new JsonArray();
-        jfrStats.values().forEach(stats -> jfr.add(stats.toJson()));
+        jfrStats.values().stream()
+                .filter(stats -> !stats.hasZeroMillis())
+                .forEach(stats -> jfr.add(stats.toJson()));
         if (!jfr.isEmpty()) performance.add("jfr", jfr);
 
         final var blocks = new JsonArray();
@@ -486,25 +492,98 @@ final class SimplePerformanceAnalyzer extends SubmissionService implements Perfo
         private final String event;
         private long count;
         private long totalNanos;
+        private long minNanos = Long.MAX_VALUE;
         private long maxNanos;
+        private @Nullable Instant firstSeen;
+        private @Nullable Instant lastSeen;
+        private final Map<ThreadKey, ThreadStats> threadStats = new HashMap<>();
 
         private JfrStats(final String event) {
             this.event = event;
         }
 
-        private void record(final Duration duration) {
-            final var nanos = duration.toNanos();
+        private void record(final RecordedEvent event) {
+            final var nanos = event.getDuration().toNanos();
             count++;
             totalNanos += nanos;
+            minNanos = Math.min(minNanos, nanos);
             maxNanos = Math.max(maxNanos, nanos);
+            firstSeen = firstSeen == null || event.getStartTime().isBefore(firstSeen) ? event.getStartTime() : firstSeen;
+            lastSeen = lastSeen == null || event.getEndTime().isAfter(lastSeen) ? event.getEndTime() : lastSeen;
+            final var thread = event.getThread();
+            if (thread != null) {
+                threadStats.computeIfAbsent(ThreadKey.from(thread), ThreadStats::new).record(nanos);
+            }
+        }
+
+        private boolean hasZeroMillis() {
+            return count == 0
+                    || TimeUnit.NANOSECONDS.toMicros(totalNanos / count) == 0
+                    && TimeUnit.NANOSECONDS.toMicros(maxNanos) == 0;
         }
 
         private JsonObject toJson() {
             final var json = new JsonObject();
             json.addProperty("event", event);
             json.addProperty("count", count);
+            json.addProperty("min_ms", TimeUnit.NANOSECONDS.toMicros(minNanos) / 1000.0D);
             json.addProperty("avg_ms", count == 0 ? 0 : TimeUnit.NANOSECONDS.toMicros(totalNanos / count) / 1000.0D);
             json.addProperty("max_ms", TimeUnit.NANOSECONDS.toMicros(maxNanos) / 1000.0D);
+            json.addProperty("total_ms", TimeUnit.NANOSECONDS.toMicros(totalNanos) / 1000.0D);
+            if (firstSeen != null) json.addProperty("first_seen", firstSeen.toString());
+            if (lastSeen != null) json.addProperty("last_seen", lastSeen.toString());
+            if (!threadStats.isEmpty()) json.add("threads", threadsToJson());
+            return json;
+        }
+
+        private JsonArray threadsToJson() {
+            final var threads = new JsonArray();
+            threadStats.values().stream()
+                    .sorted(Comparator.comparingLong(ThreadStats::totalNanos).reversed())
+                    .limit(10)
+                    .forEach(stats -> threads.add(stats.toJson()));
+            return threads;
+        }
+    }
+
+    private record ThreadKey(String name, long javaThreadId, long osThreadId) {
+        private static ThreadKey from(final RecordedThread thread) {
+            return new ThreadKey(thread.getJavaName(), thread.getJavaThreadId(), thread.getOSThreadId());
+        }
+    }
+
+    private static final class ThreadStats {
+        private final ThreadKey key;
+        private long count;
+        private long totalNanos;
+        private long minNanos = Long.MAX_VALUE;
+        private long maxNanos;
+
+        private ThreadStats(final ThreadKey key) {
+            this.key = key;
+        }
+
+        private void record(final long nanos) {
+            count++;
+            totalNanos += nanos;
+            minNanos = Math.min(minNanos, nanos);
+            maxNanos = Math.max(maxNanos, nanos);
+        }
+
+        private long totalNanos() {
+            return totalNanos;
+        }
+
+        private JsonObject toJson() {
+            final var json = new JsonObject();
+            json.addProperty("name", key.name);
+            json.addProperty("java_thread_id", key.javaThreadId);
+            json.addProperty("os_thread_id", key.osThreadId);
+            json.addProperty("count", count);
+            json.addProperty("min_ms", TimeUnit.NANOSECONDS.toMicros(minNanos) / 1000.0D);
+            json.addProperty("avg_ms", TimeUnit.NANOSECONDS.toMicros(totalNanos / count) / 1000.0D);
+            json.addProperty("max_ms", TimeUnit.NANOSECONDS.toMicros(maxNanos) / 1000.0D);
+            json.addProperty("total_ms", TimeUnit.NANOSECONDS.toMicros(totalNanos) / 1000.0D);
             return json;
         }
     }
