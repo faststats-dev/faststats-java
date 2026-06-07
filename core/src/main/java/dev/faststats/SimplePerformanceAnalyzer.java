@@ -462,7 +462,8 @@ final class SimplePerformanceAnalyzer extends SubmissionService implements Perfo
             this.key = key;
         }
 
-        private void record(final long nanos, final boolean failed, final long updateCount, final Duration slowThreshold) {
+        // todo: proper thread safety
+        private synchronized void record(final long nanos, final boolean failed, final long updateCount, final Duration slowThreshold) {
             count++;
             if (failed) failures++;
             if (nanos >= slowThreshold.toNanos()) slowCalls++;
