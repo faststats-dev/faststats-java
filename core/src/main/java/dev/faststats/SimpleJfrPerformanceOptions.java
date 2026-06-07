@@ -30,12 +30,12 @@ record SimpleJfrPerformanceOptions(
     static final class Factory implements JfrPerformanceOptions.Factory {
         private Duration duration = Duration.ofSeconds(10);
         private Set<String> eventNames = Set.of(
-                "jdk.ExecutionSample",
-                "jdk.JavaMonitorEnter",
-                "jdk.SocketRead",
-                "jdk.SocketWrite",
-                "jdk.FileRead",
-                "jdk.FileWrite"
+                FlightEvents.EXECUTION_SAMPLE,
+                FlightEvents.JAVA_MONITOR_ENTER,
+                FlightEvents.SOCKET_READ,
+                FlightEvents.SOCKET_WRITE,
+                FlightEvents.FILE_READ,
+                FlightEvents.FILE_WRITE
         );
         private int maxEvents = 10_000;
         private @Nullable ClassLoader attributionLoader;
