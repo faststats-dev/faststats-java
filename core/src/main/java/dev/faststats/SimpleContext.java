@@ -234,7 +234,7 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
          *
          * @param performanceAnalyzer a function that receives a new analyzer factory and returns the built analyzer
          * @return this factory
-         * @since 0.26.0
+         * @since 0.27.0
          */
         @Contract(value = "_ -> this", mutates = "this")
         public F performanceAnalyzer(final Function<PerformanceAnalyzer.Factory, PerformanceAnalyzer> performanceAnalyzer) {

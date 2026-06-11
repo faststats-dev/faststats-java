@@ -9,14 +9,14 @@ import java.util.Set;
 /**
  * JFR performance collection options.
  *
- * @since 0.26.0
+ * @since 0.27.0
  */
 public sealed interface JfrPerformanceOptions permits SimpleJfrPerformanceOptions {
     /**
      * Creates a JFR performance options factory.
      *
      * @return the factory
-     * @since 0.26.0
+     * @since 0.27.0
      */
     @Contract(value = " -> new", pure = true)
     static Factory factory() {
@@ -27,7 +27,7 @@ public sealed interface JfrPerformanceOptions permits SimpleJfrPerformanceOption
      * Gets the maximum retained event age while a recorder is running.
      *
      * @return the recording duration
-     * @since 0.26.0
+     * @since 0.27.0
      */
     @Contract(pure = true)
     Duration duration();
@@ -36,7 +36,7 @@ public sealed interface JfrPerformanceOptions permits SimpleJfrPerformanceOption
      * Gets the JFR event names to enable and summarize.
      *
      * @return the enabled event names
-     * @since 0.26.0
+     * @since 0.27.0
      */
     @Contract(pure = true)
     Set<String> eventNames();
@@ -45,7 +45,7 @@ public sealed interface JfrPerformanceOptions permits SimpleJfrPerformanceOption
      * Gets the maximum number of events to read from one recording.
      *
      * @return the maximum event count
-     * @since 0.26.0
+     * @since 0.27.0
      */
     @Contract(pure = true)
     int maxEvents();
@@ -54,7 +54,7 @@ public sealed interface JfrPerformanceOptions permits SimpleJfrPerformanceOption
      * Gets the optional class loader used for stack-frame attribution.
      *
      * @return the attribution class loader
-     * @since 0.26.0
+     * @since 0.27.0
      */
     @Contract(pure = true)
     @Nullable ClassLoader attributionLoader();
@@ -63,7 +63,7 @@ public sealed interface JfrPerformanceOptions permits SimpleJfrPerformanceOption
      * Creates a factory pre-populated with this options instance.
      *
      * @return the pre-populated factory
-     * @since 0.26.0
+     * @since 0.27.0
      */
     @Contract(value = " -> new", pure = true)
     Factory toFactory();
@@ -71,7 +71,7 @@ public sealed interface JfrPerformanceOptions permits SimpleJfrPerformanceOption
     /**
      * JFR performance options factory.
      *
-     * @since 0.26.0
+     * @since 0.27.0
      */
     sealed interface Factory permits SimpleJfrPerformanceOptions.Factory {
         /**
@@ -79,7 +79,7 @@ public sealed interface JfrPerformanceOptions permits SimpleJfrPerformanceOption
          *
          * @param duration the recording duration
          * @return this factory
-         * @since 0.26.0
+         * @since 0.27.0
          */
         @Contract(value = "_ -> this", mutates = "this")
         Factory duration(Duration duration);
@@ -89,7 +89,7 @@ public sealed interface JfrPerformanceOptions permits SimpleJfrPerformanceOption
          *
          * @param eventNames the enabled event names
          * @return this factory
-         * @since 0.26.0
+         * @since 0.27.0
          */
         @Contract(value = "_ -> this", mutates = "this")
         Factory eventNames(Set<String> eventNames);
@@ -99,7 +99,7 @@ public sealed interface JfrPerformanceOptions permits SimpleJfrPerformanceOption
          *
          * @param maxEvents the maximum event count
          * @return this factory
-         * @since 0.26.0
+         * @since 0.27.0
          */
         @Contract(value = "_ -> this", mutates = "this")
         Factory maxEvents(int maxEvents);
@@ -109,7 +109,7 @@ public sealed interface JfrPerformanceOptions permits SimpleJfrPerformanceOption
          *
          * @param loader the attribution class loader
          * @return this factory
-         * @since 0.26.0
+         * @since 0.27.0
          */
         @Contract(value = "_ -> this", mutates = "this")
         Factory attributionLoader(@Nullable ClassLoader loader);
@@ -118,7 +118,7 @@ public sealed interface JfrPerformanceOptions permits SimpleJfrPerformanceOption
          * Creates the JFR performance options.
          *
          * @return the JFR performance options
-         * @since 0.26.0
+         * @since 0.27.0
          */
         @Contract(value = " -> new", pure = true)
         JfrPerformanceOptions create();

@@ -37,7 +37,7 @@ import java.util.regex.Pattern;
 /**
  * Simple performance analyzer implementation.
  *
- * @since 0.26.0
+ * @since 0.27.0
  */
 final class SimplePerformanceAnalyzer extends SubmissionService implements PerformanceAnalyzer {
     private static final String PERFORMANCE_PATH = "/v1/performance";
@@ -625,7 +625,7 @@ final class SimplePerformanceAnalyzer extends SubmissionService implements Perfo
     /**
      * Simple performance analyzer factory.
      *
-     * @since 0.26.0
+     * @since 0.27.0
      */
     public static final class Factory implements PerformanceAnalyzer.Factory {
         private final SimpleContext context;

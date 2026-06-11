@@ -11,14 +11,14 @@ import java.util.regex.Pattern;
 /**
  * SQL performance collection options.
  *
- * @since 0.26.0
+ * @since 0.27.0
  */
 public sealed interface SqlPerformanceOptions permits SimpleSqlPerformanceOptions {
     /**
      * Creates a SQL performance options factory.
      *
      * @return the factory
-     * @since 0.26.0
+     * @since 0.27.0
      */
     @Contract(value = " -> new", pure = true)
     static Factory factory() {
@@ -29,7 +29,7 @@ public sealed interface SqlPerformanceOptions permits SimpleSqlPerformanceOption
      * Gets the query duration at or above which a call is counted as slow.
      *
      * @return the slow query threshold
-     * @since 0.26.0
+     * @since 0.27.0
      */
     @Contract(pure = true)
     Duration slowQueryThreshold();
@@ -38,7 +38,7 @@ public sealed interface SqlPerformanceOptions permits SimpleSqlPerformanceOption
      * Gets the maximum number of distinct sanitized query shapes to track.
      *
      * @return the maximum query shape count
-     * @since 0.26.0
+     * @since 0.27.0
      */
     @Contract(pure = true)
     int maxQueryShapes();
@@ -47,7 +47,7 @@ public sealed interface SqlPerformanceOptions permits SimpleSqlPerformanceOption
      * Gets whether aggregate JDBC update counts are included.
      *
      * @return {@code true} if update counts are included
-     * @since 0.26.0
+     * @since 0.27.0
      */
     @Contract(pure = true)
     boolean includeUpdateCounts();
@@ -56,7 +56,7 @@ public sealed interface SqlPerformanceOptions permits SimpleSqlPerformanceOption
      * Gets the SQL anonymization patterns applied to recorded query shapes.
      *
      * @return SQL anonymization patterns
-     * @since 0.26.0
+     * @since 0.27.0
      */
     @Contract(pure = true)
     List<Map.Entry<Pattern, String>> anonymizationEntries();
@@ -65,7 +65,7 @@ public sealed interface SqlPerformanceOptions permits SimpleSqlPerformanceOption
      * Creates a factory pre-populated with this options instance.
      *
      * @return the pre-populated factory
-     * @since 0.26.0
+     * @since 0.27.0
      */
     @Contract(value = " -> new", pure = true)
     Factory toFactory();
@@ -73,7 +73,7 @@ public sealed interface SqlPerformanceOptions permits SimpleSqlPerformanceOption
     /**
      * SQL performance options factory.
      *
-     * @since 0.26.0
+     * @since 0.27.0
      */
     sealed interface Factory permits SimpleSqlPerformanceOptions.Factory {
         /**
@@ -81,7 +81,7 @@ public sealed interface SqlPerformanceOptions permits SimpleSqlPerformanceOption
          *
          * @param threshold the slow query threshold
          * @return this factory
-         * @since 0.26.0
+         * @since 0.27.0
          */
         @Contract(value = "_ -> this", mutates = "this")
         Factory slowQueryThreshold(Duration threshold);
@@ -91,7 +91,7 @@ public sealed interface SqlPerformanceOptions permits SimpleSqlPerformanceOption
          *
          * @param maxQueryShapes the maximum query shape count
          * @return this factory
-         * @since 0.26.0
+         * @since 0.27.0
          */
         @Contract(value = "_ -> this", mutates = "this")
         Factory maxQueryShapes(int maxQueryShapes);
@@ -101,7 +101,7 @@ public sealed interface SqlPerformanceOptions permits SimpleSqlPerformanceOption
          *
          * @param includeUpdateCounts {@code true} to include update counts
          * @return this factory
-         * @since 0.26.0
+         * @since 0.27.0
          */
         @Contract(value = "_ -> this", mutates = "this")
         Factory includeUpdateCounts(boolean includeUpdateCounts);
@@ -112,7 +112,7 @@ public sealed interface SqlPerformanceOptions permits SimpleSqlPerformanceOption
          * @param pattern     pattern to replace
          * @param replacement replacement string
          * @return this factory
-         * @since 0.26.0
+         * @since 0.27.0
          */
         @Contract(value = "_, _ -> this", mutates = "this")
         Factory anonymize(Pattern pattern, String replacement);
@@ -123,7 +123,7 @@ public sealed interface SqlPerformanceOptions permits SimpleSqlPerformanceOption
          * @param pattern     pattern to replace
          * @param replacement replacement string
          * @return this factory
-         * @since 0.26.0
+         * @since 0.27.0
          * @see #anonymize(Pattern, String)
          */
         @Contract(value = "_, _ -> this", mutates = "this")
@@ -135,7 +135,7 @@ public sealed interface SqlPerformanceOptions permits SimpleSqlPerformanceOption
          * Creates the SQL performance options.
          *
          * @return the SQL performance options
-         * @since 0.26.0
+         * @since 0.27.0
          */
         @Contract(value = " -> new", pure = true)
         SqlPerformanceOptions create();

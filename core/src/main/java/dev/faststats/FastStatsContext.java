@@ -64,7 +64,7 @@ public sealed interface FastStatsContext permits SimpleContext {
      * Gets the performance analyzer bound to this context.
      *
      * @return the context performance analyzer, if one was configured
-     * @since 0.26.0
+     * @since 0.27.0
      */
     @Contract(pure = true)
     Optional<PerformanceAnalyzer> performanceAnalyzer();

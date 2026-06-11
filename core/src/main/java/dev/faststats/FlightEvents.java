@@ -7,7 +7,7 @@ import java.util.Set;
  * <p>
  * Source: <a href="https://bestsolution-at.github.io/jfr-doc/openjdk-matrix.html">OpenJDK JFR event matrix</a>.
  *
- * @since 0.26.0
+ * @since 0.27.0
  */
 public final class FlightEvents {
     // Java 11: https://bestsolution-at.github.io/jfr-doc/openjdk-11.html
