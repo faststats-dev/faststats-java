@@ -32,12 +32,14 @@ public final class SimpleContextTest {
                 .metrics(Metrics.Factory::create)
                 .errorTrackerService(ErrorTracker.contextUnaware())
                 .featureFlagService(FeatureFlagService.Factory::create)
+                .performanceAnalyzer(PerformanceAnalyzer.Factory::create)
                 .firstRun()
                 .create();
 
         assertFalse(context.metrics().isPresent());
         assertFalse(context.errorTrackerService().isPresent());
         assertFalse(context.featureFlagService().isPresent());
+        assertFalse(context.performanceAnalyzer().isPresent());
     }
 
     @Test
@@ -46,10 +48,12 @@ public final class SimpleContextTest {
                 .metrics(Metrics.Factory::create)
                 .errorTrackerService(ErrorTracker.contextUnaware())
                 .featureFlagService(FeatureFlagService.Factory::create)
+                .performanceAnalyzer(PerformanceAnalyzer.Factory::create)
                 .create();
 
         assertTrue(context.metrics().isPresent());
         assertTrue(context.errorTrackerService().isPresent());
         assertTrue(context.featureFlagService().isPresent());
+        assertTrue(context.performanceAnalyzer().isPresent());
     }
 }
