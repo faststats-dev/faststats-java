@@ -37,15 +37,12 @@ public final class NeoForgeContext extends SimpleContext {
 
     private NeoForgeContext(final Factory factory, final String modId, @Token final String token) {
         super(factory, SimpleConfig.read(FMLPaths.CONFIGDIR.get().resolve("faststats").resolve("config.properties")), "neoforge", token);
-        this.mod = ModList.get().getModFileById(modId).getMods().stream().filter(mod -> mod.getModId().equals(modId)).findFirst().orElseThrow(() -> {
+        this.mod = ModList.get().getModContainerById(modId).map(container -> container.getModInfo()).orElseThrow(() -> {
             return new IllegalArgumentException("Mod not found: " + modId);
         });
         initializeServices(factory);
         switch (FMLEnvironment.getDist()) {
-            case CLIENT -> {
-                ready();
-                Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown, "faststats-shutdown"));
-            }
+            case CLIENT -> ready();
             case DEDICATED_SERVER -> {
                 NeoForge.EVENT_BUS.addListener((final ServerStartedEvent event) -> ready());
                 NeoForge.EVENT_BUS.addListener((final ServerStoppingEvent event) -> shutdown());
