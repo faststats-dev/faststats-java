@@ -1,11 +1,17 @@
-repositories {
-    maven("https://maven.neoforged.net/releases")
-    maven("https://libraries.minecraft.net/")
+plugins {
+    id("net.neoforged.moddev") version "2.0.141"
+}
+
+neoForge {
+    version = "26.1.2.76"
+}
+
+configurations.configureEach {
+    resolutionStrategy.force("com.google.code.gson:gson:2.13.2")
 }
 
 dependencies {
     implementation(project(":neoforge"))
-    compileOnly("net.neoforged.fancymodloader:loader:10.0.36")
 }
 
 tasks.jar {

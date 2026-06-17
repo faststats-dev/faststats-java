@@ -2,10 +2,15 @@ package dev.faststats.neoforge;
 
 import dev.faststats.Metrics;
 import dev.faststats.SimpleContext;
+import dev.faststats.SimpleMetrics;
 import dev.faststats.Token;
 import dev.faststats.config.SimpleConfig;
 import net.neoforged.fml.ModList;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforgespi.language.IModInfo;
 import org.jetbrains.annotations.Contract;
 
@@ -19,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * NeoForge FastStats context.
  *
- * @since 0.25.2
+ * @since 0.26.2
  */
 public final class NeoForgeContext extends SimpleContext {
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(runnable -> {
@@ -36,13 +41,30 @@ public final class NeoForgeContext extends SimpleContext {
             return new IllegalArgumentException("Mod not found: " + modId);
         });
         initializeServices(factory);
+        switch (FMLEnvironment.getDist()) {
+            case CLIENT -> {
+                ready();
+                Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown, "faststats-shutdown"));
+            }
+            case DEDICATED_SERVER -> {
+                NeoForge.EVENT_BUS.addListener((final ServerStartedEvent event) -> ready());
+                NeoForge.EVENT_BUS.addListener((final ServerStoppingEvent event) -> shutdown());
+            }
+        }
     }
 
     @Override
     @Contract(value = " -> new", pure = true)
     protected Metrics.Factory metricsFactory() {
-        // todo: proper client/server support
-        return new NeoForgeMetrics.Factory(this, mod);
+        return new SimpleMetrics.Factory(this) {
+            @Override
+            public Metrics create() throws IllegalStateException {
+                return switch (FMLEnvironment.getDist()) {
+                    case CLIENT -> new NeoForgeMetricsClient(this, mod);
+                    case DEDICATED_SERVER -> new NeoForgeMetricsServer(this, mod);
+                };
+            }
+        };
     }
 
     @Override
