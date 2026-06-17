@@ -41,7 +41,7 @@ public final class FabricContext extends SimpleContext {
         switch (FabricLoader.getInstance().getEnvironmentType()) {
             case CLIENT -> {
                 ready();
-                ClientLifecycleEvents.CLIENT_STARTED.register(client -> shutdown());
+                ClientLifecycleEvents.CLIENT_STOPPING.register(client -> shutdown());
             }
             case SERVER -> {
                 ServerLifecycleEvents.SERVER_STARTED.register(server -> ready());
