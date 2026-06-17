@@ -40,12 +40,6 @@ subprojects {
         mavenCentral()
     }
 
-    if (project.path.startsWith(":neoforge")) {
-        configurations.configureEach {
-            resolutionStrategy.force("com.google.code.gson:gson:2.13.2")
-        }
-    }
-
     val javaVersion = javaVersionsOverride[project.path] ?: defaultJavaVersion
 
     extensions.configure<JavaPluginExtension> {
