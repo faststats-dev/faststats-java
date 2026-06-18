@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Quilt FastStats context.
  *
- * @since 0.25.2
+ * @since 0.27.0
  */
 public final class QuiltContext extends SimpleContext {
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(runnable -> {
@@ -46,7 +46,7 @@ public final class QuiltContext extends SimpleContext {
 
     @Override
     protected boolean preSubmissionStart() {
-        return ((SimpleConfig) getConfig()).preSubmissionStart();
+        return ((SimpleConfig) getConfig()).preSubmissionStart(getProjectName());
     }
 
     @Override
