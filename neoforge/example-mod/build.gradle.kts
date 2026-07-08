@@ -1,6 +1,6 @@
 plugins {
     id("net.neoforged.moddev") version "2.0.142"
-    kotlin("jvm")
+    //kotlin("jvm")
 }
 
 neoForge {
@@ -12,13 +12,6 @@ configurations.configureEach {
 }
 
 dependencies {
-    implementation(project(":neoforge:versions:26.1-26.2"))
-}
-
-tasks.jar {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    from(project(":config").sourceSets["main"].output)
-    from(project(":core").sourceSets["main"].output)
-    from(project(":neoforge").sourceSets["main"].output)
-    from(project(":neoforge:versions:26.1-26.2").sourceSets["main"].output)
+    compileOnly(project(":neoforge:versions:26.1-26.2"))
+    jarJar(project(":neoforge:versions:26.1-26.2"))
 }

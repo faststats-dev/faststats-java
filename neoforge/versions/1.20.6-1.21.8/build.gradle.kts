@@ -1,10 +1,6 @@
 extra.set("moduleName", "dev.faststats.neoforge.compat.v1_20_6")
 extra.set("publishVersionSuffix", "mc1.21-1.21.11")
 
-plugins {
-    id("net.neoforged.moddev")
-}
-
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 tasks.compileJava {
@@ -26,11 +22,4 @@ neoForge {
 
 configurations.configureEach {
     resolutionStrategy.force("com.google.code.gson:gson:2.14.0")
-}
-
-dependencies {
-    api(project(":neoforge"))
-    api(project(":core"))
-    implementation(project(":config"))
-    compileOnly("net.neoforged:bus:8.0.5")
 }

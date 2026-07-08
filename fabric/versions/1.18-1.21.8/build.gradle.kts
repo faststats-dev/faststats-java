@@ -12,10 +12,6 @@ tasks.compileJava {
 }
 
 dependencies {
-    api(project(":fabric"))
-    api(project(":core"))
-    implementation(project(":config"))
-
     // minecraft("com.mojang:minecraft:1.18")
     // minecraft("com.mojang:minecraft:1.18.1")
     // minecraft("com.mojang:minecraft:1.18.2")

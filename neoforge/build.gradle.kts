@@ -26,6 +26,20 @@ allprojects {
     extra.set("publishDocsUrl", "https://docs.faststats.dev/java/platform/neoforge")
 }
 
+subprojects {
+    if (project.name == "example-mod") return@subprojects
+
+    apply { plugin("net.neoforged.moddev") }
+
+    pluginManager.withPlugin("net.neoforged.moddev") {
+        dependencies {
+            "jarJar"(project(":neoforge"))
+            compileOnly("net.neoforged:bus:8.0.5")
+            compileOnlyApi(project(":neoforge"))
+        }
+    }
+}
+
 neoForge {
     version = "21.8.53" // lowest bound, 1.20.6
 }
@@ -35,7 +49,13 @@ configurations.configureEach {
 }
 
 dependencies {
-    api(project(":core"))
-    implementation(project(":config"))
+    compileOnlyApi(project(":core"))
+    compileOnly(project(":config"))
     compileOnly("net.neoforged:bus:8.0.5")
+}
+
+tasks.jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from(project(":config").sourceSets["main"].output)
+    from(project(":core").sourceSets["main"].output)
 }

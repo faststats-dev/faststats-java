@@ -10,16 +10,8 @@ tasks.compileJava {
 }
 
 dependencies {
-    implementation(project(":fabric:versions:26.1-26.3"))
-    minecraft("com.mojang:minecraft:26.1.2")
-    implementation("net.fabricmc.fabric-api:fabric-api:0.150.0+26.1.2")
     compileOnly("net.fabricmc:fabric-loader:0.19.3")
-}
-
-tasks.jar {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    from(project(":config").sourceSets["main"].output)
-    from(project(":core").sourceSets["main"].output)
-    from(project(":fabric").sourceSets["main"].output)
-    from(project(":fabric:versions:26.1-26.3").sourceSets["main"].output)
+    compileOnly(project(":fabric:versions:26.1-26.3"))
+    include(project(":fabric:versions:26.1-26.3"))
+    minecraft("com.mojang:minecraft:26.2")
 }

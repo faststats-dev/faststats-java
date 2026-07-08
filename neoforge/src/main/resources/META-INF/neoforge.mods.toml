@@ -1,0 +1,13 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "MIT"
+issueTrackerURL = "https://github.com/faststats-dev/faststats-java/issues"
+
+[[mods]]
+modId = "faststats"
+version = "${file.jarVersion}"
+displayName = "FastStats"
+description = "Analytics for developers"
+logoFile = "faststats.png"
+authors = "David | NonSwag"
+displayURL = "https://faststats.dev/mods"
