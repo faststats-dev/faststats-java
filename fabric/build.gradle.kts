@@ -25,16 +25,15 @@ allprojects {
 subprojects {
     if (project.name == "example-mod") return@subprojects
 
-    val fabricJar = project(":fabric").tasks.named<Jar>("jar")
-
     dependencies {
         compileOnlyApi(project(":fabric"))
     }
 
     tasks.jar {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        dependsOn(fabricJar)
-        from(fabricJar.flatMap { it.archiveFile }.map { it.asFile })
+        from(project(":fabric").sourceSets["main"].output)
+        from(project(":config").sourceSets["main"].output)
+        from(project(":core").sourceSets["main"].output)
     }
 }
 
@@ -44,10 +43,4 @@ dependencies {
     minecraft("com.mojang:minecraft:26.1.2")
     compileOnly("net.fabricmc.fabric-api:fabric-api:0.150.0+26.1.2")
     compileOnly("net.fabricmc:fabric-loader:0.19.3")
-}
-
-tasks.jar {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    from(project(":config").sourceSets["main"].output)
-    from(project(":core").sourceSets["main"].output)
 }
