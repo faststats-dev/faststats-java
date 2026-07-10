@@ -1,5 +1,5 @@
 extra.set("moduleName", "dev.faststats.neoforge.compat.v1_20_6")
-extra.set("publishVersionSuffix", "mc1.21-1.21.11")
+extra.set("publishVersionSuffix", "mc1.20.6-1.21.8")
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
