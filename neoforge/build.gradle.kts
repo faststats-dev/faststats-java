@@ -31,12 +31,16 @@ subprojects {
 
     apply { plugin("net.neoforged.moddev") }
 
-    pluginManager.withPlugin("net.neoforged.moddev") {
-        dependencies {
-            "jarJar"(project(":neoforge"))
-            compileOnly("net.neoforged:bus:8.0.5")
-            compileOnlyApi(project(":neoforge"))
-        }
+    dependencies {
+        compileOnly("net.neoforged:bus:8.0.5")
+        compileOnlyApi(project(":neoforge"))
+    }
+
+    tasks.jar {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        from(project(":neoforge").sourceSets["main"].output)
+        from(project(":config").sourceSets["main"].output)
+        from(project(":core").sourceSets["main"].output)
     }
 }
 
