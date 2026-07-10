@@ -18,6 +18,12 @@ configurations.runtimeClasspath {
     attributes.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 25)
 }
 
+tasks.processResources {
+    filesMatching("META-INF/neoforge.mods.toml") {
+        expand("version" to project.version)
+    }
+}
+
 allprojects {
     if (project.name == "example-mod") return@allprojects
     if (project.path == ":neoforge:versions") return@allprojects

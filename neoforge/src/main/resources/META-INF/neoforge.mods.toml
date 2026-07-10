@@ -5,7 +5,7 @@ issueTrackerURL = "https://github.com/faststats-dev/faststats-java/issues"
 
 [[mods]]
 modId = "faststats"
-version = "${file.jarVersion}"
+version = "${version}"
 displayName = "FastStats"
 description = "Analytics for developers"
 logoFile = "faststats.png"

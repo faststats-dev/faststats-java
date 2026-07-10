@@ -14,6 +14,12 @@ configurations.compileClasspath {
     attributes.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 25)
 }
 
+tasks.processResources {
+    filesMatching("fabric.mods.json") {
+        expand("version" to project.version)
+    }
+}
+
 allprojects {
     if (project.name == "example-mod") return@allprojects
     if (project.path == ":fabric:versions") return@allprojects
