@@ -14,7 +14,7 @@ abstract class NeoForgeMetrics extends SimpleMetrics {
     }
 
     protected void appendNeoForgeData(final JsonObject metrics, final String serverType) {
-        metrics.addProperty("minecraft_version", modVersion("minecraft"));
+        metrics.addProperty("game_version", modVersion("minecraft"));
         metrics.addProperty("platform_version", modVersion("neoforge"));
         metrics.addProperty("plugin_version", mod.getVersion().toString());
         metrics.addProperty("server_type", serverType);

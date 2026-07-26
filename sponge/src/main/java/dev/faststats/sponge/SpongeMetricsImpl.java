@@ -17,7 +17,7 @@ final class SpongeMetricsImpl extends SimpleMetrics {
     @Override
     protected void appendDefaultData(final JsonObject metrics) {
         final var implementation = Sponge.platform().container(Platform.Component.IMPLEMENTATION);
-        metrics.addProperty("minecraft_version", Sponge.platform().minecraftVersion().name());
+        metrics.addProperty("game_version", Sponge.platform().minecraftVersion().name());
         metrics.addProperty("online_mode", Sponge.server().isOnlineModeEnabled());
         metrics.addProperty("platform_version", implementation.metadata().version().toString()); // todo: double check
         metrics.addProperty("player_count", Sponge.server().onlinePlayers().size());

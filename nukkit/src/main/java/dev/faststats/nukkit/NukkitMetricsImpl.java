@@ -21,7 +21,7 @@ final class NukkitMetricsImpl extends SimpleMetrics {
 
     @Override
     protected void appendDefaultData(final JsonObject metrics) {
-        metrics.addProperty("minecraft_version", server.getVersion());
+        metrics.addProperty("game_version", server.getVersion());
         metrics.addProperty("online_mode", server.xboxAuth);
         metrics.addProperty("platform_version", server.getNukkitVersion());
         metrics.addProperty("player_count", server.getOnlinePlayersCount());

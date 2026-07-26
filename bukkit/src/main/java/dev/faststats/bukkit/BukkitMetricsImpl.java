@@ -56,7 +56,7 @@ final class BukkitMetricsImpl extends SimpleMetrics implements BukkitMetrics {
 
     @Override
     protected void appendDefaultData(final JsonObject metrics) {
-        metrics.addProperty("minecraft_version", minecraftVersion);
+        metrics.addProperty("game_version", minecraftVersion);
         metrics.addProperty("online_mode", checkOnlineMode());
         metrics.addProperty("player_count", getPlayerCount());
         metrics.addProperty("plugin_version", pluginVersion);

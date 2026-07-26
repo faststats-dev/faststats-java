@@ -14,7 +14,7 @@ abstract class FabricMetrics extends SimpleMetrics {
     }
 
     protected void appendFabricData(final JsonObject metrics, final String serverType) {
-        metrics.addProperty("minecraft_version", minecraftVersion());
+        metrics.addProperty("game_version", minecraftVersion());
         metrics.addProperty("platform_version", platformVersion());
         metrics.addProperty("plugin_version", mod.getMetadata().getVersion().getFriendlyString());
         metrics.addProperty("server_type", serverType);

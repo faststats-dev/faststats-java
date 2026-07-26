@@ -13,7 +13,7 @@ final class MinestomMetricsImpl extends SimpleMetrics implements MinestomMetrics
 
     @Override
     protected void appendDefaultData(final JsonObject metrics) {
-        metrics.addProperty("minecraft_version", MinecraftServer.VERSION_NAME);
+        metrics.addProperty("game_version", MinecraftServer.VERSION_NAME);
         metrics.addProperty("online_mode", !(MinecraftServer.process().auth() instanceof Auth.Offline));
         metrics.addProperty("player_count", MinecraftServer.getConnectionManager().getOnlinePlayerCount());
         metrics.addProperty("server_type", "Minestom");
