@@ -4,6 +4,6 @@
     "config:recommended",
     ":disableDependencyDashboard"
   ],
-  "ignoreUnstable": false,
+  "ignoreUnstable": true,
   "dependencyDashboard": false
 }
