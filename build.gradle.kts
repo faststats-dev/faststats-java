@@ -1,6 +1,6 @@
 plugins {
     id("java")
-    id("com.gradleup.shadow") version "9.6.0" apply false
+    id("com.gradleup.shadow") version "9.6.1" apply false
     kotlin("jvm") version "2.4.20-Beta2" apply false
 }
 
