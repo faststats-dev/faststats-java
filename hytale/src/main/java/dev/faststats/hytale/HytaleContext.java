@@ -41,7 +41,7 @@ public final class HytaleContext extends SimpleContext {
             @Override
             public Metrics create() throws IllegalStateException {
                 // todo: add client support?
-                return new HytaleMetricsImpl(this);
+                return new HytaleMetricsImpl(this, plugin);
             }
         };
     }
