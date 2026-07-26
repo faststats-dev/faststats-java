@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
       - name: Setup Java
         uses: actions/setup-java@v5
         with:
@@ -36,7 +36,7 @@ jobs:
             task: checkNeoForgePlatformCompat
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
       - name: Setup Java
         uses: actions/setup-java@v5
         with:
