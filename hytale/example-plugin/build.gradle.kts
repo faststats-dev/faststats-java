@@ -10,11 +10,11 @@ tasks.compileJava {
 }
 
 repositories {
-    maven("https://maven.hytale.com/pre-release")
+    maven("https://maven.hytale.com/release")
 }
 
 dependencies {
-    compileOnly("com.hypixel.hytale:Server:2026.05.07-5efa15f6d")
+    compileOnly("com.hypixel.hytale:Server:+")
     implementation(project(":hytale"))
 }
 
