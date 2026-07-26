@@ -14,6 +14,12 @@ configurations.compileClasspath {
     attributes.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 25)
 }
 
+tasks.processResources {
+    filesMatching("fabric.mods.json") {
+        expand("version" to project.version)
+    }
+}
+
 allprojects {
     if (project.name == "example-mod") return@allprojects
     if (project.path == ":fabric:versions") return@allprojects
@@ -22,9 +28,24 @@ allprojects {
     extra.set("publishDocsUrl", "https://docs.faststats.dev/java/platform/fabric")
 }
 
+subprojects {
+    if (project.name == "example-mod") return@subprojects
+
+    dependencies {
+        compileOnlyApi(project(":fabric"))
+    }
+
+    tasks.jar {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        from(project(":fabric").sourceSets["main"].output)
+        from(project(":config").sourceSets["main"].output)
+        from(project(":core").sourceSets["main"].output)
+    }
+}
+
 dependencies {
-    api(project(":core"))
-    implementation(project(":config"))
+    compileOnlyApi(project(":core"))
+    compileOnly(project(":config"))
     minecraft("com.mojang:minecraft:26.1.2")
     compileOnly("net.fabricmc.fabric-api:fabric-api:0.150.0+26.1.2")
     compileOnly("net.fabricmc:fabric-loader:0.19.3")

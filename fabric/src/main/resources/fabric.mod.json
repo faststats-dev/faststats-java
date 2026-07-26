@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "id": "faststats",
+  "version": "$version",
+  "name": "FastStats",
+  "description": "Analytics for developers",
+  "contact": {
+    "email": "mail@faststats.dev",
+    "homepage": "https://faststats.dev/mods",
+    "sources": "https://github.com/faststats-dev/faststats-java",
+    "issues": "https://github.com/faststats-dev/faststats-java/issues"
+  },
+  "icon": "faststats.png",
+  "license": "MIT",
+  "authors": [
+    "David | NonSwag"
+  ],
+  "environment": "*",
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "minecraft": "*",
+    "fabric-api": "*"
+  }
+}

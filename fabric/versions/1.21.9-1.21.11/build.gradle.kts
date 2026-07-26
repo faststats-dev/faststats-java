@@ -5,17 +5,13 @@ plugins {
     id("net.fabricmc.fabric-loom-remap")
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 tasks.compileJava {
-    options.release.set(25)
+    options.release.set(21)
 }
 
 dependencies {
-    api(project(":fabric"))
-    api(project(":core"))
-    implementation(project(":config"))
-
     // minecraft("com.mojang:minecraft:1.21.9")
     // minecraft("com.mojang:minecraft:1.21.10")
     minecraft("com.mojang:minecraft:1.21.11")
