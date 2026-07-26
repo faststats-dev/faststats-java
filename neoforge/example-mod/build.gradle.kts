@@ -1,6 +1,6 @@
 plugins {
     id("net.neoforged.moddev") version "2.0.142"
-    //kotlin("jvm")
+    kotlin("jvm")
 }
 
 neoForge {
