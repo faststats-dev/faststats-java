@@ -15,7 +15,9 @@ configurations.compileClasspath {
 }
 
 tasks.processResources {
-    filesMatching("fabric.mods.json") {
+    inputs.property("version", project.version)
+
+    filesMatching("fabric.mod.json") {
         expand("version" to project.version)
     }
 }
