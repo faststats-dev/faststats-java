@@ -9,6 +9,7 @@ module dev.faststats.velocity {
     requires com.velocitypowered.api;
     requires dev.faststats.config;
     requires dev.faststats;
+    requires net.kyori.adventure.api;
     requires org.slf4j;
 
     requires static org.jetbrains.annotations;

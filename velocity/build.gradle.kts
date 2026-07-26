@@ -5,10 +5,14 @@ plugins {
     id("maven-publish")
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 tasks.compileJava {
     options.release.set(21)
+}
+
+configurations.compileClasspath {
+    attributes.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 25)
 }
 
 repositories {
@@ -18,5 +22,5 @@ repositories {
 dependencies {
     api(project(":core"))
     implementation(project(":config"))
-    compileOnly("com.velocitypowered:velocity-api:3.5.0-SNAPSHOT")
+    compileOnly("com.velocitypowered:velocity-api:4.1.0-SNAPSHOT")
 }

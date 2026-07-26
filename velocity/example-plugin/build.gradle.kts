@@ -3,10 +3,10 @@ plugins {
     kotlin("jvm")
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 tasks.compileJava {
-    options.release.set(21)
+    options.release.set(25)
 }
 
 repositories {
@@ -14,8 +14,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly("com.velocitypowered:velocity-api:3.5.0-SNAPSHOT")
-    annotationProcessor("com.velocitypowered:velocity-api:3.5.0-SNAPSHOT")
+    compileOnly("com.velocitypowered:velocity-api:4.1.0-SNAPSHOT")
+    annotationProcessor("com.velocitypowered:velocity-api:4.1.0-SNAPSHOT")
     implementation(project(":velocity"))
 }
 
