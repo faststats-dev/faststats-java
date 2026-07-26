@@ -14,7 +14,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("org.spongepowered:spongeapi:8.3.0-SNAPSHOT")
+    compileOnly("org.spongepowered:spongeapi:17.0.0")
     implementation(project(":sponge"))
 }
 
