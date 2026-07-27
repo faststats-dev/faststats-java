@@ -5,10 +5,10 @@ plugins {
     id("net.fabricmc.fabric-loom-remap")
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
 tasks.compileJava {
-    options.release.set(21)
+    options.release.set(17)
 }
 
 dependencies {
