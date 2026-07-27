@@ -8,7 +8,11 @@ plugins {
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 tasks.compileJava {
-    options.release.set(21)
+    options.release.set(17)
+}
+
+configurations.compileClasspath {
+    attributes.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 21)
 }
 
 dependencies {
