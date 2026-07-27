@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "com.example.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "OnboardingScreen"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
