@@ -1,5 +1,6 @@
 package com.example.mixin;
 
+import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -190,6 +191,9 @@ public abstract class OnboardingScreen {
             graphics.textWithWordWrap(this.font, infoDescription(), descriptionX + scaled(BOX_PADDING_X), infoY + scaled(BOX_PADDING_Y), descriptionTextWidth(), text, false);
             graphics.disableScissor();
             this.renderScrollbar(graphics, panelX, panelY, panelWidth, panelHeight, border);
+            if (this.isHoveringClickableText(mouseX, mouseY)) {
+                graphics.requestCursor(CursorTypes.POINTING_HAND);
+            }
         }
 
         // fixme: all of this sucks
@@ -245,6 +249,29 @@ public abstract class OnboardingScreen {
             this.scrollOffset = Math.clamp(b, 0, maxScrollOffset);
             this.updateWidgetPositions();
             return true;
+        }
+
+        private boolean isHoveringClickableText(final double mouseX, final double mouseY) {
+            if (mouseY < scrollTop() || mouseY > scrollBottom()) {
+                return false;
+            }
+
+            final Style descriptionStyle = this.getStyleAt(description, mouseX, mouseY, descriptionTextX(), descriptionTextY(), descriptionTextWidth());
+            if (descriptionStyle != null && descriptionStyle.getClickEvent() != null) {
+                return true;
+            }
+
+            final Component info = infoDescription();
+            final Style infoStyle = this.getStyleAt(info, mouseX, mouseY, infoTextX(), infoTextY(), descriptionTextWidth());
+            if (infoStyle != null && infoStyle.getClickEvent() != null) {
+                return true;
+            }
+
+            // fixme: do not hardcode any of this, we need a proper solution here
+            final String infoLine = this.getLineAt(info, mouseX, mouseY, infoTextX(), infoTextY(), descriptionTextWidth());
+            return infoLine != null && (infoLine.contains("What data is collected?")
+                    || infoLine.contains("List of installed mods that use FastStats")
+                    || infoLine.contains("Additional Metrics"));
         }
 
         // fixme: hacky bs
