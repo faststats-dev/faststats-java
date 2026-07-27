@@ -7,7 +7,7 @@ plugins {
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 tasks.compileJava {
-    options.release.set(21)
+    options.release.set(17)
 }
 
 configurations.compileClasspath {
