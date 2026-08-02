@@ -12,6 +12,8 @@ configurations.configureEach {
 }
 
 dependencies {
+    compileOnly(project(":onboarding"))
     compileOnly(project(":neoforge:versions:26.1-26.2"))
+    jarJar(project(":onboarding"))
     jarJar(project(":neoforge:versions:26.1-26.2"))
 }
