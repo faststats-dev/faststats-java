@@ -1,6 +1,7 @@
 package com.example.mixin;
 
 import com.mojang.blaze3d.platform.cursor.CursorTypes;
+import dev.faststats.screen.onboarding.OnboardingDefinition;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -39,7 +40,8 @@ public abstract class OnboardingScreen {
     @Inject(method = "init", at = @At(value = "TAIL"))
     private void showFastStatsOnboardingScreen(final CallbackInfo cir) {
         if (!dismissed) {
-            Minecraft.getInstance().setScreenAndShow(new Onboarding());
+            OnboardingDefinition.create().open();
+            // Minecraft.getInstance().setScreenAndShow(new Onboarding());
         }
     }
 
