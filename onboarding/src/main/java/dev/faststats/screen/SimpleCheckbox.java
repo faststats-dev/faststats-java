@@ -10,7 +10,7 @@ final class SimpleCheckbox extends SimpleElement<Checkbox> implements Checkbox {
     private final String id;
     private final Text label;
 
-    public SimpleCheckbox(String id, Text label) {
+    public SimpleCheckbox(final String id, final Text label) {
         this.id = id;
         this.label = label;
     }
@@ -31,7 +31,7 @@ final class SimpleCheckbox extends SimpleElement<Checkbox> implements Checkbox {
     }
 
     @Override
-    public Checkbox enabled(boolean enabled) {
+    public Checkbox enabled(final boolean enabled) {
         this.enabled = enabled;
         return this;
     }
@@ -42,20 +42,20 @@ final class SimpleCheckbox extends SimpleElement<Checkbox> implements Checkbox {
     }
 
     @Override
-    public Checkbox selected(boolean selected) {
+    public Checkbox selected(final boolean selected) {
         this.selected = selected;
         return this;
     }
 
     @Override
-    public Checkbox onStateChange(BiConsumer<Screen, Checkbox> action) {
+    public Checkbox onStateChange(final BiConsumer<Screen, Checkbox> action) {
         if (stateChange == null) this.stateChange = action;
         else this.stateChange = this.stateChange.andThen(action);
         return this;
     }
 
     @Override
-    public void onStateChange(Screen screen) {
+    public void onStateChange(final Screen screen) {
         if (stateChange != null) stateChange.accept(screen, this);
     }
 }

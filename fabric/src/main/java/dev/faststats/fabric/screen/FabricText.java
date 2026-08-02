@@ -9,40 +9,38 @@ import net.minecraft.network.chat.Style;
 
 import java.net.URI;
 
-public final class FabricText implements Text {
-    public final MutableComponent text = Component.empty();
-
+public record FabricText(MutableComponent text) implements Text {
     @Override
-    public Text append(Text text) {
+    public Text append(final Text text) {
         this.text.append(((FabricText) text).text);
         return this;
     }
 
     @Override
-    public Text append(String string) {
+    public Text append(final String string) {
         this.text.append(string);
         return this;
     }
 
     @Override
-    public Text append(String string, URI url) {
+    public Text append(final String string, final URI url) {
         this.text.append(Component.literal(string).withStyle(Style.EMPTY.withClickEvent(new ClickEvent.OpenUrl(url))));
         return this;
     }
 
     @Override
-    public Text color(int color) {
+    public Text color(final int color) {
         this.text.withStyle(Style.EMPTY.withColor(color));
         return this;
     }
 
     @Override
-    public Text format(Formatting formatting) {
+    public Text format(final Formatting formatting) {
         this.text.withStyle(toFormat(formatting));
         return this;
     }
 
-    private ChatFormatting toFormat(Formatting formatting) {
+    private ChatFormatting toFormat(final Formatting formatting) {
         return switch (formatting) {
             case BLACK -> ChatFormatting.BLACK;
             case DARK_BLUE -> ChatFormatting.DARK_BLUE;

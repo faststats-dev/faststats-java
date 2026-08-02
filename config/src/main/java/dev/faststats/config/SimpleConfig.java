@@ -2,6 +2,7 @@ package dev.faststats.config;
 
 import dev.faststats.Config;
 import dev.faststats.SimpleContext;
+import dev.faststats.SubmissionSettings;
 import dev.faststats.internal.Logger;
 import dev.faststats.internal.LoggerFactory;
 import org.jetbrains.annotations.ApiStatus;
@@ -58,7 +59,7 @@ public record SimpleConfig(
             Learn more at: https://faststats.dev/info
             
             Since this is your first start with FastStats, submission will not start
-            until you restart the server to allow you to opt out if you prefer.""";
+            until after a restart, to allow you to opt out if you prefer.""";
 
     @Contract(mutates = "io")
     public static SimpleConfig read(final Path file, final LoggerFactory factory) throws RuntimeException {
@@ -120,6 +121,27 @@ public record SimpleConfig(
                 enabled && enabledFlag && errorTracking,
                 firstRun
         );
+    }
+
+    // todo: revise
+    @Contract(mutates = "io")
+    public static void update(
+            final Path file,
+            final SubmissionSettings settings
+    ) throws RuntimeException {
+        final var properties = readOrEmpty(file);
+        if (properties == null) throw new IllegalStateException("Metrics config has not been initialized");
+
+        properties.setProperty("submitMetrics", Boolean.toString(settings.submitMetrics()));
+        properties.setProperty("submitAdditionalMetrics", Boolean.toString(settings.additionalMetrics()));
+        properties.setProperty("submitErrors", Boolean.toString(settings.errorTracking()));
+
+        try (final var out = Files.newOutputStream(file);
+             final var writer = new OutputStreamWriter(out, UTF_8)) {
+            properties.store(writer, COMMENT);
+        } catch (final IOException e) {
+            throw new RuntimeException("Failed to save metrics config", e);
+        }
     }
 
     // fixme: this code sucks ass
