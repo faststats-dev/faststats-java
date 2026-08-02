@@ -1,8 +1,8 @@
 package dev.faststats.screen;
 
-public sealed interface Element<T extends Element<T>> permits Button, Division, Checkbox, SimpleElement, TextBox {
-    default T size(int height, int width) {
-        return height(height).width(width);
+public sealed interface Element<T extends Element<T>> permits Button, Checkbox, Division, Scrollable, ScrollableTextBox, SimpleElement, TextBox {
+    default T size(final int width, final int height) {
+        return width(width).height(height);
     }
 
     int height();

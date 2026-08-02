@@ -7,5 +7,6 @@ tasks.compileJava {
 }
 
 dependencies {
+    api(project(":core"))
     compileOnlyApi("org.jspecify:jspecify:1.0.0")
 }

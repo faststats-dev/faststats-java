@@ -7,17 +7,21 @@ public interface Text {
         return ScreenManager.instance().newText();
     }
 
-    static Text of(String text) {
+    static Text translatable(final String text) {
+        return ScreenManager.instance().translatable(text);
+    }
+
+    static Text of(final String text) {
         return text().append(text);
     }
 
-    static Text url(String text, URI uri) {
+    static Text url(final String text, final URI uri) {
         return text().append(text, uri)
                 .format(Formatting.AQUA)
                 .format(Formatting.UNDERLINE);
     }
 
-    static Text url(URI uri) {
+    static Text url(final URI uri) {
         return url(uri.toString(), uri);
     }
 
@@ -27,7 +31,7 @@ public interface Text {
 
     Text append(String text, URI url);
 
-    default Text append(URI url) {
+    default Text append(final URI url) {
         return append(url.toString(), url);
     }
 

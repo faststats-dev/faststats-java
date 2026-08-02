@@ -7,6 +7,7 @@ module dev.faststats.onboarding {
     exports dev.faststats.screen.onboarding;
 
     requires java.desktop;
+    requires transitive dev.faststats;
 
     requires static org.jspecify;
 

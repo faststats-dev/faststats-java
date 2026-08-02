@@ -1,13 +1,17 @@
 package dev.faststats.screen;
 
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 public sealed interface Button extends Element<Button> permits SimpleButton {
-    static Button button(Text label) {
+    static Button button(final Text label) {
         return new SimpleButton(label);
     }
 
-    Button onClick(Consumer<Screen> action);
+    boolean enabled();
+
+    Button enabled(boolean enabled);
+
+    Button onClick(BiConsumer<Screen, Button> action);
     
     Text label();
     

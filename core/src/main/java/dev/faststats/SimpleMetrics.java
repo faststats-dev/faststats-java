@@ -11,8 +11,10 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @ApiStatus.Internal
+// todo: revise
 public abstract class SimpleMetrics extends SubmissionService implements Metrics {
     private static final String COLLECT_PATH = "/v1/collect";
 
@@ -26,7 +28,7 @@ public abstract class SimpleMetrics extends SubmissionService implements Metrics
     @Contract(mutates = "io")
     protected SimpleMetrics(final Factory factory) {
         super(factory.context);
-        this.metrics = context.getConfig().additionalMetrics() ? Set.copyOf(factory.metrics) : Set.of();
+        this.metrics = Set.copyOf(factory.metrics);
         this.flush = factory.flush;
     }
 
@@ -43,6 +45,7 @@ public abstract class SimpleMetrics extends SubmissionService implements Metrics
     }
 
     private boolean submit() {
+        if (!context.submissionsActive() || !context.getConfig().submitMetrics()) return false;
         try {
             if (submit(url, createData(), "metrics")) {
                 if (flush != null) flush.run();
@@ -78,6 +81,7 @@ public abstract class SimpleMetrics extends SubmissionService implements Metrics
     }
 
     private void appendCustomData(final JsonObject metrics) {
+        if (!context.getConfig().additionalMetrics()) return;
         this.metrics.forEach(metric -> {
             try {
                 if (metrics.has(metric.getId())) {
@@ -114,6 +118,10 @@ public abstract class SimpleMetrics extends SubmissionService implements Metrics
 
     @Contract(mutates = "param1")
     protected abstract void appendDefaultData(JsonObject metrics);
+
+    Set<String> metricIds() {
+        return metrics.stream().map(Metric::getId).collect(Collectors.toUnmodifiableSet());
+    }
 
     protected void shutdown() {
         try {

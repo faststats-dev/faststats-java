@@ -3,7 +3,7 @@
   "package": "com.example.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
-    "OnboardingScreen"
+    "TitleScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

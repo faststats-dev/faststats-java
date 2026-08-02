@@ -1,14 +1,11 @@
 package com.example.mixin;
 
 import com.mojang.blaze3d.platform.cursor.CursorTypes;
-import dev.faststats.screen.onboarding.OnboardingDefinition;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
@@ -18,11 +15,6 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.net.URI;
 import java.util.HashSet;
@@ -32,18 +24,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @NullMarked
-@Mixin(TitleScreen.class)
 public abstract class OnboardingScreen {
-    @Unique
-    private static boolean dismissed;
-
-    @Inject(method = "init", at = @At(value = "TAIL"))
-    private void showFastStatsOnboardingScreen(final CallbackInfo cir) {
-        if (!dismissed) {
-            OnboardingDefinition.create().open();
-            // Minecraft.getInstance().setScreenAndShow(new Onboarding());
-        }
-    }
 
     // todo: add a button to open the onboarding screen somewhere in the settings
 
@@ -115,8 +96,8 @@ public abstract class OnboardingScreen {
 
         @Override
         protected void init() {
-            var submitAdditionalMetricsSelected = new AtomicBoolean(true);
-            var errorTrackingSelected = new AtomicBoolean(true);
+            final var submitAdditionalMetricsSelected = new AtomicBoolean(true);
+            final var errorTrackingSelected = new AtomicBoolean(true);
 
             this.scrollOffset = Math.min(this.scrollOffset, this.maxScrollOffset());
 
@@ -153,12 +134,6 @@ public abstract class OnboardingScreen {
                 this.onClose();
             }).bounds(contentLeft() + buttonWidth + buttonGap, buttonY(), buttonWidth, buttonHeight()).build());
             this.updateWidgetPositions();
-        }
-
-        @Override
-        public void onClose() {
-            dismissed = true;
-            Minecraft.getInstance().setScreenAndShow(new TitleScreen());
         }
 
         // fixme: this is hellish code, i bet i will forget what it does until tomorrow :)
