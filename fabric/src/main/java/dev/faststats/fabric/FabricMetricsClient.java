@@ -13,6 +13,11 @@ final class FabricMetricsClient extends FabricMetrics {
     }
 
     @Override
+    public boolean isClientApplication() {
+        return true;
+    }
+
+    @Override
     protected void appendDefaultData(final JsonObject metrics) {
         metrics.addProperty("online_mode", compatibilityLayer.clientOnlineMode());
         metrics.addProperty("player_count", compatibilityLayer.clientPlayerCount());

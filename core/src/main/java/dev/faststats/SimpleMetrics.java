@@ -38,6 +38,10 @@ public abstract class SimpleMetrics extends SubmissionService implements Metrics
         context.scheduleAtFixedRate(this::submit, initialDelay, period, TimeUnit.MILLISECONDS);
     }
 
+    public boolean isClientApplication() {
+        return false;
+    }
+
     private boolean submit() {
         try {
             if (submit(url, createData(), "metrics")) {
@@ -64,6 +68,7 @@ public abstract class SimpleMetrics extends SubmissionService implements Metrics
     private static final int coreCount = Runtime.getRuntime().availableProcessors();
 
     private void appendInternalData(final JsonObject metrics) {
+        metrics.addProperty("client", isClientApplication());
         metrics.addProperty("core_count", coreCount);
         metrics.addProperty("java_vendor", javaVendor);
         metrics.addProperty("java_version", javaVersion);
