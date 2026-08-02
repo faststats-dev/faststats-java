@@ -72,7 +72,9 @@ final class SimpleErrorTrackerService extends SubmissionService implements Error
         if (handler != null) handler.uncaughtException(thread, error);
     }
 
+    // todo: revise
     private void submit() {
+        if (!context.submissionsActive() || !context.getConfig().errorTracking()) return;
         try {
             final var data = createData();
             if (data == null) return;
@@ -126,6 +128,11 @@ final class SimpleErrorTrackerService extends SubmissionService implements Error
     @Override
     protected String serverType() {
         return "error";
+    }
+
+    // todo: revise
+    void clearPending() {
+        clear();
     }
 
     public void shutdown() {

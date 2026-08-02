@@ -1,6 +1,7 @@
 package dev.faststats.neoforge;
 
 import dev.faststats.Metrics;
+import dev.faststats.FastStatsRegistry;
 import dev.faststats.SimpleContext;
 import dev.faststats.SimpleMetrics;
 import dev.faststats.Token;
@@ -17,6 +18,7 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforgespi.language.IModInfo;
 import org.jetbrains.annotations.Contract;
 
+import java.nio.file.Path;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -41,16 +43,19 @@ public final class NeoForgeContext extends SimpleContext {
     private final IModInfo mod;
 
     private NeoForgeContext(final Factory factory, final LoggerFactory loggerFactory, final String modId, @Token final String token) {
-        super(factory, loggerFactory, SimpleConfig.read(FMLPaths.CONFIGDIR.get()
-                .resolve("faststats").resolve("config.properties"), loggerFactory
-        ), "neoforge", token);
+        super(factory, loggerFactory, SimpleConfig.read(configPath(), loggerFactory), "neoforge", token);
         this.mod = ModList.get().getModContainerById(modId).map(ModContainer::getModInfo).orElseThrow(() -> {
             return new IllegalArgumentException("Mod not found: " + modId);
         });
         this.compatibilityLayer = ServiceLoader.load(CompatibilityLayer.class)
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No NeoForge compatibility layer found"));
-        initializeServices(factory);
+        initializeManagedServices(factory);
+        FastStatsRegistry.instance().register(
+                this,
+                () -> SimpleConfig.read(configPath(), loggerFactory),
+                settings -> SimpleConfig.update(configPath(), settings)
+        );
         switch (compatibilityLayer.getEnvironment()) {
             case CLIENT -> ready();
             case SERVER -> {
@@ -91,10 +96,15 @@ public final class NeoForgeContext extends SimpleContext {
 
     @Override
     public void shutdown() {
+        FastStatsRegistry.instance().unregister(this);
         super.shutdown();
         tasks.forEach(task -> task.cancel(true));
         tasks.clear();
         executor.shutdown();
+    }
+
+    private static Path configPath() {
+        return FMLPaths.CONFIGDIR.get().resolve("faststats").resolve("config.properties");
     }
 
     public static final class Factory extends SimpleContext.Factory<NeoForgeContext, Factory> {

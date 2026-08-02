@@ -9,7 +9,7 @@ abstract non-sealed class SimpleElement<T extends Element<T>> implements Element
     }
 
     @Override
-    public T height(int percentage) {
+    public T height(final int percentage) {
         this.height = percentage;
         return self();
     }
@@ -20,7 +20,7 @@ abstract non-sealed class SimpleElement<T extends Element<T>> implements Element
     }
 
     @Override
-    public T width(int percentage) {
+    public T width(final int percentage) {
         this.width = percentage;
         return self();
     }

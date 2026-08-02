@@ -12,18 +12,21 @@ import java.io.UncheckedIOException;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+// todo: revise
 public non-sealed abstract class SimpleContext implements FastStatsContext {
     private final @Token String token;
-    private final Config config;
+    private volatile Config config;
     private final SdkInfo sdkInfo;
 
     private final LoggerFactory loggerFactory;
     private final Logger logger;
 
     protected volatile boolean ready = false;
+    private volatile boolean submissionActive;
 
     private @Nullable Metrics metrics;
     private @Nullable FeatureFlagService featureFlagService;
@@ -56,14 +59,33 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
 
     @MustBeInvokedByOverriders
     protected final void initializeServices(final Factory<?, ?> factory) throws IllegalStateException {
+        initializeServices(factory, false);
+    }
+
+    /**
+     * Initializes service descriptions before consent so this context can participate in a live lifecycle registry.
+     */
+    @MustBeInvokedByOverriders
+    protected final void initializeManagedServices(final Factory<?, ?> factory) throws IllegalStateException {
+        initializeServices(factory, true);
+    }
+
+    private void initializeServices(final Factory<?, ?> factory, final boolean lifecycleManaged) {
         if (factory.metrics == null && factory.errorTracker == null && factory.featureFlagService == null)
             throw new IllegalStateException("Context created without any service attached, was this intentional?");
 
-        if (!preSubmissionStart()) return;
+        final var start = preSubmissionStart();
+        if (!lifecycleManaged && !start) return;
 
-        this.metrics = config.submitMetrics() && factory.metrics != null ? factory.metrics.apply(metricsFactory()) : null;
-        this.errorTrackerService = config.errorTracking() && factory.errorTracker != null ? new SimpleErrorTrackerService(this, factory.errorTracker) : null;
+        if (factory.metrics != null && (lifecycleManaged || config.submitMetrics())) {
+            final var metricsFactory = metricsFactory();
+            this.metrics = factory.metrics.apply(metricsFactory);
+        }
+        this.errorTrackerService = factory.errorTracker != null && (lifecycleManaged || config.errorTracking())
+                ? new SimpleErrorTrackerService(this, factory.errorTracker)
+                : null;
         this.featureFlagService = factory.featureFlagService != null ? factory.featureFlagService.apply(new SimpleFeatureFlagService.Factory(this)) : null;
+        this.submissionActive = start;
 
         final var features = new HashSet<String>(3);
         features.add("metrics=" + (metrics != null ? "yes" : "no"));
@@ -118,13 +140,13 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
     @Override
     @Contract(pure = true)
     public final Optional<Metrics> metrics() {
-        return Optional.ofNullable(metrics);
+        return submissionActive && config.submitMetrics() ? Optional.ofNullable(metrics) : Optional.empty();
     }
 
     @Override
     @Contract(pure = true)
     public final Optional<FeatureFlagService> featureFlagService() {
-        return Optional.ofNullable(featureFlagService);
+        return submissionActive ? Optional.ofNullable(featureFlagService) : Optional.empty();
     }
 
     @Contract(value = " -> new", pure = true)
@@ -138,11 +160,11 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
     @Override
     @Contract(pure = true)
     public final Optional<ErrorTrackerService> errorTrackerService() {
-        return Optional.ofNullable(errorTrackerService);
+        return submissionActive && config.errorTracking() ? Optional.ofNullable(errorTrackerService) : Optional.empty();
     }
 
     @Override
-    public void ready() {
+    public synchronized void ready() {
         if (ready) {
             logger.warn("%s#ready() was called twice; ignoring.", getClass().getSimpleName());
             return;
@@ -155,12 +177,44 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
     @Async.Schedule
     protected abstract void scheduleAtFixedRate(Runnable task, long initialDelay, long period, TimeUnit unit);
 
+    final FastStatsRegistration registration() {
+        final var additionalMetrics = metrics instanceof final SimpleMetrics simpleMetrics
+                ? simpleMetrics.metricIds()
+                : Set.<String>of();
+        return new FastStatsRegistration(
+                getProjectName(), sdkInfo.getName(), sdkInfo.getVersion(),
+                metrics != null, errorTrackerService != null, featureFlagService != null, additionalMetrics
+        );
+    }
+
+    final synchronized void startSubmissions(final Config config) {
+        final var wasActive = submissionActive;
+        this.config = config;
+        loggerFactory.setDebug(config.debug());
+        if ((!wasActive || !config.errorTracking()) && errorTrackerService != null) errorTrackerService.clearPending();
+        submissionActive = true;
+    }
+
+    final synchronized void stopSubmissions(final Config config) {
+        this.config = config;
+        loggerFactory.setDebug(config.debug());
+        submissionActive = false;
+        if (errorTrackerService != null) errorTrackerService.clearPending();
+    }
+
+    final boolean submissionsActive() {
+        return submissionActive;
+    }
+
     @Override
-    public void shutdown() {
+    public synchronized void shutdown() {
         if (!ready) return;
-        if (errorTrackerService != null) errorTrackerService.shutdown();
+        if (submissionActive && config.errorTracking() && errorTrackerService != null) errorTrackerService.shutdown();
+        else if (errorTrackerService != null) errorTrackerService.clearPending();
         if (featureFlagService instanceof final SimpleFeatureFlagService service) service.shutdown();
-        if (metrics instanceof final SimpleMetrics simpleMetrics) simpleMetrics.shutdown();
+        if (submissionActive && config.submitMetrics() && metrics instanceof final SimpleMetrics simpleMetrics)
+            simpleMetrics.shutdown();
+        submissionActive = false;
         ready = false;
     }
 

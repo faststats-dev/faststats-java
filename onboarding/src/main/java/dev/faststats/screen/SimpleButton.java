@@ -2,18 +2,30 @@ package dev.faststats.screen;
 
 import org.jspecify.annotations.Nullable;
 
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 final class SimpleButton extends SimpleElement<Button> implements Button {
-    private @Nullable Consumer<Screen> clickAction = null;
+    private @Nullable BiConsumer<Screen, Button> clickAction = null;
+    private boolean enabled = true;
     private final Text label;
 
-    public SimpleButton(Text label) {
+    public SimpleButton(final Text label) {
         this.label = label;
     }
 
     @Override
-    public Button onClick(Consumer<Screen> action) {
+    public boolean enabled() {
+        return enabled;
+    }
+
+    @Override
+    public Button enabled(final boolean enabled) {
+        this.enabled = enabled;
+        return this;
+    }
+
+    @Override
+    public Button onClick(BiConsumer<Screen, Button> action) {
         this.clickAction = action;
         return this;
     }
@@ -24,7 +36,7 @@ final class SimpleButton extends SimpleElement<Button> implements Button {
     }
 
     @Override
-    public void onClick(Screen screen) {
-        if (clickAction != null) clickAction.accept(screen);
+    public void onClick(final Screen screen) {
+        if (enabled && clickAction != null) clickAction.accept(screen, this);
     }
 }
