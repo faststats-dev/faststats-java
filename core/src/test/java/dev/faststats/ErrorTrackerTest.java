@@ -166,6 +166,22 @@ public class ErrorTrackerTest {
     }
 
     @Test
+    public void messageFallsBackToCauseMessage() {
+        final var cause = new IllegalArgumentException("cause message");
+        final var error = new RuntimeException(null, cause);
+
+        tracker.trackError(error);
+
+        final var report = tracker.getFullData().get(0).getAsJsonObject();
+        final var stack = report.getAsJsonArray("stack");
+        assertEquals("cause message", report.get("message").getAsString());
+        assertEquals("java.lang.RuntimeException: cause message", stack.get(0).getAsString());
+        assertTrue(stack.asList().stream()
+                .anyMatch(line -> line.getAsString()
+                        .equals("Caused by: java.lang.IllegalArgumentException: cause message")));
+    }
+
+    @Test
     public void nestedCausesAreSerializedInOrder() {
         final var root = new IllegalArgumentException("root secret 172.16.0.9");
         root.setStackTrace(new StackTraceElement[]{
