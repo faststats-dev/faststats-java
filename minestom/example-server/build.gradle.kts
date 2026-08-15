@@ -10,7 +10,7 @@ tasks.compileJava {
 }
 
 dependencies {
-    implementation("net.minestom:minestom:2026.05.11-1.21.11")
+    implementation("net.minestom:minestom:2026.08.07-26.2")
     implementation(project(":minestom"))
 }
 
