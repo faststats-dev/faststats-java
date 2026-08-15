@@ -53,7 +53,7 @@ public final class FabricScreenManager implements ScreenManager {
     }
 
     @Override
-    public Text translatable(String text) {
+    public Text translatable(final String text) {
         return new FabricText(Component.translatable(text));
     }
 
@@ -94,7 +94,7 @@ public final class FabricScreenManager implements ScreenManager {
 
             final int topSeparator = topSeparator();
             final int bottomSeparator = bottomSeparator();
-            final int contentWidth = Math.clamp(width - CONTENT_MARGIN * 2, 1, CONTENT_MAX_WIDTH);
+            final int contentWidth = clamp(width - CONTENT_MARGIN * 2, 1, CONTENT_MAX_WIDTH);
             final int contentX = (width - contentWidth) / 2;
             final int contentY = topSeparator + CONTENT_MARGIN;
             final int contentHeight = Math.max(1, bottomSeparator - contentY - BOTTOM_CONTENT_MARGIN);
@@ -127,7 +127,7 @@ public final class FabricScreenManager implements ScreenManager {
             }
 
             if (!screen.footer().isEmpty()) {
-                final int footerWidth = Math.clamp(width - CONTENT_MARGIN * 2, 1, FOOTER_MAX_WIDTH);
+                final int footerWidth = clamp(width - CONTENT_MARGIN * 2, 1, FOOTER_MAX_WIDTH);
                 final var footer = buildRootDocument(screen.footer(), footerWidth, FOOTER_HEIGHT);
                 footer.setPosition((width - footerWidth) / 2,
                         bottomSeparator + Math.max(0, (height - bottomSeparator - footer.getHeight()) / 2));
@@ -265,7 +265,7 @@ public final class FabricScreenManager implements ScreenManager {
                 childrenHeight += child.getHeight();
             }
 
-            final int gap = elements.size() >= 2 ? Math.clamp((availableHeight - childrenHeight) / (elements.size() - 1), 0, ROOT_GAP) : 0;
+            final int gap = elements.size() >= 2 ? clamp((availableHeight - childrenHeight) / (elements.size() - 1), 0, ROOT_GAP) : 0;
             final var layout = LinearLayout.vertical().spacing(gap);
             layout.defaultCellSetting().alignHorizontallyLeft();
             children.forEach(layout::addChild);
@@ -313,28 +313,19 @@ public final class FabricScreenManager implements ScreenManager {
         private LayoutElement wrapSized(final Element<?> element, int width, int height) {
             width = Math.max(1, width);
             height = Math.max(1, height);
-            switch (element) {
-                case final Division division -> {
-                    return buildSizedLayout(division.elements(), division.orientation(), width, height, division.gap());
-                }
-                case final Scrollable scrollable -> {
-                    return wrapScrollable(element,
-                            buildDocument(scrollable.elements(), width, height, scrollable.gap()), width, height);
-                }
-                case final ScrollableTextBox textBox -> {
-                    return wrapScrollableTextBox(element, textBox.text(), width, height);
-                }
-                case final TextBox textBox -> {
-                    return wrapTextBox(textBox.text(), width, height);
-                }
-                case final Checkbox checkbox -> {
-                    return frame(width, height, wrap(checkbox, width), 0.0F, 0.5F);
-                }
-                case final Button button -> {
-                    return frame(width, height, wrap(button, width, height), 0.0F, 0.5F);
-                }
-                default -> {
-                }
+            if (element instanceof final Division division) {
+                return buildSizedLayout(division.elements(), division.orientation(), width, height, division.gap());
+            } else if (element instanceof final Scrollable scrollable) {
+                return wrapScrollable(element,
+                        buildDocument(scrollable.elements(), width, height, scrollable.gap()), width, height);
+            } else if (element instanceof final ScrollableTextBox textBox) {
+                return wrapScrollableTextBox(element, textBox.text(), width, height);
+            } else if (element instanceof final TextBox textBox) {
+                return wrapTextBox(textBox.text(), width, height);
+            } else if (element instanceof final Checkbox checkbox) {
+                return frame(width, height, wrap(checkbox, width), 0.0F, 0.5F);
+            } else if (element instanceof final Button button) {
+                return frame(width, height, wrap(button, width, height), 0.0F, 0.5F);
             }
             throw new IllegalArgumentException("Unsupported screen element: " + element.getClass().getName());
         }
@@ -352,37 +343,28 @@ public final class FabricScreenManager implements ScreenManager {
 
         private LayoutElement wrapNatural(final Element<?> element, int width, final int referenceHeight) {
             width = Math.max(1, width);
-            switch (element) {
-                case final Division division -> {
-                    return buildNaturalDivision(division, width, referenceHeight);
-                }
-                case final Scrollable scrollable -> {
-                    final int height = percentage(referenceHeight, scrollable.height());
-                    return wrapScrollable(element,
-                            buildDocument(scrollable.elements(), width, height, scrollable.gap()), width, height);
-                }
-                case final ScrollableTextBox textBox -> {
-                    final int maxHeight = percentage(referenceHeight, textBox.height());
-                    final int height = Math.min(maxHeight, naturalScrollableTextBoxHeight(textBox.text(), width));
-                    return wrapScrollableTextBox(element, textBox.text(), width, height);
-                }
-                case final TextBox textBox -> {
-                    final int innerWidth = Math.max(1, width - TEXT_PADDING_X * 2);
-                    final var widget = textWidget(textBox.text(), innerWidth);
-                    final int naturalHeight = widget.getHeight() + TEXT_PADDING_Y * 2;
-                    final int height = textBox.height() == 100
-                            ? naturalHeight
-                            : percentage(referenceHeight, textBox.height());
-                    return wrapTextBox(textBox.text(), width, height);
-                }
-                case final Checkbox checkbox -> {
-                    return wrap(checkbox, width);
-                }
-                case final Button button -> {
-                    return wrap(button, width, net.minecraft.client.gui.components.Button.DEFAULT_HEIGHT);
-                }
-                default -> {
-                }
+            if (element instanceof final Division division) {
+                return buildNaturalDivision(division, width, referenceHeight);
+            } else if (element instanceof final Scrollable scrollable) {
+                final int height = percentage(referenceHeight, scrollable.height());
+                return wrapScrollable(element,
+                        buildDocument(scrollable.elements(), width, height, scrollable.gap()), width, height);
+            } else if (element instanceof final ScrollableTextBox textBox) {
+                final int maxHeight = percentage(referenceHeight, textBox.height());
+                final int height = Math.min(maxHeight, naturalScrollableTextBoxHeight(textBox.text(), width));
+                return wrapScrollableTextBox(element, textBox.text(), width, height);
+            } else if (element instanceof final TextBox textBox) {
+                final int innerWidth = Math.max(1, width - TEXT_PADDING_X * 2);
+                final var widget = textWidget(textBox.text(), innerWidth);
+                final int naturalHeight = widget.getHeight() + TEXT_PADDING_Y * 2;
+                final int height = textBox.height() == 100
+                        ? naturalHeight
+                        : percentage(referenceHeight, textBox.height());
+                return wrapTextBox(textBox.text(), width, height);
+            } else if (element instanceof final Checkbox checkbox) {
+                return wrap(checkbox, width);
+            } else if (element instanceof final Button button) {
+                return wrap(button, width, net.minecraft.client.gui.components.Button.DEFAULT_HEIGHT);
             }
             throw new IllegalArgumentException("Unsupported screen element: " + element.getClass().getName());
         }
@@ -412,7 +394,7 @@ public final class FabricScreenManager implements ScreenManager {
         }
 
         private LayoutElement wrapTextBox(final Text text, final int width, final int height) {
-            final int paddingX = Math.clamp((width - 1) / 2, 0, TEXT_PADDING_X);
+            final int paddingX = clamp((width - 1) / 2, 0, TEXT_PADDING_X);
             final int paddingY = textPaddingY(height);
             final var widget = textWidget(text, Math.max(1, width - paddingX * 2));
             widget.setMaxRows(Math.max(1, (height - paddingY * 2) / font.lineHeight));
@@ -425,7 +407,7 @@ public final class FabricScreenManager implements ScreenManager {
 
         private LayoutElement wrapScrollableTextBox(final Element<?> element, final Text text, final int width, final int height) {
             final int panelWidth = Math.max(1, width - AbstractScrollArea.SCROLLBAR_WIDTH);
-            final int paddingX = Math.clamp((panelWidth - 1) / 2, 0, TEXT_PADDING_X);
+            final int paddingX = clamp((panelWidth - 1) / 2, 0, TEXT_PADDING_X);
             final int paddingY = textPaddingY(height);
             final int textWidth = Math.max(1, panelWidth - paddingX * 2);
             final int documentWidth = scrollContentWidth(width);
@@ -448,7 +430,7 @@ public final class FabricScreenManager implements ScreenManager {
 
         private int naturalScrollableTextBoxHeight(final Text text, final int width) {
             final int panelWidth = Math.max(1, width - AbstractScrollArea.SCROLLBAR_WIDTH);
-            final int paddingX = Math.clamp((panelWidth - 1) / 2, 0, TEXT_PADDING_X);
+            final int paddingX = clamp((panelWidth - 1) / 2, 0, TEXT_PADDING_X);
             final int textWidth = Math.max(1, panelWidth - paddingX * 2);
             return Math.max(1, textWidget(text, textWidth).getHeight() + (TEXT_PADDING_Y + 1) * 2);
         }
@@ -504,7 +486,7 @@ public final class FabricScreenManager implements ScreenManager {
             scrollable.visitWidgets(widget -> {
                 if (widget instanceof final AbstractScrollArea scrollArea) {
                     scrollAreas.put(element, scrollArea);
-                    scrollAreasByPriority.addFirst(scrollArea);
+                    scrollAreasByPriority.add(0, scrollArea);
                 }
             });
             return scrollable;
@@ -553,11 +535,16 @@ public final class FabricScreenManager implements ScreenManager {
         }
 
         private int topSeparator() {
-            return Math.clamp(height / 3, 1, HEADER_HEIGHT);
+            return clamp(height / 3, 1, HEADER_HEIGHT);
         }
 
         private int bottomSeparator() {
-            return Math.max(topSeparator() + 1, height - Math.clamp(height / 3, 1, FOOTER_HEIGHT));
+            return Math.max(topSeparator() + 1, height - clamp(height / 3, 1, FOOTER_HEIGHT));
+        }
+
+        public static int clamp(final long value, final int min, final int max) {
+            if (min > max) throw new IllegalArgumentException(min + " > " + max);
+            return (int) Math.min(max, Math.max(value, min));
         }
 
         private static final class PanelWidget extends AbstractWidget {
