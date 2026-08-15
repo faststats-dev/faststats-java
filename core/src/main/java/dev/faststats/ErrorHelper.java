@@ -36,7 +36,7 @@ final class ErrorHelper {
                                          @Nullable final Attributes defaultAttributes) {
         final var error = trackedError.error();
         final var report = new JsonObject();
-        final var message = getAnonymizedMessage(error, customPatterns);
+        final var message = anonymize(error.getMessage(), customPatterns);
 
         final var stacktrace = new JsonArray();
         final var header = message != null
@@ -54,7 +54,8 @@ final class ErrorHelper {
         appendCauseChain(error.getCause(), stack, suppress, stacktrace, customPatterns);
 
         report.addProperty("error", error.getClass().getName());
-        if (message != null) report.addProperty("message", message);
+        final var first = anonymize(findFirstMessage(error, null), customPatterns);
+        if (first != null) report.addProperty("message", first);
 
         report.add("stack", stacktrace);
         report.addProperty("handled", trackedError.handled());
@@ -75,7 +76,7 @@ final class ErrorHelper {
         if (suppress != null) toSuppress.addAll(suppress);
         final var visited = Collections.<Throwable>newSetFromMap(new IdentityHashMap<>());
         while (cause != null && visited.add(cause)) {
-            final var causeMessage = getAnonymizedMessage(cause, customPatterns);
+            final var causeMessage = anonymize(cause.getMessage(), customPatterns);
             final var header = causeMessage != null
                     ? "Caused by: " + cause.getClass().getName() + ": " + causeMessage
                     : "Caused by: " + cause.getClass().getName();
@@ -213,8 +214,16 @@ final class ErrorHelper {
         return loader == current;
     }
 
-    private static @Nullable String getAnonymizedMessage(final Throwable error, final List<Map.Entry<Pattern, String>> customPatterns) {
+    private static @Nullable String findFirstMessage(@Nullable final Throwable error, @Nullable Set<Throwable> visited) {
+        if (error == null) return null;
         final var message = error.getMessage();
+        if (message != null) return message;
+        if (visited == null) visited = Collections.newSetFromMap(new IdentityHashMap<>());
+        if (!visited.add(error)) return null;
+        return findFirstMessage(error.getCause(), visited);
+    }
+
+    private static @Nullable String anonymize(@Nullable final String message, final List<Map.Entry<Pattern, String>> customPatterns) {
         if (message == null) return null;
         var truncated = message.length() > MAX_MESSAGE_LENGTH
                 ? message.substring(0, MAX_MESSAGE_LENGTH) + "..."
