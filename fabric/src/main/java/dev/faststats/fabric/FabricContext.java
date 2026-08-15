@@ -47,11 +47,7 @@ public final class FabricContext extends SimpleContext {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No Fabric compatibility layer found"));
         initializeManagedServices(factory);
-        FastStatsRegistry.instance().register(
-                this,
-                this::getConfig, // todo: keep first between reads or do not read again
-                settings -> SimpleConfig.update(configPath(), settings)
-        );
+        FastStatsRegistry.instance().register(this);
         switch (FabricLoader.getInstance().getEnvironmentType()) {
             case CLIENT -> {
                 ready();

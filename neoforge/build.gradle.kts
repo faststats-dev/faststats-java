@@ -56,8 +56,7 @@ configurations.configureEach {
 }
 
 dependencies {
-    compileOnlyApi(project(":core"))
-    compileOnly(project(":config"))
+    compileOnlyApi(project(":onboarding"))
     compileOnly("net.neoforged:bus:8.0.5")
 }
 

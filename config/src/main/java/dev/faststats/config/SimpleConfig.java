@@ -2,7 +2,6 @@ package dev.faststats.config;
 
 import dev.faststats.Config;
 import dev.faststats.SimpleContext;
-import dev.faststats.SubmissionSettings;
 import dev.faststats.internal.Logger;
 import dev.faststats.internal.LoggerFactory;
 import org.jetbrains.annotations.ApiStatus;
@@ -10,9 +9,9 @@ import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -22,15 +21,7 @@ import java.util.function.Supplier;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @ApiStatus.Internal
-public record SimpleConfig(
-        UUID serverId,
-        boolean enabled,
-        boolean additionalMetrics,
-        boolean debug,
-        boolean submitMetrics,
-        boolean errorTracking,
-        boolean firstRun
-) implements Config {
+public final class SimpleConfig implements Config {
     private static final int CONFIG_VERSION = 3;
 
     private static final String COMMENT = """
@@ -60,6 +51,85 @@ public record SimpleConfig(
             
             Since this is your first start with FastStats, submission will not start
             until after a restart, to allow you to opt out if you prefer.""";
+
+    private final Path file;
+    private final UUID serverId;
+    private final boolean debug;
+    private final boolean firstRun;
+    private volatile boolean additionalMetrics;
+    private volatile boolean enabled;
+    private volatile boolean errorTracking;
+    private volatile boolean submitMetrics;
+
+    public SimpleConfig(
+            final Path file,
+            final UUID serverId,
+            final boolean enabled,
+            final boolean additionalMetrics,
+            final boolean debug,
+            final boolean submitMetrics,
+            final boolean errorTracking,
+            final boolean firstRun
+    ) {
+        this.file = file;
+        this.serverId = serverId;
+        this.enabled = enabled;
+        this.additionalMetrics = additionalMetrics;
+        this.debug = debug;
+        this.submitMetrics = submitMetrics;
+        this.errorTracking = errorTracking;
+        this.firstRun = firstRun;
+    }
+
+    @Override
+    public UUID serverId() {
+        return serverId;
+    }
+
+    @Override
+    public boolean enabled() {
+        return enabled;
+    }
+
+    public void enabled(final boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    @Override
+    public boolean additionalMetrics() {
+        return additionalMetrics;
+    }
+
+    public void additionalMetrics(final boolean additionalMetrics) {
+        this.additionalMetrics = additionalMetrics;
+    }
+
+    @Override
+    public boolean debug() {
+        return debug;
+    }
+
+    @Override
+    public boolean submitMetrics() {
+        return submitMetrics;
+    }
+
+    public void submitMetrics(final boolean submitMetrics) {
+        this.submitMetrics = submitMetrics;
+    }
+
+    @Override
+    public boolean errorTracking() {
+        return errorTracking;
+    }
+
+    public void errorTracking(final boolean errorTracking) {
+        this.errorTracking = errorTracking;
+    }
+
+    public boolean firstRun() {
+        return firstRun;
+    }
 
     @Contract(mutates = "io")
     public static SimpleConfig read(final Path file, final LoggerFactory factory) throws RuntimeException {
@@ -92,8 +162,7 @@ public record SimpleConfig(
             if (configVersion != null && configVersion < CONFIG_VERSION)
                 logger.info("Updating config version from %s to %s", configVersion, CONFIG_VERSION);
             Files.createDirectories(file.getParent());
-            try (final var out = Files.newOutputStream(file);
-                 final var writer = new OutputStreamWriter(out, UTF_8)) {
+            try (final var writer = Files.newBufferedWriter(file, UTF_8)) {
                 final var store = new Properties();
 
                 store.setProperty("enabled", Boolean.toString(enabled));
@@ -113,6 +182,7 @@ public record SimpleConfig(
         }
 
         return new SimpleConfig(
+                file,
                 serverId,
                 enabled && enabledFlag,
                 enabled && enabledFlag && additionalMetrics,
@@ -123,21 +193,17 @@ public record SimpleConfig(
         );
     }
 
-    // todo: revise
     @Contract(mutates = "io")
-    public static void update(
-            final Path file,
-            final SubmissionSettings settings
-    ) throws RuntimeException {
+    public void persist() throws RuntimeException {
         final var properties = readOrEmpty(file);
         if (properties == null) throw new IllegalStateException("Metrics config has not been initialized");
 
-        properties.setProperty("submitMetrics", Boolean.toString(settings.submitMetrics()));
-        properties.setProperty("submitAdditionalMetrics", Boolean.toString(settings.additionalMetrics()));
-        properties.setProperty("submitErrors", Boolean.toString(settings.errorTracking()));
+        properties.setProperty("enabled", Boolean.toString(enabled()));
+        properties.setProperty("submitAdditionalMetrics", Boolean.toString(additionalMetrics()));
+        properties.setProperty("submitErrors", Boolean.toString(errorTracking()));
+        properties.setProperty("submitMetrics", Boolean.toString(submitMetrics()));
 
-        try (final var out = Files.newOutputStream(file);
-             final var writer = new OutputStreamWriter(out, UTF_8)) {
+        try (final var writer = Files.newBufferedWriter(file, UTF_8)) {
             properties.store(writer, COMMENT);
         } catch (final IOException e) {
             throw new RuntimeException("Failed to save metrics config", e);
@@ -201,5 +267,34 @@ public record SimpleConfig(
             return false;
         }
         return true;
+    }
+
+    @Override
+    public boolean equals(final Object object) {
+        if (this == object) return true;
+        if (!(object instanceof final SimpleConfig that)) return false;
+        return enabled == that.enabled
+                && additionalMetrics == that.additionalMetrics
+                && debug == that.debug
+                && submitMetrics == that.submitMetrics
+                && errorTracking == that.errorTracking
+                && firstRun == that.firstRun
+                && Objects.equals(serverId, that.serverId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(serverId, enabled, additionalMetrics, debug, submitMetrics, errorTracking, firstRun);
+    }
+
+    @Override
+    public String toString() {
+        return "SimpleConfig[serverId=" + serverId
+                + ", enabled=" + enabled
+                + ", additionalMetrics=" + additionalMetrics
+                + ", debug=" + debug
+                + ", submitMetrics=" + submitMetrics
+                + ", errorTracking=" + errorTracking
+                + ", firstRun=" + firstRun + ']';
     }
 }
