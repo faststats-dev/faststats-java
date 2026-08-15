@@ -10,6 +10,7 @@ tasks.compileJava {
 }
 
 dependencies {
+    compileOnly(project(":config"))
     compileOnly(project(":onboarding"))
     compileOnly("net.fabricmc:fabric-loader:0.19.3")
     compileOnly(project(":fabric:versions:26.1-26.3"))

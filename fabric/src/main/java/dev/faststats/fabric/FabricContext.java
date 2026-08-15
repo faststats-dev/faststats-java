@@ -49,7 +49,7 @@ public final class FabricContext extends SimpleContext {
         initializeManagedServices(factory);
         FastStatsRegistry.instance().register(
                 this,
-                () -> SimpleConfig.read(configPath(), loggerFactory),
+                this::getConfig, // todo: keep first between reads or do not read again
                 settings -> SimpleConfig.update(configPath(), settings)
         );
         switch (FabricLoader.getInstance().getEnvironmentType()) {
