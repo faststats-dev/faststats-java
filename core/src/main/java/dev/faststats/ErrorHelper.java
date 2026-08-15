@@ -36,7 +36,7 @@ final class ErrorHelper {
                                          @Nullable final Attributes defaultAttributes) {
         final var error = trackedError.error();
         final var report = new JsonObject();
-        final var message = anonymize(findFirstMessage(error, null), customPatterns);
+        final var message = anonymize(error.getMessage(), customPatterns);
 
         final var stacktrace = new JsonArray();
         final var header = message != null
@@ -54,7 +54,8 @@ final class ErrorHelper {
         appendCauseChain(error.getCause(), stack, suppress, stacktrace, customPatterns);
 
         report.addProperty("error", error.getClass().getName());
-        if (message != null) report.addProperty("message", message);
+        final var first = anonymize(findFirstMessage(error, null), customPatterns);
+        if (first != null) report.addProperty("message", first);
 
         report.add("stack", stacktrace);
         report.addProperty("handled", trackedError.handled());
