@@ -17,10 +17,10 @@ public final class TitleScreenMixin {
     @SuppressWarnings("IllegalDependencyOnInternalPackage")
     @Inject(method = "init", at = @At("TAIL"))
     private void openOnboardingScreen(final CallbackInfo ci) {
+        if (onboardingOpened) return;
         final var config = (SimpleConfig) FastStatsRegistry.instance().config();
-        if (!onboardingOpened && config.firstRun()) {
-            onboardingOpened = true;
-            OnboardingDefinition.create().open();
-        }
+        if (!config.firstRun()) return;
+        OnboardingDefinition.create().open();
+        onboardingOpened = true;
     }
 }
