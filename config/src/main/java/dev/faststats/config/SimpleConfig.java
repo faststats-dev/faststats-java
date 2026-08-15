@@ -78,11 +78,11 @@ public record SimpleConfig(
             return uuid;
         }, logger);
         final var configVersion = parse(properties, saveConfig, "configVersion", null, Integer::parseInt, logger);
-        final boolean enabled = parse(properties, saveConfig, "enabled", () -> true, Boolean::parseBoolean, logger);
-        final boolean submitMetrics = parse(properties, saveConfig, "submitMetrics", () -> true, Boolean::parseBoolean, logger);
-        final boolean errorTracking = parse(properties, saveConfig, "submitErrors", () -> true, Boolean::parseBoolean, logger);
-        final boolean additionalMetrics = parse(properties, saveConfig, "submitAdditionalMetrics", () -> true, Boolean::parseBoolean, logger);
-        final boolean debug = parse(properties, saveConfig, "debug", () -> false, Boolean::parseBoolean, logger);
+        final var enabled = parse(properties, saveConfig, "enabled", () -> true, Boolean::parseBoolean, logger);
+        final var submitMetrics = parse(properties, saveConfig, "submitMetrics", () -> true, Boolean::parseBoolean, logger);
+        final var errorTracking = parse(properties, saveConfig, "submitErrors", () -> true, Boolean::parseBoolean, logger);
+        final var additionalMetrics = parse(properties, saveConfig, "submitAdditionalMetrics", () -> true, Boolean::parseBoolean, logger);
+        final var debug = parse(properties, saveConfig, "debug", () -> false, Boolean::parseBoolean, logger);
 
         if (configVersion == null || configVersion < CONFIG_VERSION) saveConfig.set(true);
         else if (configVersion > CONFIG_VERSION) saveConfig.set(false);
