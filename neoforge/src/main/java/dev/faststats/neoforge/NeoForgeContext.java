@@ -51,11 +51,7 @@ public final class NeoForgeContext extends SimpleContext {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No NeoForge compatibility layer found"));
         initializeManagedServices(factory);
-        FastStatsRegistry.instance().register(
-                this,
-                () -> SimpleConfig.read(configPath(), loggerFactory),
-                settings -> SimpleConfig.update(configPath(), settings)
-        );
+        FastStatsRegistry.instance().register(this);
         switch (compatibilityLayer.getEnvironment()) {
             case CLIENT -> ready();
             case SERVER -> {

@@ -64,7 +64,12 @@ final class SimpleScreen implements Screen {
 
     @Override
     public Screen onClose(@Nullable final Runnable runnable) {
-        this.onClose = runnable;
+        final var onClose = this.onClose;
+        if (onClose != null && runnable != null) this.onClose = () -> {
+            onClose.run();
+            runnable.run();
+        };
+        else this.onClose = runnable;
         return this;
     }
 

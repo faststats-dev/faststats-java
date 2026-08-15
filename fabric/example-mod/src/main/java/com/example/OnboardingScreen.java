@@ -1,4 +1,4 @@
-package com.example.mixin;
+package com.example;
 
 import com.mojang.blaze3d.platform.cursor.CursorTypes;
 import net.minecraft.ChatFormatting;

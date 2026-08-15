@@ -152,9 +152,8 @@ public final class FabricScreenManager implements ScreenManager {
         }
 
         @Override
-        @SuppressWarnings("DataFlowIssue")
         public void onClose() {
-            screen.onClose().ifPresentOrElse(Runnable::run, () -> Minecraft.getInstance().setScreenAndShow(null));
+            screen.onClose().ifPresentOrElse(Runnable::run, super::onClose);
         }
 
         @Override
