@@ -60,7 +60,7 @@ public final class FabricScreenManager implements ScreenManager {
     @Override
     @SuppressWarnings("DataFlowIssue")
     public void closeScreen(final Screen screen) {
-        Minecraft.getInstance().setScreenAndShow(null);
+        screen.onClose().ifPresentOrElse(Runnable::run, () -> Minecraft.getInstance().setScreenAndShow(null));
     }
 
     @Override
@@ -149,6 +149,12 @@ public final class FabricScreenManager implements ScreenManager {
         protected void repositionElements() {
             saveScrollAmounts();
             super.repositionElements();
+        }
+
+        @Override
+        @SuppressWarnings("DataFlowIssue")
+        public void onClose() {
+            screen.onClose().ifPresentOrElse(Runnable::run, () -> Minecraft.getInstance().setScreenAndShow(null));
         }
 
         @Override

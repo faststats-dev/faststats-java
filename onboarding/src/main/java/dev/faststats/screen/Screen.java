@@ -1,8 +1,9 @@
 package dev.faststats.screen;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 public interface Screen {
     static Screen screen(final Text title) {
@@ -24,6 +25,10 @@ public interface Screen {
     Screen addFooter(Element<?> element);
 
     Optional<Checkbox> findSelect(String id);
+
+    Screen onClose(@Nullable Runnable runnable);
+
+    Optional<Runnable> onClose();
 
     void close();
 
