@@ -3,6 +3,7 @@
   "package": "com.example.mixin",
   "compatibilityLevel": "JAVA_25",
   "client": [
+    "TelemetryScreenMixin",
     "TitleScreenMixin"
   ],
   "injectors": {

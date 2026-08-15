@@ -1,14 +1,17 @@
 package dev.faststats.screen;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 final class SimpleScreen implements Screen {
-    public final Text title;
-    public final List<Element<?>> elements = new ArrayList<>();
-    public final List<Element<?>> bottom = new ArrayList<>();
-    public final List<Element<?>> footer = new ArrayList<>();
+    private final Text title;
+    private final List<Element<?>> elements = new ArrayList<>();
+    private final List<Element<?>> bottom = new ArrayList<>();
+    private final List<Element<?>> footer = new ArrayList<>();
+    private @Nullable Runnable onClose;
 
     public SimpleScreen(final Text title) {
         this.title = title;
@@ -57,6 +60,17 @@ final class SimpleScreen implements Screen {
         return findSelect(elements, id)
                 .or(() -> findSelect(bottom, id))
                 .or(() -> findSelect(footer, id));
+    }
+
+    @Override
+    public Screen onClose(@Nullable final Runnable runnable) {
+        this.onClose = runnable;
+        return this;
+    }
+
+    @Override
+    public Optional<Runnable> onClose() {
+        return Optional.ofNullable(onClose);
     }
 
     private Optional<Checkbox> findSelect(final List<Element<?>> elements, final String id) {
