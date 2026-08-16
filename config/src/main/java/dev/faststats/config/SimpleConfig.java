@@ -30,10 +30,10 @@ public record SimpleConfig(
         boolean errorTracking,
         boolean firstRun
 ) implements Config {
-    private static final int CONFIG_VERSION = 2;
+    private static final int CONFIG_VERSION = 3;
 
     private static final String COMMENT = """
-             FastStats (https://faststats.dev) collects anonymous usage statistics and errors.
+             FastStats (https://faststats.dev) collects pseudonymous usage statistics and errors.
             # This helps developers understand how their projects are used in the real world.
             #
             # No IP addresses, player data, or personal information is collected.
@@ -52,7 +52,7 @@ public record SimpleConfig(
             # For more information, visit: https://faststats.dev/info
             """;
     private static final String ONBOARDING_MESSAGE = """
-            This plugin uses FastStats to collect anonymous usage statistics and errors.
+            This plugin uses FastStats to collect pseudonymous usage statistics and errors.
             No personal or identifying information is ever collected.
             To opt out, set 'enabled=false' in the metrics configuration file.
             Learn more at: https://faststats.dev/info
