@@ -3,6 +3,7 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 module dev.faststats {
     exports dev.faststats.data;
+    exports dev.faststats.event;
     exports dev.faststats.internal;
     exports dev.faststats;
 
