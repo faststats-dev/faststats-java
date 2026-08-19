@@ -25,7 +25,7 @@ final class SimpleButton extends SimpleElement<Button> implements Button {
     }
 
     @Override
-    public Button onClick(BiConsumer<Screen, Button> action) {
+    public Button onClick(final BiConsumer<Screen, Button> action) {
         this.clickAction = action;
         return this;
     }

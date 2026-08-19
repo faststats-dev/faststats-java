@@ -1,6 +1,5 @@
 package dev.faststats.fabric;
 
-import dev.faststats.FastStatsRegistry;
 import dev.faststats.Metrics;
 import dev.faststats.SimpleContext;
 import dev.faststats.SimpleMetrics;
@@ -8,6 +7,7 @@ import dev.faststats.Token;
 import dev.faststats.config.SimpleConfig;
 import dev.faststats.fabric.compat.CompatibilityLayer;
 import dev.faststats.internal.PlatformLoggerFactory;
+import dev.faststats.screen.registry.FastStatsRegistry;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;

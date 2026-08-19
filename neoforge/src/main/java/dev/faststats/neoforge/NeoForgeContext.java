@@ -1,7 +1,7 @@
 package dev.faststats.neoforge;
 
+import dev.faststats.screen.registry.FastStatsRegistry;
 import dev.faststats.Metrics;
-import dev.faststats.FastStatsRegistry;
 import dev.faststats.SimpleContext;
 import dev.faststats.SimpleMetrics;
 import dev.faststats.Token;

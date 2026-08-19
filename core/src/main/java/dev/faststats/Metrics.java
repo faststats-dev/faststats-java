@@ -3,12 +3,18 @@ package dev.faststats;
 import dev.faststats.data.Metric;
 import org.jetbrains.annotations.Contract;
 
+import java.util.stream.Stream;
+
 /**
  * Metrics interface.
  *
  * @since 0.24.0
  */
 public interface Metrics {
+    // todo: document
+    @Contract(pure = true)
+    Stream<Metric<?>> stream();
+    
     /**
      * A metrics factory.
      *

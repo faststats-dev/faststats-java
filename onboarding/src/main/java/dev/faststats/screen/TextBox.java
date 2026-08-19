@@ -8,6 +8,6 @@ public sealed interface TextBox extends Element<TextBox> permits SimpleTextBox {
     default ScrollableTextBox scrollable() {
         return ScrollableTextBox.of(text()).size(width(), height());
     }
-    
+
     Text text();
 }

@@ -23,7 +23,7 @@ public sealed interface Logger permits PlatformLoggerFactory.PlatformLogger {
     }
 
     String caller();
-    
+
     LoggerFactory factory();
 
     void print(LogLevel level, @Nullable Throwable t, String message);

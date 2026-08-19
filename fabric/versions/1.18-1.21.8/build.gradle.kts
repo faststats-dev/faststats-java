@@ -1,5 +1,5 @@
 extra.set("moduleName", "dev.faststats.fabric.compat.v1_18")
-extra.set("publishVersionSuffix", "mc1.18-1.21.8")
+extra.set("publishVersionSuffix", "mc1.19.4-1.21.8")
 
 plugins {
     id("net.fabricmc.fabric-loom-remap")

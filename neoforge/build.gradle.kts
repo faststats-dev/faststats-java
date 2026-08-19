@@ -37,9 +37,22 @@ subprojects {
 
     apply { plugin("net.neoforged.moddev") }
 
+    val onboardingBand = when (project.name) {
+        "1.20.6-1.21.8" -> ":onboarding:versions:1.19.4-1.21.8"
+        "1.21.9-1.21.11" -> ":onboarding:versions:1.21.9-1.21.11"
+        "26.1-26.2" -> ":onboarding:versions:26.1-26.3"
+        else -> null
+    }
+    evaluationDependsOn(":onboarding")
+    onboardingBand?.let { evaluationDependsOn(it) }
+
     dependencies {
         compileOnly("net.neoforged:bus:8.0.5")
         compileOnlyApi(project(":neoforge"))
+        compileOnlyApi(project(":onboarding"))
+        onboardingBand?.let {
+            compileOnlyApi(project(it))
+        }
     }
 
     tasks.jar {
@@ -47,6 +60,8 @@ subprojects {
         from(project(":neoforge").sourceSets["main"].output)
         from(project(":config").sourceSets["main"].output)
         from(project(":core").sourceSets["main"].output)
+        from(project(":onboarding").sourceSets["main"].output)
+        onboardingBand?.let { from(project(it).sourceSets["main"].output) }
     }
 }
 
