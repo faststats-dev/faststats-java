@@ -19,14 +19,14 @@ import java.util.function.Function;
 // todo: revise
 public non-sealed abstract class SimpleContext implements FastStatsContext {
     private final @Token String token;
-    private volatile Config config;
+    private final Config config;
     private final SdkInfo sdkInfo;
 
     private final LoggerFactory loggerFactory;
     private final Logger logger;
 
     protected volatile boolean ready = false;
-    private volatile boolean submissionActive;
+    public volatile boolean submissionActive;
 
     private @Nullable Metrics metrics;
     private @Nullable FeatureFlagService featureFlagService;
@@ -140,13 +140,13 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
     @Override
     @Contract(pure = true)
     public final Optional<Metrics> metrics() {
-        return submissionActive && config.submitMetrics() ? Optional.ofNullable(metrics) : Optional.empty();
+        return Optional.ofNullable(metrics);
     }
 
     @Override
     @Contract(pure = true)
     public final Optional<FeatureFlagService> featureFlagService() {
-        return submissionActive ? Optional.ofNullable(featureFlagService) : Optional.empty();
+        return Optional.ofNullable(featureFlagService);
     }
 
     @Contract(value = " -> new", pure = true)
@@ -160,11 +160,11 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
     @Override
     @Contract(pure = true)
     public final Optional<ErrorTrackerService> errorTrackerService() {
-        return submissionActive && config.errorTracking() ? Optional.ofNullable(errorTrackerService) : Optional.empty();
+        return Optional.ofNullable(errorTrackerService);
     }
 
     @Override
-    public synchronized void ready() {
+    public void ready() {
         if (ready) {
             logger.warn("%s#ready() was called twice; ignoring.", getClass().getSimpleName());
             return;
@@ -177,44 +177,13 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
     @Async.Schedule
     protected abstract void scheduleAtFixedRate(Runnable task, long initialDelay, long period, TimeUnit unit);
 
-    final FastStatsRegistration registration() {
-        final var additionalMetrics = metrics instanceof final SimpleMetrics simpleMetrics
-                ? simpleMetrics.metricIds()
-                : Set.<String>of();
-        return new FastStatsRegistration(
-                getProjectName(), sdkInfo.getName(), sdkInfo.getVersion(),
-                metrics != null, errorTrackerService != null, featureFlagService != null, additionalMetrics
-        );
-    }
-
-    final synchronized void startSubmissions(final Config config) {
-        final var wasActive = submissionActive;
-        this.config = config;
-        loggerFactory.setDebug(config.debug());
-        if ((!wasActive || !config.errorTracking()) && errorTrackerService != null) errorTrackerService.clearPending();
-        submissionActive = true;
-    }
-
-    final synchronized void stopSubmissions(final Config config) {
-        this.config = config;
-        loggerFactory.setDebug(config.debug());
-        submissionActive = false;
-        if (errorTrackerService != null) errorTrackerService.clearPending();
-    }
-
-    final boolean submissionsActive() {
-        return submissionActive;
-    }
-
     @Override
-    public synchronized void shutdown() {
+    public void shutdown() {
         if (!ready) return;
-        if (submissionActive && config.errorTracking() && errorTrackerService != null) errorTrackerService.shutdown();
-        else if (errorTrackerService != null) errorTrackerService.clearPending();
+        if (errorTrackerService != null) errorTrackerService.shutdown();
         if (featureFlagService instanceof final SimpleFeatureFlagService service) service.shutdown();
-        if (submissionActive && config.submitMetrics() && metrics instanceof final SimpleMetrics simpleMetrics)
-            simpleMetrics.shutdown();
-        submissionActive = false;
+        if (metrics instanceof final SimpleMetrics simpleMetrics) simpleMetrics.shutdown();
+        this.submissionActive = false;
         ready = false;
     }
 

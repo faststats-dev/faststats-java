@@ -12,8 +12,8 @@ public sealed interface Button extends Element<Button> permits SimpleButton {
     Button enabled(boolean enabled);
 
     Button onClick(BiConsumer<Screen, Button> action);
-    
+
     Text label();
-    
+
     void onClick(Screen screen);
 }

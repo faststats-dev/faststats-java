@@ -30,8 +30,25 @@ allprojects {
 }
 
 subprojects {
+    // todo: move to respective sub-module
+    val onboardingBand = when (project.name) {
+        "1.16.1-1.17.1" -> ":onboarding:versions:1.16.1-1.17.1"
+        "1.18-1.18.2" -> ":onboarding:versions:1.18-1.18.2"
+        "1.19-1.19.3" -> ":onboarding:versions:1.19-1.19.3"
+        "1.18-1.21.8" -> ":onboarding:versions:1.19.4-1.21.8"
+        "1.21.9-1.21.11" -> ":onboarding:versions:1.21.9-1.21.11"
+        "26.1-26.3" -> ":onboarding:versions:26.1-26.3"
+        else -> null
+    }
+    evaluationDependsOn(":onboarding")
+    onboardingBand?.let { evaluationDependsOn(it) }
+
     dependencies {
         compileOnlyApi(project(":fabric"))
+        compileOnlyApi(project(":onboarding"))
+        onboardingBand?.let {
+            compileOnlyApi(project(it))
+        }
     }
 
     tasks.jar {
@@ -39,6 +56,8 @@ subprojects {
         from(project(":fabric").sourceSets["main"].output)
         from(project(":config").sourceSets["main"].output)
         from(project(":core").sourceSets["main"].output)
+        from(project(":onboarding").sourceSets["main"].output)
+        onboardingBand?.let { from(project(it).sourceSets["main"].output) }
     }
 }
 
@@ -46,7 +65,6 @@ dependencies {
     compileOnlyApi(project(":core"))
     compileOnly(project(":config"))
     compileOnly(project(":onboarding"))
-    include(project(":onboarding"))
     minecraft("com.mojang:minecraft:26.1.2")
     compileOnly("net.fabricmc.fabric-api:fabric-api:0.150.0+26.1.2")
     compileOnly("net.fabricmc:fabric-loader:0.19.5")

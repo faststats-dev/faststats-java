@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "faststats-onboarding-legacy",
+  "version": "1",
+  "name": "FastStats Onboarding UI",
+  "environment": "client",
+  "mixins": [
+    "faststats-onboarding-legacy.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.18.4",
+    "minecraft": "*",
+    "faststats": "*"
+  }
+}

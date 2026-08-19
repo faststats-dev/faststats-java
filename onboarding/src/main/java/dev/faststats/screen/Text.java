@@ -35,8 +35,6 @@ public interface Text {
         return append(url.toString(), url);
     }
 
-    Text color(int color);
-
     Text format(Formatting formatting);
 
     default TextBox box() {

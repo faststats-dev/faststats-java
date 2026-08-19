@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "dev.faststats.screen.v1_16",
+  "compatibilityLevel": "JAVA_17",
+  "client": [
+    "OptionsScreenMixin",
+    "TitleScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
