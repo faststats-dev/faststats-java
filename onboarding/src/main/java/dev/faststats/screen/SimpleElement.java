@@ -24,7 +24,7 @@ abstract non-sealed class SimpleElement<T extends Element<T>> implements Element
         this.width = percentage;
         return self();
     }
-    
+
     @SuppressWarnings("unchecked")
     private T self() {
         return (T) this;

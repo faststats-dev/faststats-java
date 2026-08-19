@@ -10,11 +10,11 @@ tasks.compileJava {
 }
 
 dependencies {
+    compileOnly(project(":fabric"))
     compileOnly(project(":config"))
     compileOnly(project(":onboarding"))
     compileOnly("net.fabricmc:fabric-loader:0.19.3")
     compileOnly(project(":fabric:versions:26.1-26.3"))
-    include(project(":onboarding"))
     include(project(":fabric:versions:26.1-26.3"))
     minecraft("com.mojang:minecraft:26.2")
 }

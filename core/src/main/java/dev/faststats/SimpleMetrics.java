@@ -11,7 +11,7 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @ApiStatus.Internal
 // todo: revise
@@ -45,7 +45,7 @@ public abstract class SimpleMetrics extends SubmissionService implements Metrics
     }
 
     private boolean submit() {
-        if (!context.submissionsActive() || !context.getConfig().submitMetrics()) return false;
+        if (!context.submissionActive || !context.getConfig().submitMetrics()) return false;
         try {
             if (submit(url, createData(), "metrics")) {
                 if (flush != null) flush.run();
@@ -119,10 +119,6 @@ public abstract class SimpleMetrics extends SubmissionService implements Metrics
     @Contract(mutates = "param1")
     protected abstract void appendDefaultData(JsonObject metrics);
 
-    Set<String> metricIds() {
-        return metrics.stream().map(Metric::getId).collect(Collectors.toUnmodifiableSet());
-    }
-
     protected void shutdown() {
         try {
             logger.info("Shutting down metrics submission");
@@ -130,6 +126,11 @@ public abstract class SimpleMetrics extends SubmissionService implements Metrics
         } catch (final Throwable t) {
             logger.error("Failed to submit metrics on shutdown", t);
         }
+    }
+
+    @Override
+    public Stream<Metric<?>> stream() {
+        return metrics.stream();
     }
 
     public abstract static class Factory implements Metrics.Factory {

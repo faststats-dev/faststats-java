@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "dev.faststats.screen.v1_19_4",
+  "compatibilityLevel": "JAVA_17",
+  "client": [
+    "TelemetryInfoScreenMixin",
+    "TitleScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

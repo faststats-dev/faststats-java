@@ -41,3 +41,4 @@ fun includeVersionModules(platform: String) {
 
 includeVersionModules("fabric")
 includeVersionModules("neoforge")
+includeVersionModules("onboarding")

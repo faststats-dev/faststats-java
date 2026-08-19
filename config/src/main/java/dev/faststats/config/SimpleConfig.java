@@ -11,7 +11,6 @@ import org.jspecify.annotations.Nullable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -270,31 +269,15 @@ public final class SimpleConfig implements Config {
     }
 
     @Override
-    public boolean equals(final Object object) {
-        if (this == object) return true;
-        if (!(object instanceof final SimpleConfig that)) return false;
-        return enabled == that.enabled
-                && additionalMetrics == that.additionalMetrics
-                && debug == that.debug
-                && submitMetrics == that.submitMetrics
-                && errorTracking == that.errorTracking
-                && firstRun == that.firstRun
-                && Objects.equals(serverId, that.serverId);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(serverId, enabled, additionalMetrics, debug, submitMetrics, errorTracking, firstRun);
-    }
-
-    @Override
     public String toString() {
-        return "SimpleConfig[serverId=" + serverId
-                + ", enabled=" + enabled
-                + ", additionalMetrics=" + additionalMetrics
-                + ", debug=" + debug
-                + ", submitMetrics=" + submitMetrics
-                + ", errorTracking=" + errorTracking
-                + ", firstRun=" + firstRun + ']';
+        return "SimpleConfig{" +
+                "serverId=" + serverId +
+                ", debug=" + debug +
+                ", firstRun=" + firstRun +
+                ", additionalMetrics=" + additionalMetrics +
+                ", enabled=" + enabled +
+                ", errorTracking=" + errorTracking +
+                ", submitMetrics=" + submitMetrics +
+                '}';
     }
 }
