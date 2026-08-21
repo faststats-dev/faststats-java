@@ -1,6 +1,7 @@
 package dev.faststats;
 
 import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An error report with tracking metadata.
@@ -9,13 +10,51 @@ import org.jetbrains.annotations.Contract;
  */
 public sealed interface TrackedError permits SimpleTrackedError {
     /**
-     * Returns the tracked error.
+     * Returns a snapshot of the tracked error.
      *
-     * @return the tracked error
-     * @since 0.24.0
+     * @return a snapshot of the tracked error
+     * @since 0.30.0
      */
     @Contract(pure = true)
-    Throwable error();
+    ThrowableSnapshot error();
+
+    /**
+     * A snapshot of a {@link Throwable} captured when an error is tracked.
+     * <p>
+     * The snapshot preserves the throwable's type, message, cause chain, and stack trace
+     * without retaining the original throwable.
+     *
+     * @since 0.30.0
+     */
+    sealed interface ThrowableSnapshot permits SimpleTrackedError.SimpleThrowableSnapshot {
+        /**
+         * Returns the throwable class.
+         *
+         * @return the throwable class
+         */
+        Class<?> type();
+
+        /**
+         * Returns the throwable message.
+         *
+         * @return the throwable message, or {@code null} if none was provided
+         */
+        @Nullable String message();
+
+        /**
+         * Returns a snapshot of the throwable's cause.
+         *
+         * @return a snapshot of the throwable's cause, or {@code null} if it has no cause
+         */
+        @Nullable ThrowableSnapshot cause();
+
+        /**
+         * Returns a copy of the throwable's stack trace elements.
+         *
+         * @return a copy of the throwable's stack trace elements
+         */
+        StackTraceElement[] stackTraces();
+    }
 
     /**
      * Returns whether the error was handled.
