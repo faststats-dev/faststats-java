@@ -22,5 +22,5 @@ repositories {
 dependencies {
     api(project(":core"))
     implementation(project(":config"))
-    compileOnly("com.velocitypowered:velocity-api:4.1.0-SNAPSHOT")
+    compileOnly("com.velocitypowered:velocity-api:4.1.0")
 }
