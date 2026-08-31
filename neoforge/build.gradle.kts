@@ -1,7 +1,7 @@
 extra.set("moduleName", "dev.faststats.neoforge")
 
 plugins {
-    id("net.neoforged.moddev") version "2.0.144"
+    id("net.neoforged.moddev") version "2.0.146"
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)

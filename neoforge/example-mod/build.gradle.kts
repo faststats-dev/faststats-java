@@ -1,5 +1,5 @@
 plugins {
-    id("net.neoforged.moddev") version "2.0.144"
+    id("net.neoforged.moddev") version "2.0.146"
     kotlin("jvm")
 }
 
