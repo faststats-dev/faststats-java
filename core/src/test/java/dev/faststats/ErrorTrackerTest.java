@@ -224,12 +224,23 @@ public class ErrorTrackerTest {
         var secondCauseCount = 0;
         for (final var element : stack) {
             final var line = element.getAsString();
-            if (line.equals("Caused by: java.lang.RuntimeException: first")) firstCauseCount++;
+            if (line.equals("java.lang.RuntimeException: first")) firstCauseCount++;
             if (line.equals("Caused by: java.lang.IllegalStateException: second")) secondCauseCount++;
         }
 
         assertEquals(1, firstCauseCount);
         assertEquals(1, secondCauseCount);
+    }
+
+    @Test
+    public void noEmptyTraces() {
+        final var oom = new OutOfMemoryError();
+        oom.setStackTrace(new StackTraceElement[0]);
+
+        tracker.trackError(oom);
+
+        final var stack = tracker.getFullData().get(0).getAsJsonObject().getAsJsonArray("stack");
+        assertFalse(stack.isEmpty(), "Tracked error must always have a stacktrace");
     }
 
     @Test

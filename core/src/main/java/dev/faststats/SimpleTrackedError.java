@@ -1,5 +1,6 @@
 package dev.faststats;
 
+import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
@@ -11,14 +12,55 @@ import java.util.Set;
 final class SimpleTrackedError implements TrackedError {
     private volatile Attributes attributes = Attributes.empty();
     private volatile boolean handled = true;
-    private final Throwable error;
+    private final ThrowableSnapshot error;
 
     SimpleTrackedError(final Throwable error) {
-        this.error = error;
+        this.error = snapshot(error, null);
+    }
+
+    @Contract("_, null -> !null")
+    private static @Nullable ThrowableSnapshot snapshot(final Throwable error, @Nullable Set<Throwable> visited) {
+        final var message = error.getMessage();
+        final var stackTrace = error.getStackTrace();
+        if (error.getCause() != null && visited == null)
+            visited = Collections.newSetFromMap(new IdentityHashMap<>());
+        if (visited != null && !visited.add(error)) return null;
+        final var cause = error.getCause() != null
+                ? snapshot(error.getCause(), visited)
+                : null;
+        final var trace = stackTrace.length == 0 ? new Throwable().getStackTrace() : stackTrace;
+        return new SimpleThrowableSnapshot(error.getClass(), message, cause, trace);
+    }
+
+    record SimpleThrowableSnapshot(
+            Class<?> type,
+            @Nullable String message,
+            @Nullable ThrowableSnapshot cause,
+            StackTraceElement... stackTraces
+    ) implements ThrowableSnapshot {
+        @Override
+        public StackTraceElement[] stackTraces() {
+            return stackTraces.clone();
+        }
+        
+        @Override
+        public boolean equals(@Nullable final Object o) {
+            if (o == null || getClass() != o.getClass()) return false;
+            final SimpleThrowableSnapshot that = (SimpleThrowableSnapshot) o;
+            return Objects.equals(type, that.type)
+                    && Objects.equals(message, that.message)
+                    && Objects.equals(cause, that.cause)
+                    && Objects.deepEquals(stackTraces, that.stackTraces);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(type, message, cause, Arrays.hashCode(stackTraces));
+        }
     }
 
     @Override
-    public Throwable error() {
+    public ThrowableSnapshot error() {
         return error;
     }
 
@@ -50,36 +92,20 @@ final class SimpleTrackedError implements TrackedError {
         final SimpleTrackedError that = (SimpleTrackedError) o;
         return handled == that.handled
                 && Objects.equals(attributes, that.attributes)
-                && deepEquals(error, that.error, Collections.newSetFromMap(new IdentityHashMap<>()));
+                && Objects.equals(error, that.error);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(attributes, handled, hash(error, Collections.newSetFromMap(new IdentityHashMap<>())));
+        return Objects.hash(attributes, handled, error);
     }
 
-    // fixme: hacky shit; it only has to compile and pass tests for now
-    private static boolean deepEquals(
-            @Nullable final Throwable first,
-            @Nullable final Throwable second,
-            final Set<Throwable> visited
-    ) {
-        if (first == second) return true;
-        if (first == null || second == null) return false;
-        if (first.getClass() != second.getClass()) return false;
-        if (!Objects.equals(first.getMessage(), second.getMessage())) return false;
-        if (!Arrays.equals(first.getStackTrace(), second.getStackTrace())) return false;
-        if (!visited.add(first)) return true;
-        return deepEquals(first.getCause(), second.getCause(), visited);
-    }
-
-    private static int hash(@Nullable final Throwable error, final Set<Throwable> visited) {
-        if (error == null || !visited.add(error)) return 0;
-        return Objects.hash(
-                error.getClass(),
-                error.getMessage(),
-                Arrays.hashCode(error.getStackTrace()),
-                hash(error.getCause(), visited)
-        );
+    @Override
+    public String toString() {
+        return "SimpleTrackedError{" +
+                "attributes=" + attributes +
+                ", handled=" + handled +
+                ", error=" + error +
+                '}';
     }
 }

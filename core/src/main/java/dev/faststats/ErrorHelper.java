@@ -36,25 +36,25 @@ final class ErrorHelper {
                                          @Nullable final Attributes defaultAttributes) {
         final var error = trackedError.error();
         final var report = new JsonObject();
-        final var message = anonymize(error.getMessage(), customPatterns);
+        final var message = anonymize(error.message(), customPatterns);
 
         final var stacktrace = new JsonArray();
         final var header = message != null
-                ? error.getClass().getName() + ": " + message
-                : error.getClass().getName();
+                ? error.type().getName() + ": " + message
+                : error.type().getName();
         stacktrace.add(header);
 
-        final var elements = error.getStackTrace();
+        final var elements = error.stackTraces();
         final var stack = collapseStackTrace(elements);
         final var list = new ArrayList<>(stack);
         if (suppress != null) list.removeAll(suppress);
         final var traces = Math.min(list.size(), MAX_STACK_SIZE);
 
         populateTraces(traces, list, elements, stacktrace);
-        appendCauseChain(error.getCause(), stack, suppress, stacktrace, customPatterns);
+        appendCauseChain(error.cause(), stack, suppress, stacktrace, customPatterns);
 
-        report.addProperty("error", error.getClass().getName());
-        final var first = anonymize(findFirstMessage(error, null), customPatterns);
+        report.addProperty("error", error.type().getName());
+        final var first = anonymize(findFirstMessage(error), customPatterns);
         if (first != null) report.addProperty("message", first);
 
         report.add("stack", stacktrace);
@@ -68,28 +68,26 @@ final class ErrorHelper {
         return report;
     }
 
-    // fixme: unmaintainable mess, i already forgot what it does
-    private static void appendCauseChain(@Nullable Throwable cause, final List<String> parentStack,
+    private static void appendCauseChain(TrackedError.@Nullable ThrowableSnapshot cause, final List<String> parentStack,
                                          @Nullable final List<String> suppress, final JsonArray stacktrace,
                                          final List<Map.Entry<Pattern, String>> customPatterns) {
         final var toSuppress = new ArrayList<>(parentStack);
         if (suppress != null) toSuppress.addAll(suppress);
-        final var visited = Collections.<Throwable>newSetFromMap(new IdentityHashMap<>());
-        while (cause != null && visited.add(cause)) {
-            final var causeMessage = anonymize(cause.getMessage(), customPatterns);
+        while (cause != null) {
+            final var causeMessage = anonymize(cause.message(), customPatterns);
             final var header = causeMessage != null
-                    ? "Caused by: " + cause.getClass().getName() + ": " + causeMessage
-                    : "Caused by: " + cause.getClass().getName();
+                    ? "Caused by: " + cause.type().getName() + ": " + causeMessage
+                    : "Caused by: " + cause.type().getName();
             stacktrace.add(header);
 
-            final var causeElements = cause.getStackTrace();
+            final var causeElements = cause.stackTraces();
             final var causeStack = collapseStackTrace(causeElements);
             final var causeList = new ArrayList<>(causeStack);
             causeList.removeAll(toSuppress);
             final var causeTraces = Math.min(causeList.size(), MAX_STACK_SIZE);
             populateTraces(causeTraces, causeList, causeElements, stacktrace);
 
-            cause = cause.getCause();
+            cause = cause.cause();
         }
     }
 
@@ -214,13 +212,11 @@ final class ErrorHelper {
         return loader == current;
     }
 
-    private static @Nullable String findFirstMessage(@Nullable final Throwable error, @Nullable Set<Throwable> visited) {
+    private static @Nullable String findFirstMessage(final TrackedError.@Nullable ThrowableSnapshot error) {
         if (error == null) return null;
-        final var message = error.getMessage();
+        final var message = error.message();
         if (message != null) return message;
-        if (visited == null) visited = Collections.newSetFromMap(new IdentityHashMap<>());
-        if (!visited.add(error)) return null;
-        return findFirstMessage(error.getCause(), visited);
+        return findFirstMessage(error.cause());
     }
 
     private static @Nullable String anonymize(@Nullable final String message, final List<Map.Entry<Pattern, String>> customPatterns) {
