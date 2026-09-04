@@ -49,6 +49,6 @@ dependencies {
     compileOnlyApi(project(":core"))
     compileOnly(project(":config"))
     minecraft("com.mojang:minecraft:26.1.2")
-    compileOnly("net.fabricmc.fabric-api:fabric-api:0.150.0+26.1.2")
+    compileOnly("net.fabricmc.fabric-api:fabric-api:0.159.4+26.3")
     compileOnly("net.fabricmc:fabric-loader:0.19.3")
 }
