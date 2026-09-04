@@ -65,7 +65,7 @@ dependencies {
     // compileOnly("net.fabricmc.fabric-api:fabric-api:0.128.2+1.21.5") // 1.21.5
     // compileOnly("net.fabricmc.fabric-api:fabric-api:0.128.2+1.21.6") // 1.21.6
     // compileOnly("net.fabricmc.fabric-api:fabric-api:0.129.0+1.21.7") // 1.21.7
-    compileOnly("net.fabricmc.fabric-api:fabric-api:0.136.1+1.21.8") // 1.21.8
+    compileOnly("net.fabricmc.fabric-api:fabric-api:0.159.4+26.3") // 1.21.8
 
     compileOnly("net.fabricmc:fabric-loader:0.19.3")
 }
