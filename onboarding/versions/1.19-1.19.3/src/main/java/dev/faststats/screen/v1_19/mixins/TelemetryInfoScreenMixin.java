@@ -1,4 +1,4 @@
-package dev.faststats.screen.v1_19_4;
+package dev.faststats.screen.v1_19.mixins;
 
 import dev.faststats.screen.onboarding.OnboardingDefinition;
 import net.minecraft.client.Minecraft;

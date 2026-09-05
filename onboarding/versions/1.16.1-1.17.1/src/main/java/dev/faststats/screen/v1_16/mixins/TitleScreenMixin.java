@@ -1,4 +1,4 @@
-package dev.faststats.screen.v1_16;
+package faststats.screen.v1_16.mixins;
 
 import dev.faststats.screen.onboarding.FirstRunOnboarding;
 import net.minecraft.client.gui.screens.TitleScreen;
