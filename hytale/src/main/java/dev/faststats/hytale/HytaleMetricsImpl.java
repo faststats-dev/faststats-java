@@ -9,8 +9,8 @@ import dev.faststats.SimpleMetrics;
 
 final class HytaleMetricsImpl extends SimpleMetrics {
     private final String pluginVersion;
-    
-    HytaleMetricsImpl(final Factory factory, JavaPlugin plugin) throws IllegalStateException {
+
+    HytaleMetricsImpl(final Factory factory, final JavaPlugin plugin) throws IllegalStateException {
         super(factory);
         this.pluginVersion = plugin.getManifest().getVersion().toString();
     }

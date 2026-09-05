@@ -1,3 +1,6 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import net.fabricmc.loom.task.RemapJarTask
+
 extra.set("moduleName", "dev.faststats.fabric")
 
 plugins {
@@ -31,23 +34,47 @@ allprojects {
 }
 
 subprojects {
-    if (project.name == "example-mod") return@subprojects
+    if (parent?.path != ":fabric:versions") return@subprojects
+
+    afterEvaluate {
+        if (plugins.hasPlugin("net.fabricmc.fabric-loom-remap")) {
+            tasks.named<ShadowJar>("shadowJar") {
+                destinationDirectory.set(layout.buildDirectory.dir("devlibs"))
+            }
+            tasks.named<RemapJarTask>("remapJar") {
+                inputFile.set(tasks.named<ShadowJar>("shadowJar").flatMap { it.archiveFile })
+            }
+            configurations.named("shadowRuntimeElements") {
+                outgoing.artifacts.clear()
+                outgoing.artifact(tasks.named("remapJar"))
+            }
+        } else {
+            tasks.named<ShadowJar>("shadowJar") { archiveClassifier.set("") }
+        }
+    }
+
+    tasks.processResources {
+        from(project(":fabric").file("src/main/resources"))
+        inputs.property("version", provider { project.version })
+        filesMatching("fabric.mod.json") {
+            expand("version" to project.version)
+        }
+    }
 
     dependencies {
         compileOnlyApi(project(":fabric"))
-    }
-
-    tasks.jar {
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        from(project(":fabric").sourceSets["main"].output)
-        from(project(":config").sourceSets["main"].output)
-        from(project(":core").sourceSets["main"].output)
+        compileOnlyApi(project(":onboarding"))
+        "bundled"(project(":core"))
+        "bundled"(project(":config"))
+        "bundled"(project(":onboarding"))
+        "bundled"(project(mapOf("path" to ":fabric", "configuration" to "runtimeElements")))
     }
 }
 
 dependencies {
     compileOnlyApi(project(":core"))
     compileOnly(project(":config"))
+    compileOnly(project(":onboarding"))
     minecraft("com.mojang:minecraft:26.1.2")
     compileOnly("net.fabricmc.fabric-api:fabric-api:0.150.0+26.1.2")
     compileOnly("net.fabricmc:fabric-loader:0.19.3")

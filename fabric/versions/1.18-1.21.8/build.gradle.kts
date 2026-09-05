@@ -1,5 +1,5 @@
 extra.set("moduleName", "dev.faststats.fabric.compat.v1_18")
-extra.set("publishVersionSuffix", "mc1.18-1.21.8")
+extra.set("publishVersionSuffix", "mc1.19.4-1.21.8")
 
 plugins {
     id("net.fabricmc.fabric-loom-remap")
@@ -68,4 +68,11 @@ dependencies {
     compileOnly("net.fabricmc.fabric-api:fabric-api:0.136.1+1.21.8") // 1.21.8
 
     compileOnly("net.fabricmc:fabric-loader:0.19.3")
+}
+
+dependencies {
+    "bundled"(project(mapOf(
+        "path" to ":onboarding:versions:1.19.4-1.21.8",
+        "configuration" to "namedElements"
+    )))
 }

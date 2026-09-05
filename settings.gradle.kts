@@ -15,6 +15,7 @@ include("bungeecord")
 include("bungeecord:example-plugin")
 include("config")
 include("core")
+include("onboarding")
 include("core:example")
 include("fabric")
 include("fabric:example-mod")
@@ -40,3 +41,4 @@ fun includeVersionModules(platform: String) {
 
 includeVersionModules("fabric")
 includeVersionModules("neoforge")
+includeVersionModules("onboarding")

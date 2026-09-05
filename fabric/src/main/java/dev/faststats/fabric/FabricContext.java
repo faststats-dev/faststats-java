@@ -7,14 +7,16 @@ import dev.faststats.Token;
 import dev.faststats.config.SimpleConfig;
 import dev.faststats.fabric.compat.CompatibilityLayer;
 import dev.faststats.internal.PlatformLoggerFactory;
+import dev.faststats.screen.registry.FastStatsRegistry;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import org.jetbrains.annotations.Contract;
 
-import java.util.Set;
+import java.nio.file.Path;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -37,16 +39,15 @@ public final class FabricContext extends SimpleContext {
     private final ModContainer mod;
 
     private FabricContext(final Factory factory, final dev.faststats.internal.LoggerFactory loggerFactory, final String modId, @Token final String token) {
-        super(factory, loggerFactory, SimpleConfig.read(FabricLoader.getInstance().getConfigDir()
-                .resolve("faststats").resolve("config.properties"), loggerFactory
-        ), "fabric", token);
+        super(factory, loggerFactory, SimpleConfig.read(configPath(), loggerFactory), "fabric", token);
         this.mod = FabricLoader.getInstance().getModContainer(modId).orElseThrow(() -> {
             return new IllegalArgumentException("Mod not found: " + modId);
         });
         this.compatibilityLayer = ServiceLoader.load(CompatibilityLayer.class)
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No Fabric compatibility layer found"));
-        initializeServices(factory);
+        initializeManagedServices(factory);
+        FastStatsRegistry.instance().register(this);
         switch (FabricLoader.getInstance().getEnvironmentType()) {
             case CLIENT -> {
                 ready();
@@ -90,10 +91,15 @@ public final class FabricContext extends SimpleContext {
 
     @Override
     public void shutdown() {
+        FastStatsRegistry.instance().unregister(this);
         super.shutdown();
         tasks.forEach(task -> task.cancel(true));
         tasks.clear();
         executor.shutdown();
+    }
+
+    private static Path configPath() {
+        return FabricLoader.getInstance().getConfigDir().resolve("faststats").resolve("config.properties");
     }
 
     public static final class Factory extends SimpleContext.Factory<FabricContext, Factory> {
