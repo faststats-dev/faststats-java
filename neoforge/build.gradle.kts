@@ -45,7 +45,6 @@ subprojects {
     }
 
     tasks.named<ShadowJar>("shadowJar") { archiveClassifier.set("") }
-    tasks.jar { archiveClassifier.set("thin") }
 
     apply { plugin("net.neoforged.moddev") }
 

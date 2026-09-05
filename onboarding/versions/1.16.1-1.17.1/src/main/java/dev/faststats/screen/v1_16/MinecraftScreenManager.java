@@ -32,8 +32,7 @@ public final class MinecraftScreenManager implements ScreenManager {
 
     @Override
     public void closeScreen(final Screen s) {
-        s.onClose().ifPresent(Runnable::run);
-        if (Minecraft.getInstance().screen instanceof ConsentScreen) Minecraft.getInstance().setScreen(null);
+        s.onClose().ifPresentOrElse(Runnable::run, () -> Minecraft.getInstance().setScreen(null));
     }
 
     private static final class ConsentScreen extends net.minecraft.client.gui.screens.Screen {
@@ -102,8 +101,7 @@ public final class MinecraftScreenManager implements ScreenManager {
         }
 
         private void close() {
-            model.onClose().ifPresent(Runnable::run);
-            if (minecraft.screen == this) minecraft.setScreen(null);
+            model.onClose().ifPresentOrElse(Runnable::run, super::onClose);
         }
 
         @Override

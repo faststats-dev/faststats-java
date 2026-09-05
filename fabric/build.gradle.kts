@@ -37,6 +37,9 @@ subprojects {
 
     afterEvaluate {
         if (plugins.hasPlugin("net.fabricmc.fabric-loom-remap")) {
+            tasks.named<ShadowJar>("shadowJar") {
+                destinationDirectory.set(layout.buildDirectory.dir("devlibs"))
+            }
             tasks.named<RemapJarTask>("remapJar") {
                 inputFile.set(tasks.named<ShadowJar>("shadowJar").flatMap { it.archiveFile })
             }
@@ -46,7 +49,6 @@ subprojects {
             }
         } else {
             tasks.named<ShadowJar>("shadowJar") { archiveClassifier.set("") }
-            tasks.jar { archiveClassifier.set("thin") }
         }
     }
 
