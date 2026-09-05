@@ -37,6 +37,34 @@ subprojects {
             if (project.path.startsWith(":neoforge:")) exclude("fabric.mod.json")
         }
         tasks.named("assemble") { dependsOn("shadowJar") }
+        tasks.named<Jar>("jar") {
+            enabled = false
+        }
+
+        afterEvaluate {
+            configurations.named("shadowRuntimeElements") {
+                attributes.attributeProvider(
+                    TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE,
+                    tasks.named<JavaCompile>("compileJava").flatMap { it.options.release }
+                )
+            }
+            val distribution = tasks.named<AbstractArchiveTask>(
+                if (plugins.hasPlugin("net.fabricmc.fabric-loom-remap")) "remapJar" else "shadowJar"
+            )
+            listOf("apiElements", "runtimeElements").forEach { name ->
+                configurations.named(name) {
+                    outgoing.artifacts.clear()
+                    outgoing.variants.clear()
+                    outgoing.artifact(distribution)
+                    exclude(group = "dev.faststats.metrics")
+                }
+            }
+            configurations.findByName("namedElements")?.outgoing?.apply {
+                artifacts.clear()
+                variants.clear()
+                artifact(tasks.named("shadowJar"))
+            }
+        }
     }
 
     repositories {
