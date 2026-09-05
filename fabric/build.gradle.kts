@@ -1,3 +1,6 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import net.fabricmc.loom.task.RemapJarTask
+
 extra.set("moduleName", "dev.faststats.fabric")
 
 plugins {
@@ -31,36 +34,38 @@ allprojects {
 }
 
 subprojects {
-    if (project.name == "example-mod") return@subprojects
+    if (parent?.path != ":fabric:versions") return@subprojects
 
-    // todo: move to respective sub-module
-    val onboardingBand = when (project.name) {
-        "1.16.1-1.17.1" -> ":onboarding:versions:1.16.1-1.17.1"
-        "1.18-1.18.2" -> ":onboarding:versions:1.18-1.18.2"
-        "1.19-1.19.3" -> ":onboarding:versions:1.19-1.19.3"
-        "1.18-1.21.8" -> ":onboarding:versions:1.19.4-1.21.8"
-        "1.21.9-1.21.11" -> ":onboarding:versions:1.21.9-1.21.11"
-        "26.1-26.3" -> ":onboarding:versions:26.1-26.3"
-        else -> null
+    afterEvaluate {
+        if (plugins.hasPlugin("net.fabricmc.fabric-loom-remap")) {
+            tasks.named<RemapJarTask>("remapJar") {
+                inputFile.set(tasks.named<ShadowJar>("shadowJar").flatMap { it.archiveFile })
+            }
+            configurations.named("shadowRuntimeElements") {
+                outgoing.artifacts.clear()
+                outgoing.artifact(tasks.named("remapJar"))
+            }
+        } else {
+            tasks.named<ShadowJar>("shadowJar") { archiveClassifier.set("") }
+            tasks.jar { archiveClassifier.set("thin") }
+        }
     }
-    evaluationDependsOn(":onboarding")
-    onboardingBand?.let { evaluationDependsOn(it) }
+
+    tasks.processResources {
+        from(project(":fabric").file("src/main/resources"))
+        inputs.property("version", provider { project.version })
+        filesMatching("fabric.mod.json") {
+            expand("version" to project.version)
+        }
+    }
 
     dependencies {
         compileOnlyApi(project(":fabric"))
         compileOnlyApi(project(":onboarding"))
-        onboardingBand?.let {
-            compileOnlyApi(project(it))
-        }
-    }
-
-    tasks.jar {
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        from(project(":fabric").sourceSets["main"].output)
-        from(project(":config").sourceSets["main"].output)
-        from(project(":core").sourceSets["main"].output)
-        from(project(":onboarding").sourceSets["main"].output)
-        onboardingBand?.let { from(project(it).sourceSets["main"].output) }
+        "bundled"(project(":core"))
+        "bundled"(project(":config"))
+        "bundled"(project(":onboarding"))
+        "bundled"(project(mapOf("path" to ":fabric", "configuration" to "runtimeElements")))
     }
 }
 

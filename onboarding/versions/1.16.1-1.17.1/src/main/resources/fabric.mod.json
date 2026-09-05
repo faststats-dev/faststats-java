@@ -5,7 +5,7 @@
   "name": "FastStats Onboarding UI",
   "environment": "client",
   "mixins": [
-    "faststats-onboarding-legacy.mixins.json"
+    "faststats-onboarding.mixins.json"
   ],
   "depends": {
     "fabricloader": ">=0.18.4",

@@ -12,13 +12,20 @@ tasks.compileJava {
 }
 
 sourceSets.main {
-    java.srcDir(project(":fabric:versions:1.18-1.21.8").file("src/main/java"));
+    java.srcDir(project(":fabric:versions:1.18-1.21.8").file("src/main/java"))
     resources.srcDir(project(":fabric:versions:1.18-1.21.8").file("src/main/resources"))
 }
 
 dependencies {
-    minecraft("com.mojang:minecraft:1.18.2");
-    mappings(loom.officialMojangMappings());
-    compileOnly("net.fabricmc.fabric-api:fabric-api:0.77.0+1.18.2");
+    minecraft("com.mojang:minecraft:1.18.2")
+    mappings(loom.officialMojangMappings())
+    compileOnly("net.fabricmc.fabric-api:fabric-api:0.77.0+1.18.2")
     compileOnly("net.fabricmc:fabric-loader:0.19.3")
+}
+
+dependencies {
+    "bundled"(project(mapOf(
+        "path" to ":onboarding:versions:1.18-1.18.2",
+        "configuration" to "namedElements"
+    )))
 }
