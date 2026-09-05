@@ -11,3 +11,6 @@ description = "Analytics for developers"
 logoFile = "faststats.png"
 authors = "David | NonSwag"
 displayURL = "https://faststats.dev/mods"
+
+[[mixins]]
+config = "faststats-onboarding.mixins.json"
