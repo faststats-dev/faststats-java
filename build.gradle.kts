@@ -1,3 +1,6 @@
+import com.github.jengelman.gradle.plugins.shadow.ShadowExtension
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 plugins {
     id("java")
     id("com.gradleup.shadow") version "9.6.1" apply false
@@ -11,6 +14,30 @@ subprojects {
     }
 
     group = "dev.faststats.metrics"
+
+    if (path.startsWith(":fabric:versions:") || path.startsWith(":neoforge:versions:")) {
+        apply { plugin("com.gradleup.shadow") }
+        extra.set("publishComponent", "shadow")
+
+        val bundled = configurations.create("bundled") {
+            isCanBeConsumed = false
+            isTransitive = false
+        }
+        extensions.configure<ShadowExtension> {
+            addShadowVariantIntoJavaComponent = false
+        }
+        tasks.named<ShadowJar>("shadowJar") {
+            configurations = listOf(bundled)
+            duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+            filesMatching("META-INF/services/**") {
+                duplicatesStrategy = DuplicatesStrategy.INCLUDE
+            }
+            mergeServiceFiles()
+            exclude("module-info.class", "META-INF/versions/**/module-info.class")
+            if (project.path.startsWith(":neoforge:")) exclude("fabric.mod.json")
+        }
+        tasks.named("assemble") { dependsOn("shadowJar") }
+    }
 
     repositories {
         mavenCentral()
@@ -108,7 +135,11 @@ subprojects {
                     }
                 }
 
-                from(components["java"])
+                from(components[ownProperty("publishComponent") ?: "java"])
+                if (ownProperty("publishComponent") == "shadow") {
+                    artifact(tasks.named(if (plugins.hasPlugin("net.fabricmc.fabric-loom-remap")) "remapSourcesJar" else "sourcesJar"))
+                    artifact(tasks.named("javadocJar"))
+                }
             }
 
             repositories {
@@ -141,10 +172,25 @@ tasks.register("checkNeoForgePlatformCompat") {
     dependsOn(platformCompatProjects("neoforge").map { "${it.path}:compileJava" })
 }
 
+tasks.register("checkOnboardingCompat") {
+    group = "verification"
+    description = "Compiles every onboarding band against its own Minecraft version."
+    dependsOn(platformCompatProjects("onboarding").map { "${it.path}:compileJava" })
+}
+
 tasks.register("checkPlatformCompat") {
     group = "verification"
     description = "Compiles all platform compatibility modules."
-    dependsOn(tasks.named("checkFabricPlatformCompat"), tasks.named("checkNeoForgePlatformCompat"))
+    dependsOn("checkFabricPlatformCompat", "checkNeoForgePlatformCompat", "checkOnboardingCompat")
+}
+
+tasks.register("assemblePlatformCompat") {
+    group = "build"
+    description = "Assembles all Fabric and NeoForge distributions, including onboarding."
+    dependsOn(
+        (platformCompatProjects("fabric") + platformCompatProjects("neoforge"))
+            .map { "${it.path}:assemble" }
+    )
 }
 
 tasks.register("publishPlatformCompat") {

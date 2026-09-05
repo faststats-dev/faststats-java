@@ -69,3 +69,10 @@ dependencies {
 
     compileOnly("net.fabricmc:fabric-loader:0.19.3")
 }
+
+dependencies {
+    "bundled"(project(mapOf(
+        "path" to ":onboarding:versions:1.19.4-1.21.8",
+        "configuration" to "namedElements"
+    )))
+}

@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 extra.set("moduleName", "dev.faststats.neoforge")
 
 plugins {
@@ -33,35 +35,29 @@ allprojects {
 }
 
 subprojects {
-    if (project.name == "example-mod") return@subprojects
+    if (parent?.path != ":neoforge:versions") return@subprojects
+
+    tasks.processResources {
+        from(project(":neoforge").file("src/main/resources"))
+        inputs.property("version", provider { project.version })
+        filesMatching("META-INF/neoforge.mods.toml") {
+            expand("version" to project.version)
+        }
+    }
+
+    tasks.named<ShadowJar>("shadowJar") { archiveClassifier.set("") }
+    tasks.jar { archiveClassifier.set("thin") }
 
     apply { plugin("net.neoforged.moddev") }
-
-    val onboardingBand = when (project.name) {
-        "1.20.6-1.21.8" -> ":onboarding:versions:1.19.4-1.21.8"
-        "1.21.9-1.21.11" -> ":onboarding:versions:1.21.9-1.21.11"
-        "26.1-26.2" -> ":onboarding:versions:26.1-26.3"
-        else -> null
-    }
-    evaluationDependsOn(":onboarding")
-    onboardingBand?.let { evaluationDependsOn(it) }
 
     dependencies {
         compileOnly("net.neoforged:bus:8.0.5")
         compileOnlyApi(project(":neoforge"))
         compileOnlyApi(project(":onboarding"))
-        onboardingBand?.let {
-            compileOnlyApi(project(it))
-        }
-    }
-
-    tasks.jar {
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        from(project(":neoforge").sourceSets["main"].output)
-        from(project(":config").sourceSets["main"].output)
-        from(project(":core").sourceSets["main"].output)
-        from(project(":onboarding").sourceSets["main"].output)
-        onboardingBand?.let { from(project(it).sourceSets["main"].output) }
+        "bundled"(project(":core"))
+        "bundled"(project(":config"))
+        "bundled"(project(":onboarding"))
+        "bundled"(project(":neoforge"))
     }
 }
 
