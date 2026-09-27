@@ -22,5 +22,5 @@ dependencies {
     // compileOnly("net.fabricmc.fabric-api:fabric-api:0.153.0+26.2") // 26.2
     compileOnly("net.fabricmc.fabric-api:fabric-api:0.153.1+26.3") // 26.3
 
-    compileOnly("net.fabricmc:fabric-loader:0.19.3")
+    compileOnly("net.fabricmc:fabric-loader:0.19.5")
 }
