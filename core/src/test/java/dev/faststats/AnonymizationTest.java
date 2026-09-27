@@ -2,6 +2,8 @@ package dev.faststats;
 
 import com.google.gson.JsonObject;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.regex.Pattern;
 
@@ -64,10 +66,18 @@ public final class AnonymizationTest {
         assertEquals("Error for [username hidden]", getErrorMessage());
     }
 
-    @Test
-    public void discordWebhookAnonymization() {
-        tracker.trackError("Webhook failed: https://discord.com/api/webhooks/1234567890987654321/aAaAaAaa0AAaAAaaaAAAAa_0AAAAAAAaaaAaaAaaAAAA0aA00AAA0AAA0aAAaA0a0a0A");
-        assertEquals("Webhook failed: https://discord.com/api/webhooks/1234567890987654321/[token hidden]", getErrorMessage());
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "https://discord.com/api/webhooks",
+            "https://discord.com/api/v10/webhooks",
+            "https://canary.discord.com/api/webhooks",
+            "https://ptb.discord.com/api/webhooks",
+            "https://discordapp.com/api/webhooks"
+    })
+    public void discordWebhookAnonymization(final String webhookBaseUrl) {
+        final var webhookUrl = webhookBaseUrl + "/1234567890987654321/aAaAaAaa0AAaAAaaaAAAAa_0AAAAAAAaaaAaaAaaAAAA0aA00AAA0AAA0aAAaA0a0a0A";
+        tracker.trackError("Webhook failed: " + webhookUrl + "?wait=true");
+        assertEquals("Webhook failed: " + webhookBaseUrl + "/[id hidden]/[token hidden]", getErrorMessage());
     }
 
     @Test

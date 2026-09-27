@@ -235,7 +235,7 @@ final class ErrorHelper {
                 Map.entry(ipv4Pattern(), "[IP hidden]"),
                 Map.entry(ipv6Pattern(), "[IP hidden]"),
                 Map.entry(userHomePathPattern(), "$1$2$3[username hidden]"),
-                Map.entry(discordWebhookPattern(), "$1[token hidden]"),
+                Map.entry(discordWebhookPattern(), "$1[id hidden]/[token hidden]"),
                 Map.entry(jdbcUrlPattern(), "$1[password hidden]$2")
         ));
         usernamePattern().ifPresent(pattern -> entries.add(Map.entry(pattern, "[username hidden]")));
@@ -243,7 +243,7 @@ final class ErrorHelper {
     }
 
     private static Pattern discordWebhookPattern() {
-        return Pattern.compile("(https://discord\\.com/api/webhooks/\\d+/)[\\w-]+");
+        return Pattern.compile("(https://(?:discord\\.com|canary\\.discord\\.com|ptb\\.discord\\.com|discordapp\\.com)/api/(?:v\\d+/)?webhooks/)\\d+/[\\w-]+(?:\\?\\S*)?");
     }
 
     private static Pattern ipv4Pattern() {
