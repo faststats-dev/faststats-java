@@ -1,0 +1,16 @@
+include(
+    "bukkit",
+    "bukkit:example-plugin",
+    "bungeecord",
+    "bungeecord:example-plugin",
+    "hytale",
+    "hytale:example-plugin",
+    "minestom",
+    "minestom:example-server",
+    "nukkit",
+    "nukkit:example-plugin",
+    "sponge",
+    "sponge:example-plugin",
+    "velocity",
+    "velocity:example-plugin",
+)

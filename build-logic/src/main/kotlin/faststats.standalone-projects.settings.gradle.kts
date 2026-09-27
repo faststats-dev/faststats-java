@@ -1,0 +1,1 @@
+includeBuild("proguard-upload-plugin")
