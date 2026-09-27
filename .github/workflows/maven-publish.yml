@@ -17,8 +17,45 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
-      - name: Publish with Gradle to Repository
+      - name: Select publication
+        id: publication
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          case "$RELEASE_TAG" in
+            proguard-upload-plugin/*)
+              package=proguard-upload-plugin
+              release_version="${RELEASE_TAG#proguard-upload-plugin/}"
+              properties=proguard-upload-plugin/gradle.properties
+              ;;
+            *)
+              package=faststats-java
+              release_version="$RELEASE_TAG"
+              properties=gradle.properties
+              ;;
+          esac
+
+          if [[ ! "$release_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-pre[0-9]+)?$ ]]; then
+            echo "Unsupported release tag: $RELEASE_TAG" >&2
+            exit 1
+          fi
+
+          project_version="$(sed -n 's/^version=//p' "$properties")"
+          if [[ "$release_version" != "$project_version" ]]; then
+            echo "Release tag version $release_version does not match $properties ($project_version)" >&2
+            exit 1
+          fi
+
+          echo "package=$package" >> "$GITHUB_OUTPUT"
+      - name: Publish FastStats Java
+        if: steps.publication.outputs.package == 'faststats-java'
         env:
           REPOSITORY_USER: ${{ secrets.REPOSITORY_USER }}
           REPOSITORY_TOKEN: ${{ secrets.REPOSITORY_TOKEN }}
         run: ./gradlew publish publishPlatformCompat
+      - name: Publish ProGuard upload plugin
+        if: steps.publication.outputs.package == 'proguard-upload-plugin'
+        env:
+          REPOSITORY_USER: ${{ secrets.REPOSITORY_USER }}
+          REPOSITORY_TOKEN: ${{ secrets.REPOSITORY_TOKEN }}
+        run: ./gradlew -p proguard-upload-plugin publish
