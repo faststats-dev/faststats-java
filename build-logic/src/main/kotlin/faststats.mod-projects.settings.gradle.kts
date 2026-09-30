@@ -1,8 +1,6 @@
 include(
     "fabric",
-    "fabric:example-mod",
     "neoforge",
-    "neoforge:example-mod",
 )
 
 fun includeVersionModules(platform: String) {

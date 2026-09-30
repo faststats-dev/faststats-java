@@ -23,7 +23,6 @@ tasks.processResources {
 }
 
 allprojects {
-    if (project.name == "example-mod") return@allprojects
     if (project.path == ":fabric:versions") return@allprojects
     apply { plugin("maven-publish") }
     extra.set("publishArtifactId", "fabric")
@@ -31,8 +30,6 @@ allprojects {
 }
 
 subprojects {
-    if (project.name == "example-mod") return@subprojects
-
     dependencies {
         compileOnlyApi(project(":fabric"))
     }

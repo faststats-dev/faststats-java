@@ -25,7 +25,6 @@ tasks.processResources {
 }
 
 allprojects {
-    if (project.name == "example-mod") return@allprojects
     if (project.path == ":neoforge:versions") return@allprojects
     apply { plugin("maven-publish") }
     extra.set("publishArtifactId", "neoforge")
@@ -33,8 +32,6 @@ allprojects {
 }
 
 subprojects {
-    if (project.name == "example-mod") return@subprojects
-
     apply { plugin("net.neoforged.moddev") }
 
     dependencies {
