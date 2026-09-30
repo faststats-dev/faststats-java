@@ -73,6 +73,7 @@ final class SimpleErrorTrackerService extends SubmissionService implements Error
     }
 
     private void submit() {
+        if (!context.submissionActive || !context.getConfig().errorTracking()) return;
         try {
             final var data = createData();
             if (data == null) return;
@@ -111,7 +112,7 @@ final class SimpleErrorTrackerService extends SubmissionService implements Error
         return data;
     }
 
-    private void clear() {
+    public void clear() {
         globalErrorTracker.clear();
         errorTrackers.forEach(SimpleErrorTracker::clear);
     }

@@ -12,9 +12,11 @@ import java.io.UncheckedIOException;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+// todo: revise
 public non-sealed abstract class SimpleContext implements FastStatsContext {
     private final @Token String token;
     private final Config config;
@@ -24,6 +26,7 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
     private final Logger logger;
 
     protected volatile boolean ready = false;
+    public volatile boolean submissionActive;
 
     private @Nullable Metrics metrics;
     private @Nullable FeatureFlagService featureFlagService;
@@ -56,14 +59,33 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
 
     @MustBeInvokedByOverriders
     protected final void initializeServices(final Factory<?, ?> factory) throws IllegalStateException {
+        initializeServices(factory, false);
+    }
+
+    /**
+     * Initializes service descriptions before consent so this context can participate in a live lifecycle registry.
+     */
+    @MustBeInvokedByOverriders
+    protected final void initializeManagedServices(final Factory<?, ?> factory) throws IllegalStateException {
+        initializeServices(factory, true);
+    }
+
+    private void initializeServices(final Factory<?, ?> factory, final boolean lifecycleManaged) {
         if (factory.metrics == null && factory.errorTracker == null && factory.featureFlagService == null)
             throw new IllegalStateException("Context created without any service attached, was this intentional?");
 
-        if (!preSubmissionStart()) return;
+        final var start = preSubmissionStart();
+        if (!lifecycleManaged && !start) return;
 
-        this.metrics = config.submitMetrics() && factory.metrics != null ? factory.metrics.apply(metricsFactory()) : null;
-        this.errorTrackerService = config.errorTracking() && factory.errorTracker != null ? new SimpleErrorTrackerService(this, factory.errorTracker) : null;
+        if (factory.metrics != null && (lifecycleManaged || config.submitMetrics())) {
+            final var metricsFactory = metricsFactory();
+            this.metrics = factory.metrics.apply(metricsFactory);
+        }
+        this.errorTrackerService = factory.errorTracker != null && (lifecycleManaged || config.errorTracking())
+                ? new SimpleErrorTrackerService(this, factory.errorTracker)
+                : null;
         this.featureFlagService = factory.featureFlagService != null ? factory.featureFlagService.apply(new SimpleFeatureFlagService.Factory(this)) : null;
+        this.submissionActive = start;
 
         final var features = new HashSet<String>(3);
         features.add("metrics=" + (metrics != null ? "yes" : "no"));
@@ -161,6 +183,7 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
         if (errorTrackerService != null) errorTrackerService.shutdown();
         if (featureFlagService instanceof final SimpleFeatureFlagService service) service.shutdown();
         if (metrics instanceof final SimpleMetrics simpleMetrics) simpleMetrics.shutdown();
+        this.submissionActive = false;
         ready = false;
     }
 

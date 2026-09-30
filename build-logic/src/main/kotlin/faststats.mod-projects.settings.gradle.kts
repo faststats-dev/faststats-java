@@ -1,8 +1,14 @@
+pluginManagement.repositories {
+    maven("https://maven.fabricmc.net/")
+    maven("https://maven.neoforged.net/releases")
+}
+
 include(
     "fabric",
     "fabric:example-mod",
     "neoforge",
     "neoforge:example-mod",
+    "onboarding"
 )
 
 fun includeVersionModules(platform: String) {
@@ -14,3 +20,4 @@ fun includeVersionModules(platform: String) {
 
 includeVersionModules("fabric")
 includeVersionModules("neoforge")
+includeVersionModules("onboarding")

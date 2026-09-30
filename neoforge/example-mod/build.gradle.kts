@@ -12,6 +12,6 @@ configurations.configureEach {
 }
 
 dependencies {
-    compileOnly(project(":neoforge:versions:26.1-26.2"))
+    implementation(project(":neoforge:versions:26.1-26.2"))
     jarJar(project(":neoforge:versions:26.1-26.2"))
 }

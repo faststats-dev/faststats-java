@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
 extra.set("moduleName", "dev.faststats.neoforge")
 
 plugins {
@@ -33,20 +35,28 @@ allprojects {
 }
 
 subprojects {
-    if (project.name == "example-mod") return@subprojects
+    if (parent?.path != ":neoforge:versions") return@subprojects
+
+    tasks.processResources {
+        from(project(":neoforge").file("src/main/resources"))
+        inputs.property("version", provider { project.version })
+        filesMatching("META-INF/neoforge.mods.toml") {
+            expand("version" to project.version)
+        }
+    }
+
+    tasks.named<ShadowJar>("shadowJar") { archiveClassifier.set("") }
 
     apply { plugin("net.neoforged.moddev") }
 
     dependencies {
         compileOnly("net.neoforged:bus:8.0.5")
         compileOnlyApi(project(":neoforge"))
-    }
-
-    tasks.jar {
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        from(project(":neoforge").sourceSets["main"].output)
-        from(project(":config").sourceSets["main"].output)
-        from(project(":core").sourceSets["main"].output)
+        compileOnlyApi(project(":onboarding"))
+        "bundled"(project(":core"))
+        "bundled"(project(":config"))
+        "bundled"(project(":onboarding"))
+        "bundled"(project(":neoforge"))
     }
 }
 
@@ -59,8 +69,7 @@ configurations.configureEach {
 }
 
 dependencies {
-    compileOnlyApi(project(":core"))
-    compileOnly(project(":config"))
+    compileOnlyApi(project(":onboarding"))
     compileOnly("net.neoforged:bus:8.0.5")
 }
 
