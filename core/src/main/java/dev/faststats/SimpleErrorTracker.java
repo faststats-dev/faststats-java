@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.BiConsumer;
+import java.util.function.BiPredicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -25,6 +26,7 @@ final class SimpleErrorTracker implements ErrorTracker {
     private final Set<Class<? extends Throwable>> ignoredTypes = new CopyOnWriteArraySet<>();
     private final Set<Pattern> ignoredPatterns = new CopyOnWriteArraySet<>();
     private final List<Map.Entry<Pattern, String>> anonymizationEntries = new CopyOnWriteArrayList<>();
+    private final List<BiPredicate<Thread, Throwable>> contextExclusionRules = new CopyOnWriteArrayList<>();
 
     private volatile @Nullable BiConsumer<@Nullable ClassLoader, Throwable> errorEvent;
     private volatile @Nullable ClassLoader attachedLoader;
@@ -87,6 +89,12 @@ final class SimpleErrorTracker implements ErrorTracker {
     }
 
     @Override
+    public ErrorTracker addExclusionRule(final BiPredicate<Thread, Throwable> rule) {
+        contextExclusionRules.add(rule);
+        return this;
+    }
+
+    @Override
     public ErrorTracker anonymize(final Pattern pattern, final String replacement) {
         anonymizationEntries.add(Map.entry(pattern, replacement));
         return this;
@@ -145,5 +153,12 @@ final class SimpleErrorTracker implements ErrorTracker {
 
     @Nullable ClassLoader attachedLoader() {
         return attachedLoader;
+    }
+
+    boolean isContextErrorIgnored(final Thread thread, final Throwable error) {
+        for (final var rule : contextExclusionRules) {
+            if (rule.test(thread, error)) return true;
+        }
+        return false;
     }
 }

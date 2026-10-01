@@ -59,6 +59,7 @@ final class SimpleErrorTrackerService extends SubmissionService implements Error
             try {
                 final var loader = tracker.attachedLoader();
                 if (loader != null && !ErrorHelper.isSameLoader(thread, loader, error)) continue;
+                if (tracker.isContextErrorIgnored(thread, error)) continue;
                 tracker.trackError(error).handled(false);
                 tracker.getContextErrorHandler().ifPresent(handler -> handler.accept(loader, error));
             } catch (final Throwable t) {
