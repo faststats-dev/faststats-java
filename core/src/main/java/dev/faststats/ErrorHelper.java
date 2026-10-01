@@ -154,29 +154,45 @@ final class ErrorHelper {
         return result;
     }
 
-    public static boolean isSameLoader(final ClassLoader loader, final Throwable error) {
-        return isSameLoader(loader, error, Collections.newSetFromMap(new IdentityHashMap<>()));
+    private static final StackWalker STACK_WALKER = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+
+    public static @Nullable ClassLoader callerClassLoader() {
+        return STACK_WALKER.walk(frames -> frames
+                        .map(StackWalker.StackFrame::getDeclaringClass)
+                        .filter(type -> type != ErrorHelper.class && type != ErrorTracker.class)
+                        .findFirst())
+                .orElse(ErrorTracker.class)
+                .getClassLoader();
     }
 
-    private static boolean isSameLoader(final ClassLoader loader, @Nullable final Throwable error, final Set<Throwable> visited) {
+    public static boolean isSameLoader(@Nullable final Thread thread, final ClassLoader loader, final Throwable error) {
+        return isSameLoader(thread, loader, error, Collections.newSetFromMap(new IdentityHashMap<>()));
+    }
+
+    private static boolean isSameLoader(@Nullable final Thread thread, final ClassLoader loader, @Nullable final Throwable error, final Set<Throwable> visited) {
         if (error == null || !visited.add(error)) return false;
 
         final var stackTrace = error.getStackTrace();
         if (stackTrace == null || stackTrace.length == 0)
-            return isSameLoader(loader, error.getCause(), visited);
+            return isSameLoader(thread, loader, error.getCause(), visited);
 
         final var firstNonLibraryIndex = findFirstNonLibraryFrameIndex(stackTrace);
-        if (firstNonLibraryIndex == -1) return isSameLoader(loader, error.getCause(), visited);
+        if (firstNonLibraryIndex == -1) return isSameLoader(thread, loader, error.getCause(), visited);
 
         final var framesToCheck = Math.min(5, stackTrace.length - firstNonLibraryIndex);
 
         for (var i = 0; i < framesToCheck; i++) {
             final var frame = stackTrace[firstNonLibraryIndex + i];
             if (isLibraryFrame(frame.getClassName())) continue;
-            if (!isFromLoader(frame, loader)) return isSameLoader(loader, error.getCause(), visited);
+            if (!isFromLoader(frame, loader)) return isSameLoader(thread, loader, error.getCause(), visited);
         }
 
-        return true;
+        return thread == null || isRelatedContextLoader(thread.getContextClassLoader(), loader);
+    }
+
+    private static boolean isRelatedContextLoader(@Nullable final ClassLoader contextLoader, final ClassLoader loader) {
+        if (contextLoader == null) return true;
+        return isSameClassLoader(contextLoader, loader) || isSameClassLoader(loader, contextLoader);
     }
 
     private static int findFirstNonLibraryFrameIndex(final StackTraceElement[] stackTrace) {
