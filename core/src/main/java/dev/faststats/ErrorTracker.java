@@ -16,16 +16,15 @@ import java.util.regex.Pattern;
  */
 public sealed interface ErrorTracker permits SimpleErrorTracker {
     /**
-     * Creates a context-aware error tracker policy for the current class loader.
+     * Creates a context-aware error tracker policy for the class loader of the calling class.
      *
      * @return the error tracker policy
-     * @see #contextAware(BiPredicate)
      * @see #contextAware(ClassLoader)
      * @since 0.24.0
      */
-    @Contract(value = " -> new", pure = true)
+    @Contract(value = " -> new")
     static ErrorTracker contextAware() {
-        return contextAware(Thread.currentThread().getContextClassLoader());
+        return contextAware(ErrorHelper.callerClassLoader());
     }
 
     /**
@@ -37,66 +36,14 @@ public sealed interface ErrorTracker permits SimpleErrorTracker {
      * @param classLoader the class loader whose errors should be tracked, or {@code null} to track all errors
      * @return the error tracker policy
      * @throws IllegalStateException if the error context is already attached
-     * @see #contextAware(ClassLoader, BiPredicate)
      * @see #attachErrorContext(ClassLoader)
      * @since 0.24.0
      */
-    @Contract(value = "_ -> new", pure = true)
+    @Contract(value = "_ -> new")
     static ErrorTracker contextAware(@Nullable final ClassLoader classLoader) {
         final var tracker = new SimpleErrorTracker();
         tracker.attachErrorContext(classLoader);
         return tracker;
-    }
-
-    /**
-     * Creates a context-aware error tracker policy for the current class loader with a predicate to conditionally exclude errors.
-     * <p>
-     * Example use of the predicate:
-     * <pre>{@code
-     * contextAware((thread, throwable) -> {
-     *   for (final var element : throwable.getStackTrace()) {
-     *     if (element.getClassName().startsWith("your.package.name")) {
-     *       return true;
-     *     }
-     *   }
-     *   return false;
-     * });}</pre>
-     *
-     * @param override the error inclusion override predicate
-     * @return the error tracker policy
-     * @see #contextAware(ClassLoader, BiPredicate)
-     * @since 0.24.0
-     */
-    @Contract(value = "_ -> new", pure = true)
-    static ErrorTracker contextAware(final BiPredicate<Thread, Throwable> override) {
-        return contextAware();
-    }
-
-    /**
-     * Creates a context-aware error tracker policy for the given class loader with a predicate to conditionally exclude errors.
-     * <p>
-     * The returned tracker has its error context attached immediately. If the class
-     * loader is {@code null}, the tracker will track all errors.
-     * <p>
-     * Example use of the predicate:
-     * <pre>{@code
-     * contextAware(classLoader, (thread, throwable) -> {
-     *   for (final var element : throwable.getStackTrace()) {
-     *     if (element.getClassName().startsWith("your.package.name")) {
-     *       return true;
-     *     }
-     *   }
-     *   return false;
-     * });}</pre>
-     *
-     * @param override the error inclusion override predicate
-     * @return the error tracker policy
-     * @see #attachErrorContext(ClassLoader)
-     * @since 0.24.0
-     */
-    @Contract(value = "_, _ -> new", pure = true)
-    static ErrorTracker contextAware(@Nullable final ClassLoader classLoader, final BiPredicate<Thread, Throwable> override) {
-        return contextAware();
     }
 
     /**
@@ -220,6 +167,33 @@ public sealed interface ErrorTracker permits SimpleErrorTracker {
     }
 
     /**
+     * Adds a rule that excludes automatically tracked errors from being reported to FastStats.
+     * <p>
+     * Rules are only applied to errors captured through an attached error context,
+     * after the error has been attributed to the tracker's class loader.
+     * <p>
+     * If any rule returns {@code true} for the thread and error, the error is not tracked.
+     * <pre>{@code
+     * // Exclude all errors without a package frame from "your.package.name"
+     * tracker.addExclusionRule((thread, error) -> {
+     *   for (final var element : throwable.getStackTrace()) {
+     *     if (element.getClassName().startsWith("your.package.name")) {
+     *       return false; // track this error
+     *     }
+     *   }
+     *   return true; // do not track this error
+     * });
+     * }</pre>
+     *
+     * @param rule the rule deciding whether an error on the given thread should be excluded
+     * @return the error tracker
+     * @see #attachErrorContext(ClassLoader)
+     * @since 0.31.0
+     */
+    @Contract(value = "_ -> this", mutates = "this")
+    ErrorTracker addExclusionRule(BiPredicate<Thread, Throwable> rule);
+
+    /**
      * Adds an anonymization pattern that replaces matched text in error messages.
      * <pre>{@code
      * tracker.anonymize(Pattern.compile("token=[^&]+"), "token=[redacted]");
@@ -279,6 +253,7 @@ public sealed interface ErrorTracker permits SimpleErrorTracker {
      * @return whether an error context is attached
      * @since 0.23.0
      */
+    @Contract(pure = true)
     boolean isContextAttached();
 
     /**
@@ -311,20 +286,25 @@ public sealed interface ErrorTracker permits SimpleErrorTracker {
      */
     @Contract(pure = true)
     static boolean isSameLoader(final ClassLoader loader, final Throwable error) {
-        return ErrorHelper.isSameLoader(Thread.currentThread(), loader, error);
+        return ErrorHelper.isSameLoader(null, loader, error);
     }
 
     /**
-     * Checks if the error occurred in the same class loader as the provided loader and thread.
+     * Checks if the error occurred in the same class loader as the provided loader,
+     * taking the context class loader of the given thread into account.
+     * <p>
+     * In addition to the stack frame check of {@link #isSameLoader(ClassLoader, Throwable)}, the
+     * thread's context class loader must be either {@code null}, or be the given loader, one of
+     * its parents or one of its children.
      *
-     * @param thread the thread
+     * @param thread the thread the error occurred on
      * @param loader the class loader
      * @param error  the error
      * @return whether the error occurred in the same class loader
-     * @since 0.23.0
+     * @since 0.31.0
      */
     @Contract(pure = true)
     static boolean isSameLoader(final Thread thread, final ClassLoader loader, final Throwable error) {
         return ErrorHelper.isSameLoader(thread, loader, error);
     }
-}    
+}

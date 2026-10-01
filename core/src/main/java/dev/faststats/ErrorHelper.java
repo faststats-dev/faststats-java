@@ -11,7 +11,6 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -155,11 +154,22 @@ final class ErrorHelper {
         return result;
     }
 
-    public static boolean isSameLoader(final Thread thread, final ClassLoader loader, final Throwable error) {
+    private static final StackWalker STACK_WALKER = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+
+    public static @Nullable ClassLoader callerClassLoader() {
+        return STACK_WALKER.walk(frames -> frames
+                        .map(StackWalker.StackFrame::getDeclaringClass)
+                        .filter(type -> type != ErrorHelper.class && type != ErrorTracker.class)
+                        .findFirst())
+                .orElse(ErrorTracker.class)
+                .getClassLoader();
+    }
+
+    public static boolean isSameLoader(@Nullable final Thread thread, final ClassLoader loader, final Throwable error) {
         return isSameLoader(thread, loader, error, Collections.newSetFromMap(new IdentityHashMap<>()));
     }
 
-    private static boolean isSameLoader(final Thread thread, final ClassLoader loader, @Nullable final Throwable error, final Set<Throwable> visited) {
+    private static boolean isSameLoader(@Nullable final Thread thread, final ClassLoader loader, @Nullable final Throwable error, final Set<Throwable> visited) {
         if (error == null || !visited.add(error)) return false;
 
         final var stackTrace = error.getStackTrace();
@@ -177,15 +187,12 @@ final class ErrorHelper {
             if (!isFromLoader(frame, loader)) return isSameLoader(thread, loader, error.getCause(), visited);
         }
 
-        return classLoadersMatch(thread.getContextClassLoader(), loader);
+        return thread == null || isRelatedContextLoader(thread.getContextClassLoader(), loader);
     }
 
-    private static boolean classLoadersMatch(@Nullable final ClassLoader first, @Nullable final ClassLoader second) {
-        if (Objects.equals(first, second)) return true;
-        if (first == null || second == null) return false;
-        if (classLoadersMatch(first.getParent(), second)) return true;
-        if (classLoadersMatch(first, second.getParent())) return true;
-        return false;
+    private static boolean isRelatedContextLoader(@Nullable final ClassLoader contextLoader, final ClassLoader loader) {
+        if (contextLoader == null) return true;
+        return isSameClassLoader(contextLoader, loader) || isSameClassLoader(loader, contextLoader);
     }
 
     private static int findFirstNonLibraryFrameIndex(final StackTraceElement[] stackTrace) {
