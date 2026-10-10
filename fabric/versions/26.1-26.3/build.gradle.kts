@@ -2,7 +2,7 @@ extra.set("moduleName", "dev.faststats.fabric.compat.v26_1")
 extra.set("publishVersionSuffix", "mc26.1-26.3")
 
 plugins {
-    id("net.fabricmc.fabric-loom") version "1.15-SNAPSHOT"
+    id("net.fabricmc.fabric-loom") version "1.18.4"
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
