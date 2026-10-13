@@ -22,24 +22,12 @@ public final class OnboardingDefinition {
         final var acceptAll = Button.button(Text.of("Select All"));
         final var declineAll = Button.button(Text.of("Unselect All"));
 
-        final var collectedData = registrationText(state).box().scrollable().height(40);
+        final var collectedData = consentText(state).box().scrollable();
 
         acceptAll.onClick((screen, button) -> setAll(screen, state, true, collectedData));
         declineAll.onClick((screen, button) -> setAll(screen, state, false, collectedData));
 
         return Screen.screen(Text.of("FastStats Metrics"))
-                .add(Text.text()
-                        .append(Text.url("FastStats", MODS_URL))
-                        .append(" collects anonymous usage statistics and errors.\n")
-                        .append("Keeping Metrics and Error tracking enabled helps developers to improve their mods.\n\n")
-                        .append("If you suspect a developer is collecting personal data or bypassing any opt-out option,\n")
-                        .append("please report it at: ")
-                        .append(Text.url(ABUSE_URL))
-                        .append("\n\nPrivacy policy: ")
-                        .append(Text.url(PRIVACY_URL))
-                        .box()
-                        .scrollable()
-                        .height(30))
                 .add(collectedData)
                 .addBottom(Division.div()
                         .gap(4)
@@ -59,7 +47,7 @@ public final class OnboardingDefinition {
                                     state.additionalMetrics(self.value());
                                     update(state, collectedData);
                                 }))
-                        .add(Checkbox.create("submit_errors", Text.of("Submit Errors"))
+                        .add(Checkbox.create("submit_errors", Text.of("Submit Errors (helps developers fix bugs in their mods)"))
                                 .selected(state.errorTracking())
                                 .onStateChange((screen, self) -> {
                                     state.errorTracking(self.selected());
@@ -92,7 +80,21 @@ public final class OnboardingDefinition {
     }
 
     private static void updateRegistrationText(final ConsentState state, final ScrollableTextBox collectedData) {
-        collectedData.text(registrationText(state));
+        collectedData.text(consentText(state));
+    }
+
+    private static Text consentText(final ConsentState state) {
+        return Text.text()
+                .append(Text.url("FastStats", MODS_URL))
+                .append(" collects anonymous usage statistics and errors.\n")
+                .append("Keeping Metrics and Error tracking enabled helps developers to improve their mods.\n\n")
+                .append("If you suspect a developer is collecting personal data or bypassing any opt-out option,\n")
+                .append("please report it at: ")
+                .append(Text.url(ABUSE_URL))
+                .append("\n\nPrivacy policy: ")
+                .append(Text.url(PRIVACY_URL))
+                .append("\n\n")
+                .append(registrationText(state));
     }
 
     private static Text registrationText(final ConsentState state) {
