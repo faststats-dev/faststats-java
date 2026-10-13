@@ -1,4 +1,4 @@
-extra.set("moduleName", "dev.faststats.fabric.compat.v1_18")
+extra.set("moduleName", "dev.faststats.fabric.compat.v1_19_4")
 extra.set("publishVersionSuffix", "mc1.18-1.18.2")
 
 plugins {
@@ -13,8 +13,8 @@ tasks.compileJava {
 }
 
 sourceSets.main {
-    java.srcDir(project(":fabric:versions:1.18-1.21.8").file("src/main/java"))
-    resources.srcDir(project(":fabric:versions:1.18-1.21.8").file("src/main/resources"))
+    java.srcDir(project(":fabric:versions:1.19.4-1.21.8").file("src/main/java"))
+    resources.srcDir(project(":fabric:versions:1.19.4-1.21.8").file("src/main/resources"))
 }
 
 dependencies {

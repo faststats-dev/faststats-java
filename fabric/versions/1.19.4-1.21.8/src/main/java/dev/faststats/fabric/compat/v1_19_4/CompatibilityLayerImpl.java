@@ -1,4 +1,4 @@
-package dev.faststats.fabric.compat.v1_18;
+package dev.faststats.fabric.compat.v1_19_4;
 
 import dev.faststats.fabric.compat.CompatibilityLayer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
