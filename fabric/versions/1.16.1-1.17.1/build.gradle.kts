@@ -13,24 +13,24 @@ tasks.compileJava {
 }
 
 dependencies {
-    // minecraft("com.mojang:minecraft:1.16.1")
-    // minecraft("com.mojang:minecraft:1.16.2")
-    // minecraft("com.mojang:minecraft:1.16.3")
-    // minecraft("com.mojang:minecraft:1.16.4")
-    // minecraft("com.mojang:minecraft:1.16.5")
-    // minecraft("com.mojang:minecraft:1.17")
-    minecraft("com.mojang:minecraft:1.17.1")
+    // minecraft(libs.minecraft.v1x16x1)
+    // minecraft(libs.minecraft.v1x16x2)
+    // minecraft(libs.minecraft.v1x16x3)
+    // minecraft(libs.minecraft.v1x16x4)
+    // minecraft(libs.minecraft.v1x16x5)
+    // minecraft(libs.minecraft.v1x17)
+    minecraft(libs.minecraft.v1x17x1)
     mappings(loom.officialMojangMappings())
 
-    // compileOnly("net.fabricmc.fabric-api:fabric-api:0.18.0+build.387-1.16.1") // 1.16.1
-    // compileOnly("net.fabricmc.fabric-api:fabric-api:0.20.1+build.401-1.16") // 1.16.2
-    // compileOnly("net.fabricmc.fabric-api:fabric-api:0.25.0+build.415-1.16") // 1.16.3
-    // compileOnly("net.fabricmc.fabric-api:fabric-api:0.29.3+1.16") // 1.16.4
-    // compileOnly("net.fabricmc.fabric-api:fabric-api:0.42.0+1.16") // 1.16.5
-    // compileOnly("net.fabricmc.fabric-api:fabric-api:0.36.0+1.17") // 1.17
-    compileOnly("net.fabricmc.fabric-api:fabric-api:0.46.1+1.17") // 1.17.1
+    // compileOnly(libs.fabric.api.v1x16x1) // 1.16.1
+    // compileOnly(libs.fabric.api.v1x16x2) // 1.16.2
+    // compileOnly(libs.fabric.api.v1x16x3) // 1.16.3
+    // compileOnly(libs.fabric.api.v1x16x4) // 1.16.4
+    // compileOnly(libs.fabric.api.v1x16x5) // 1.16.5
+    // compileOnly(libs.fabric.api.v1x17) // 1.17
+    compileOnly(libs.fabric.api.v1x17x1) // 1.17.1
 
-    compileOnly("net.fabricmc:fabric-loader:0.19.5")
+    compileOnly(libs.fabric.loader)
 }
 
 dependencies {

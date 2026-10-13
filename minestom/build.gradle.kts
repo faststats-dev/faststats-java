@@ -14,7 +14,7 @@ tasks.compileJava {
 dependencies {
     api(project(":core"))
     implementation(project(":config"))
-    compileOnly("net.minestom:minestom:2026.10.07-26.2") {
+    compileOnly(libs.minestom) {
         attributes {
             attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
         }

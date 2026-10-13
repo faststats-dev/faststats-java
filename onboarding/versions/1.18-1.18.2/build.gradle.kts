@@ -16,6 +16,6 @@ sourceSets.main {
 }
 
 dependencies {
-    minecraft("com.mojang:minecraft:1.18.2")
+    minecraft(libs.minecraft.v1x18x2)
     mappings(loom.officialMojangMappings())
 }

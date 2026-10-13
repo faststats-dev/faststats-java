@@ -29,16 +29,16 @@ tasks.processResources {
 }
 
 neoForge {
-    version = "21.8.53" // lowest bound, 1.20.6
+    version = libs.versions.neoforge.v1x21x8.get() // lowest bound, 1.20.6
 }
 
 configurations.configureEach {
-    resolutionStrategy.force("com.google.code.gson:gson:2.14.0")
+    resolutionStrategy.force(libs.gson)
 }
 
 dependencies {
     implementation(project(":core"))
     implementation(project(":config"))
     compileOnlyApi(project(":onboarding"))
-    compileOnly("net.neoforged:bus:8.0.5")
+    compileOnly(libs.neoforged.bus)
 }

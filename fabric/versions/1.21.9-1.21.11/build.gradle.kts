@@ -13,16 +13,16 @@ tasks.compileJava {
 }
 
 dependencies {
-    // minecraft("com.mojang:minecraft:1.21.9")
-    // minecraft("com.mojang:minecraft:1.21.10")
-    minecraft("com.mojang:minecraft:1.21.11")
+    // minecraft(libs.minecraft.v1x21x9)
+    // minecraft(libs.minecraft.v1x21x10)
+    minecraft(libs.minecraft.v1x21x11)
     mappings(loom.officialMojangMappings())
 
-    // compileOnly("net.fabricmc.fabric-api:fabric-api:0.134.1+1.21.9") // 1.21.9
-    // compileOnly("net.fabricmc.fabric-api:fabric-api:0.138.4+1.21.10") // 1.21.10
-    compileOnly("net.fabricmc.fabric-api:fabric-api:0.141.4+1.21.11") // 1.21.11
+    // compileOnly(libs.fabric.api.v1x21x9) // 1.21.9
+    // compileOnly(libs.fabric.api.v1x21x10) // 1.21.10
+    compileOnly(libs.fabric.api.v1x21x11) // 1.21.11
 
-    compileOnly("net.fabricmc:fabric-loader:0.19.5")
+    compileOnly(libs.fabric.loader)
 }
 
 dependencies {

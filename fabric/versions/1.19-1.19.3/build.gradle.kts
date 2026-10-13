@@ -18,10 +18,10 @@ sourceSets.main {
 }
 
 dependencies {
-    minecraft("com.mojang:minecraft:1.19.3")
+    minecraft(libs.minecraft.v1x19x3)
     mappings(loom.officialMojangMappings())
-    compileOnly("net.fabricmc.fabric-api:fabric-api:0.76.1+1.19.3")
-    compileOnly("net.fabricmc:fabric-loader:0.19.3")
+    compileOnly(libs.fabric.api.v1x19x3)
+    compileOnly(libs.fabric.loader)
 }
 
 dependencies {

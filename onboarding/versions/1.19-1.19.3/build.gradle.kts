@@ -11,6 +11,6 @@ tasks.compileJava {
 }
 
 dependencies {
-    minecraft("com.mojang:minecraft:1.19.3")
+    minecraft(libs.minecraft.v1x19x3)
     mappings(loom.officialMojangMappings())
 }

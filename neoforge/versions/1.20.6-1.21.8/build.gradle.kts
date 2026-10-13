@@ -12,16 +12,16 @@ tasks.compileJava {
 }
 
 neoForge {
-    // version = "20.6.139" // 1.20.6
-    // version = "21.0.167" // 1.21
-    // version = "21.1.234" // 1.21.1
-    // version = "21.2.1-beta" // 1.21.2
-    // version = "21.3.96" // 1.21.3
-    // version = "21.4.157" // 1.21.4
-    // version = "21.5.97" // 1.21.5
-    // version = "21.6.20-beta" // 1.21.6
-    // version = "21.7.25-beta" // 1.21.7
-    version = "21.8.53" // 1.21.8
+    // version = libs.versions.neoforge.v1x20x6.get() // 1.20.6
+    // version = libs.versions.neoforge.v1x21.get() // 1.21
+    // version = libs.versions.neoforge.v1x21x1.get() // 1.21.1
+    // version = libs.versions.neoforge.v1x21x2.get() // 1.21.2
+    // version = libs.versions.neoforge.v1x21x3.get() // 1.21.3
+    // version = libs.versions.neoforge.v1x21x4.get() // 1.21.4
+    // version = libs.versions.neoforge.v1x21x5.get() // 1.21.5
+    // version = libs.versions.neoforge.v1x21x6.get() // 1.21.6
+    // version = libs.versions.neoforge.v1x21x7.get() // 1.21.7
+    version = libs.versions.neoforge.v1x21x8.get() // 1.21.8
 }
 
 dependencies {

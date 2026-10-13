@@ -4,6 +4,8 @@ plugins {
     id("maven-publish")
 }
 
+val libs = the<VersionCatalogsExtension>().named("libs")
+
 extra.set("publishArtifactId", "neoforge")
 extra.set("publishDocsUrl", "https://docs.faststats.dev/java/platform/neoforge")
 
@@ -16,11 +18,11 @@ tasks.processResources {
 }
 
 configurations.configureEach {
-    resolutionStrategy.force("com.google.code.gson:gson:2.14.0")
+    resolutionStrategy.force(libs.findLibrary("gson").get())
 }
 
 dependencies {
-    compileOnly("net.neoforged:bus:8.0.5")
+    compileOnly(libs.findLibrary("neoforged-bus").get())
     implementation(project(":core"))
     implementation(project(":config"))
     implementation(project(":onboarding"))

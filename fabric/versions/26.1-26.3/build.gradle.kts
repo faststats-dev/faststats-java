@@ -13,17 +13,17 @@ tasks.compileJava {
 }
 
 dependencies {
-    // minecraft("com.mojang:minecraft:26.1")
-    // minecraft("com.mojang:minecraft:26.1.1")
-    // minecraft("com.mojang:minecraft:26.1.2")
-    // minecraft("com.mojang:minecraft:26.2")
-    minecraft("com.mojang:minecraft:26.3-snapshot-1")
+    // minecraft(libs.minecraft.v26x1)
+    // minecraft(libs.minecraft.v26x1x1)
+    // minecraft(libs.minecraft.v26x1x2)
+    // minecraft(libs.minecraft.v26x2)
+    minecraft(libs.minecraft.v26x3)
 
-    // compileOnly("net.fabricmc.fabric-api:fabric-api:0.153.0+26.1.2") // 26.1-26.1.2
-    // compileOnly("net.fabricmc.fabric-api:fabric-api:0.153.0+26.2") // 26.2
-    compileOnly("net.fabricmc.fabric-api:fabric-api:0.153.1+26.3") // 26.3
+    // compileOnly(libs.fabric.api.v26x1x2) // 26.1-26.1.2
+    // compileOnly(libs.fabric.api.v26x2) // 26.2
+    compileOnly(libs.fabric.api.v26x3) // 26.3
 
-    compileOnly("net.fabricmc:fabric-loader:0.19.5")
+    compileOnly(libs.fabric.loader)
 }
 
 dependencies {

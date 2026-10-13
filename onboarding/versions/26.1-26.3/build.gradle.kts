@@ -11,5 +11,5 @@ tasks.compileJava {
 }
 
 dependencies {
-    minecraft("com.mojang:minecraft:26.1.2")
+    minecraft(libs.minecraft.v26x1x2)
 }

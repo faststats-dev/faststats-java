@@ -9,8 +9,10 @@ tasks.compileJava {
 dependencies {
     api(project(":config"))
     api(project(":core"))
-    compileOnlyApi("org.jspecify:jspecify:1.0.0")
+    compileOnlyApi(libs.jspecify)
 }
+
+val catalog = libs
 
 subprojects {
     if (parent?.path != ":onboarding:versions") return@subprojects
@@ -22,9 +24,9 @@ subprojects {
     repositories { maven("https://maven.neoforged.net/releases") }
 
     dependencies {
-        "compileOnly"("cpw.mods:modlauncher:10.0.9")
+        "compileOnly"(catalog.modlauncher)
         "compileOnlyApi"(project(":onboarding"))
-        "compileOnly"("net.fabricmc:fabric-loader:0.19.3")
-        "compileOnly"("net.fabricmc:sponge-mixin:0.17.3+mixin.0.8.7")
+        "compileOnly"(catalog.fabric.loader)
+        "compileOnly"(catalog.sponge.mixin)
     }
 }

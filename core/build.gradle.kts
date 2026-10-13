@@ -12,13 +12,13 @@ tasks.compileJava {
 }
 
 dependencies {
-    compileOnlyApi("com.google.code.gson:gson:2.14.0")
-    compileOnlyApi("org.jetbrains:annotations:26.1.0")
-    compileOnlyApi("org.jspecify:jspecify:1.0.0")
+    compileOnlyApi(libs.gson)
+    compileOnlyApi(libs.jetbrains.annotations)
+    compileOnlyApi(libs.jspecify)
 
     testImplementation(project(":config"))
-    testImplementation("com.google.code.gson:gson:2.14.0")
+    testImplementation(libs.gson)
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation(platform("org.junit:junit-bom:6.1.3"))
+    testImplementation(platform(libs.junit.bom))
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

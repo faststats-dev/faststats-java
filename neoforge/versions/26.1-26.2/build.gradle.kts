@@ -12,10 +12,10 @@ tasks.compileJava {
 }
 
 neoForge {
-    // version = "26.1.0.19-beta" // 26.1
-    // version = "26.1.1.15-beta" // 26.1.1
-    // version = "26.1.2.76" // 26.1.2
-    version = "26.2.0.7-beta" // 26.2
+    // version = libs.versions.neoforge.v26x1.get() // 26.1
+    // version = libs.versions.neoforge.v26x1x1.get() // 26.1.1
+    // version = libs.versions.neoforge.v26x1x2.get() // 26.1.2
+    version = libs.versions.neoforge.v26x2.get() // 26.2
 }
 
 dependencies {
