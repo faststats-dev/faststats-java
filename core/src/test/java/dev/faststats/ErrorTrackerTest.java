@@ -1,11 +1,15 @@
 package dev.faststats;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -342,6 +346,140 @@ public class ErrorTrackerTest {
             assertFalse(report.get("handled").getAsBoolean());
         } finally {
             tracker.detachErrorContext();
+        }
+    }
+
+    @Test
+    public void threadContextLoaderOnSameChainMatches() {
+        final var loader = getClass().getClassLoader();
+        final var childLoader = new URLClassLoader(new URL[0], loader);
+        final var error = new RuntimeException("test");
+        final var thread = new Thread(() -> {
+        });
+
+        thread.setContextClassLoader(loader);
+        assertTrue(ErrorTracker.isSameLoader(thread, loader, error));
+
+        thread.setContextClassLoader(loader.getParent());
+        assertTrue(ErrorTracker.isSameLoader(thread, loader, error));
+
+        thread.setContextClassLoader(childLoader);
+        assertTrue(ErrorTracker.isSameLoader(thread, loader, error));
+
+        thread.setContextClassLoader(null);
+        assertTrue(ErrorTracker.isSameLoader(thread, loader, error));
+    }
+
+    @Test
+    public void unrelatedThreadContextLoaderDoesNotMatch() {
+        final var loader = getClass().getClassLoader();
+        final var error = new RuntimeException("test");
+        final var thread = new Thread(() -> {
+        });
+
+        thread.setContextClassLoader(new URLClassLoader(new URL[0], null));
+        assertFalse(ErrorTracker.isSameLoader(thread, loader, error));
+        assertTrue(ErrorTracker.isSameLoader(loader, error));
+    }
+
+    @Test
+    public void defaultThreadContextLoadersMatch() throws ClassNotFoundException {
+        final var className = PlatformLoaded.class.getName();
+        final var loader = definingLoader(ClassLoader.getPlatformClassLoader(), className);
+        loader.loadClass(className);
+        final var error = createErrorWithStackFrom(className);
+        final var thread = new Thread(() -> {
+        });
+
+        thread.setContextClassLoader(ClassLoader.getSystemClassLoader());
+        assertTrue(ErrorTracker.isSameLoader(thread, loader, error));
+
+        thread.setContextClassLoader(ClassLoader.getPlatformClassLoader());
+        assertTrue(ErrorTracker.isSameLoader(thread, loader, error));
+
+        thread.setContextClassLoader(new URLClassLoader(new URL[0], ClassLoader.getSystemClassLoader()));
+        assertFalse(ErrorTracker.isSameLoader(thread, loader, error));
+    }
+
+    public static final class PlatformLoaded {
+    }
+
+    @Test
+    public void contextExclusionRulesExcludeErrorsFromTrackedLoader() throws InterruptedException {
+        final var loader = getClass().getClassLoader();
+        final var tracked = createErrorWithStackFrom(ErrorTrackerTest.class.getName());
+        final var excluded = createErrorWithStackFrom(MockContext.class.getName());
+        final var foreign = createErrorWithStackFrom("example.Foreign");
+
+        final var excludedThread = new AtomicReference<@Nullable Thread>();
+        final var tracker = (SimpleErrorTracker) ErrorTracker.contextAware(loader)
+                .addExclusionRule((thread, error) -> error.getStackTrace()[0].getClassName().equals(MockContext.class.getName()))
+                .addExclusionRule((thread, error) -> thread == excludedThread.get());
+        try {
+            for (final var error : new RuntimeException[]{tracked, excluded, foreign}) {
+                final var thread = new Thread(() -> {
+                    throw error;
+                });
+                thread.start();
+                thread.join(1000);
+            }
+
+            final var trackedOnExcludedThread = createErrorWithStackFrom(ErrorTrackerTest.class.getName());
+            final var thread = new Thread(() -> {
+                throw trackedOnExcludedThread;
+            });
+            excludedThread.set(thread);
+            thread.start();
+            thread.join(1000);
+
+            final var reports = tracker.getFullData();
+            assertEquals(1, reports.size());
+            final var stack = reports.get(0).getAsJsonObject().getAsJsonArray("stack");
+            assertEquals("  at " + ErrorTrackerTest.class.getName() + ".test(Test.java:1)", stack.get(1).getAsString());
+        } finally {
+            tracker.detachErrorContext();
+        }
+    }
+
+    @Test
+    public void contextAwareResolvesCallerClassLoader() throws Exception {
+        final var callerName = ContextAwareCaller.class.getName();
+        final var callerLoader = definingLoader(getClass().getClassLoader(), callerName);
+
+        @SuppressWarnings("unchecked") final var caller = (Supplier<ErrorTracker>) callerLoader
+                .loadClass(callerName).getDeclaredConstructor().newInstance();
+        final var tracker = (SimpleErrorTracker) caller.get();
+        try {
+            assertEquals(callerLoader, tracker.attachedLoader());
+        } finally {
+            tracker.detachErrorContext();
+        }
+    }
+
+    private ClassLoader definingLoader(final ClassLoader parent, final String className) {
+        final var source = getClass().getClassLoader();
+        return new ClassLoader(parent) {
+            @Override
+            protected Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
+                if (!name.equals(className)) return super.loadClass(name, resolve);
+                synchronized (getClassLoadingLock(name)) {
+                    final var loaded = findLoadedClass(name);
+                    if (loaded != null) return loaded;
+                    try (final var stream = source.getResourceAsStream(name.replace('.', '/') + ".class")) {
+                        final var bytes = stream.readAllBytes();
+                        return defineClass(name, bytes, 0, bytes.length);
+                    } catch (final IOException e) {
+                        throw new ClassNotFoundException(name, e);
+                    }
+                }
+            }
+        };
+    }
+
+    public static final class ContextAwareCaller implements Supplier<ErrorTracker> {
+        @Override
+        public ErrorTracker get() {
+            return ErrorTracker.contextAware();
         }
     }
 
