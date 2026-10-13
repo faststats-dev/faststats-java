@@ -15,8 +15,9 @@ neoforge-v1x21x10 = "21.10.64"
 neoforge-v1x21x11 = "21.11.42"
 neoforge-v26x1 = "26.1.0.19-beta"
 neoforge-v26x1x1 = "26.1.1.15-beta"
-neoforge-v26x1x2 = "26.1.2.76"
-neoforge-v26x2 = "26.2.0.7-beta"
+neoforge-v26x1x2 = "26.1.2.116"
+neoforge-v26x2 = "26.2.0.90"
+neoforge-v26x3 = "26.3.0.76"
 
 [libraries]
 gson = "com.google.code.gson:gson:2.14.0"

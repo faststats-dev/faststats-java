@@ -26,8 +26,8 @@ Library jars are written to each module's `build/libs` directory. Fabric and Neo
 published under stable Maven artifact IDs with Minecraft range suffixes:
 
 ```text
-dev.faststats.metrics:fabric:<sdk-version>+mc26.1-26.2
-dev.faststats.metrics:neoforge:<sdk-version>+mc26.1-26.2
+dev.faststats.metrics:fabric:<sdk-version>+mc26.1-26.3
+dev.faststats.metrics:neoforge:<sdk-version>+mc26.1-26.3
 ```
 
 Use `checkPlatformCompat` to compile all Fabric and NeoForge compatibility modules.
