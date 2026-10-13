@@ -60,7 +60,8 @@ public final class MinecraftScreenManager implements ScreenManager {
     @Override
     @SuppressWarnings("DataFlowIssue")
     public void closeScreen(final Screen screen) {
-        screen.onClose().ifPresentOrElse(Runnable::run, () -> Minecraft.getInstance().setScreenAndShow(null));
+        Minecraft.getInstance().setScreenAndShow(null);
+        screen.onClose().ifPresent(Runnable::run);
     }
 
     @Override
@@ -152,7 +153,7 @@ public final class MinecraftScreenManager implements ScreenManager {
 
         @Override
         public void onClose() {
-            screen.onClose().ifPresentOrElse(Runnable::run, super::onClose);
+            screen.close();
         }
 
         @Override

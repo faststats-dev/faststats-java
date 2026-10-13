@@ -30,9 +30,8 @@ public final class MinecraftScreenManager implements ScreenManager {
 
     @Override
     public void closeScreen(final Screen screen) {
+        Minecraft.getInstance().setScreen(null);
         screen.onClose().ifPresent(Runnable::run);
-        if (Minecraft.getInstance().screen instanceof final ConsentScreen wrapper && wrapper.model == screen)
-            Minecraft.getInstance().setScreen(null);
     }
 
     private static final class ConsentScreen extends net.minecraft.client.gui.screens.Screen {
@@ -103,7 +102,7 @@ public final class MinecraftScreenManager implements ScreenManager {
         }
 
         private void close() {
-            MinecraftScreenManager.thisClose(model);
+            model.close();
         }
 
         @Override
@@ -118,10 +117,5 @@ public final class MinecraftScreenManager implements ScreenManager {
             graphics.drawCenteredString(font, "Anonymous metrics and errors help mod developers improve their projects.", width / 2, 34, 0xCCCCCC);
             super.render(graphics, mouseX, mouseY, delta);
         }
-    }
-
-    private static void thisClose(final Screen model) {
-        model.onClose().ifPresent(Runnable::run);
-        if (Minecraft.getInstance().screen instanceof ConsentScreen) Minecraft.getInstance().setScreen(null);
     }
 }

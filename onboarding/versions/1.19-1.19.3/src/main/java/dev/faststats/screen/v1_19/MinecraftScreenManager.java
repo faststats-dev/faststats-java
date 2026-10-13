@@ -27,8 +27,8 @@ public final class MinecraftScreenManager implements ScreenManager {
 
     @Override
     public void closeScreen(final Screen s) {
+        Minecraft.getInstance().setScreen(null);
         s.onClose().ifPresent(Runnable::run);
-        if (Minecraft.getInstance().screen instanceof Wrapper) Minecraft.getInstance().setScreen(null);
     }
 
     private static final class Wrapper extends net.minecraft.client.gui.screens.Screen {
@@ -72,8 +72,7 @@ public final class MinecraftScreenManager implements ScreenManager {
         }
 
         void close() {
-            model.onClose().ifPresent(Runnable::run);
-            if (minecraft.screen == this) minecraft.setScreen(null);
+            model.close();
         }
 
         @Override
