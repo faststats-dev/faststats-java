@@ -1,0 +1,4 @@
+[plugins]
+fabric-loom = { id = "net.fabricmc.fabric-loom", version = "1.15-SNAPSHOT" }
+moddev = { id = "net.neoforged.moddev", version = "2.0.148" }
+shadow = { id = "com.gradleup.shadow", version = "9.6.1" }

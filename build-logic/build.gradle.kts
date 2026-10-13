@@ -8,10 +8,12 @@ repositories {
     maven("https://maven.neoforged.net/releases")
 }
 
-fun plugin(id: String, version: String) = "$id:$id.gradle.plugin:$version"
+fun plugin(plugin: Provider<PluginDependency>) = plugin.map {
+    "${it.pluginId}:${it.pluginId}.gradle.plugin:${it.version}"
+}
 
 dependencies {
-    implementation(plugin("com.gradleup.shadow", "9.6.1"))
-    implementation(plugin("net.fabricmc.fabric-loom", "1.15-SNAPSHOT"))
-    implementation(plugin("net.neoforged.moddev", "2.0.148"))
+    implementation(plugin(libs.plugins.fabric.loom))
+    implementation(plugin(libs.plugins.moddev))
+    implementation(plugin(libs.plugins.shadow))
 }
