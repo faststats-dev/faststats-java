@@ -14,7 +14,7 @@ public interface ScreenManager {
 
     Text newText();
 
-    Text translatable(String text);
+    Text translatable(String key, Text... args);
 
     void closeScreen(Screen screen);
 

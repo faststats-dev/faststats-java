@@ -29,6 +29,14 @@ public record MinecraftText(MutableComponent text) implements Text {
     }
 
     @Override
+    public Text append(final Text text, final URI url) {
+        this.text.append(Component.empty()
+                .append(((MinecraftText) text).text)
+                .withStyle(Style.EMPTY.withClickEvent(new ClickEvent.OpenUrl(url))));
+        return this;
+    }
+
+    @Override
     public Text format(final Formatting formatting) {
         this.text.withStyle(toFormat(formatting));
         return this;

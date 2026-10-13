@@ -1,0 +1,23 @@
+{
+  "faststats.consent.title": "FastStats Metrics",
+  "faststats.consent.summary": "Anonymous metrics and errors help mod developers improve their projects.",
+  "faststats.consent.description": "%1$s collects anonymous usage statistics and errors.\nKeeping Metrics and Error tracking enabled helps developers to improve their mods.\n\nIf you suspect a developer is collecting personal data or bypassing any opt-out option,\nplease report it at: %2$s\n\nPrivacy policy: %3$s",
+  "faststats.consent.installed_mods": "> Installed mods that use FastStats:",
+  "faststats.consent.default_metrics": "Default Metrics",
+  "faststats.consent.default_metrics.disabled": "Default Metrics (disabled)",
+  "faststats.consent.error_tracking": "Error Tracking",
+  "faststats.consent.error_tracking.disabled": "Error Tracking (disabled)",
+  "faststats.consent.additional_metrics": "Additional Metrics:",
+  "faststats.consent.additional_metrics.disabled": "Additional Metrics (disabled):",
+  "faststats.consent.learn_more": "Learn more: %s",
+  "faststats.consent.learn_more.link": "What data is collected?",
+  "faststats.consent.submit_metrics": "Submit Metrics",
+  "faststats.consent.submit_additional_metrics": "Submit Additional Metrics (provided by the developer)",
+  "faststats.consent.submit_errors": "Submit Errors (helps developers fix bugs in their mods)",
+  "faststats.consent.select_all": "Select All",
+  "faststats.consent.unselect_all": "Unselect All",
+  "faststats.consent.link.info": "Info",
+  "faststats.consent.link.mods": "Mods",
+  "faststats.consent.link.privacy": "Privacy",
+  "faststats.consent.link.report": "Report"
+}

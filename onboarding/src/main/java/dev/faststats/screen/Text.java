@@ -7,8 +7,8 @@ public interface Text {
         return ScreenManager.instance().newText();
     }
 
-    static Text translatable(final String text) {
-        return ScreenManager.instance().translatable(text);
+    static Text translatable(final String key, final Text... args) {
+        return ScreenManager.instance().translatable(key, args);
     }
 
     static Text of(final String text) {
@@ -16,6 +16,12 @@ public interface Text {
     }
 
     static Text url(final String text, final URI uri) {
+        return text().append(text, uri)
+                .format(Formatting.AQUA)
+                .format(Formatting.UNDERLINE);
+    }
+
+    static Text url(final Text text, final URI uri) {
         return text().append(text, uri)
                 .format(Formatting.AQUA)
                 .format(Formatting.UNDERLINE);
@@ -30,6 +36,8 @@ public interface Text {
     Text append(String string);
 
     Text append(String text, URI url);
+
+    Text append(Text text, URI url);
 
     default Text append(final URI url) {
         return append(url.toString(), url);

@@ -31,6 +31,11 @@ public record MinecraftText(MutableComponent component) implements Text {
     }
 
     @Override
+    public Text append(final Text text, final URI url) {
+        return append(text);
+    }
+
+    @Override
     public Text format(final Formatting formatting) {
         component.withStyle(ChatFormatting.valueOf(formatting.name()));
         return this;

@@ -29,6 +29,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.network.chat.Component;
 
+import java.util.Arrays;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,8 +44,8 @@ public final class MinecraftScreenManager implements ScreenManager {
     }
 
     @Override
-    public Text translatable(final String text) {
-        return new MinecraftText(Component.translatable(text));
+    public Text translatable(final String key, final Text... args) {
+        return new MinecraftText(Component.translatable(key, Arrays.stream(args).map(MinecraftScreenManager::component).toArray()));
     }
 
     @Override

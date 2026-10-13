@@ -19,19 +19,19 @@ public final class OnboardingDefinition {
     public static Screen create() {
         final var registry = FastStatsRegistry.instance();
         final var state = new ConsentState(registry.anyConfig());
-        final var acceptAll = Button.button(Text.of("Select All"));
-        final var declineAll = Button.button(Text.of("Unselect All"));
+        final var acceptAll = Button.button(Text.translatable("faststats.consent.select_all"));
+        final var declineAll = Button.button(Text.translatable("faststats.consent.unselect_all"));
 
         final var collectedData = consentText(state).box().scrollable();
 
         acceptAll.onClick((screen, button) -> setAll(screen, state, true, collectedData));
         declineAll.onClick((screen, button) -> setAll(screen, state, false, collectedData));
 
-        return Screen.screen(Text.of("FastStats Metrics"))
+        return Screen.screen(Text.translatable("faststats.consent.title"))
                 .add(collectedData)
                 .addBottom(Division.div()
                         .gap(4)
-                        .add(Checkbox.create("submit_metrics", Text.of("Submit Metrics"))
+                        .add(Checkbox.create("submit_metrics", Text.translatable("faststats.consent.submit_metrics"))
                                 .selected(state.submitMetrics())
                                 .onStateChange((screen, self) -> {
                                     final var select = screen.findSelect("submit_additional_metrics").orElseThrow();
@@ -40,14 +40,14 @@ public final class OnboardingDefinition {
                                     if (!self.selected()) select.selected(false);
                                     update(state, collectedData);
                                 }))
-                        .add(Checkbox.create("submit_additional_metrics", Text.of("Submit Additional Metrics (provided by the developer)"))
+                        .add(Checkbox.create("submit_additional_metrics", Text.translatable("faststats.consent.submit_additional_metrics"))
                                 .selected(state.additionalMetrics())
                                 .enabled(state.submitMetrics())
                                 .onStateChange((screen, self) -> {
                                     state.additionalMetrics(self.value());
                                     update(state, collectedData);
                                 }))
-                        .add(Checkbox.create("submit_errors", Text.of("Submit Errors (helps developers fix bugs in their mods)"))
+                        .add(Checkbox.create("submit_errors", Text.translatable("faststats.consent.submit_errors"))
                                 .selected(state.errorTracking())
                                 .onStateChange((screen, self) -> {
                                     state.errorTracking(self.selected());
@@ -84,43 +84,33 @@ public final class OnboardingDefinition {
     }
 
     private static Text consentText(final ConsentState state) {
-        return Text.text()
-                .append(Text.url("FastStats", MODS_URL))
-                .append(" collects anonymous usage statistics and errors.\n")
-                .append("Keeping Metrics and Error tracking enabled helps developers to improve their mods.\n\n")
-                .append("If you suspect a developer is collecting personal data or bypassing any opt-out option,\n")
-                .append("please report it at: ")
-                .append(Text.url(ABUSE_URL))
-                .append("\n\nPrivacy policy: ")
-                .append(Text.url(PRIVACY_URL))
+        return Text.translatable("faststats.consent.description",
+                        Text.url("FastStats", MODS_URL), Text.url(ABUSE_URL), Text.url(PRIVACY_URL))
                 .append("\n\n")
                 .append(registrationText(state));
     }
 
     private static Text registrationText(final ConsentState state) {
-        final var text = Text.of("> Installed mods that use FastStats:");
-        final var registrations = FastStatsRegistry.instance().registrations();
-        if (registrations.isEmpty()) {
-            text.append(Text.of("\n  No registered mods").format(Text.Formatting.RED));
-        } else registrations.forEach(registration -> {
+        final var text = Text.translatable("faststats.consent.installed_mods");
+        FastStatsRegistry.instance().registrations().forEach(registration -> {
             final var projectName = Text.of(registration.projectName()).format(Text.Formatting.YELLOW);
             text.append("\n  ").append(projectName).append(":");
             if (registration.metrics()) {
                 final var label = state.submitMetrics()
-                        ? Text.of("Default Metrics").format(Text.Formatting.AQUA)
-                        : Text.of("Default Metrics (disabled)").format(Text.Formatting.GRAY);
+                        ? Text.translatable("faststats.consent.default_metrics").format(Text.Formatting.AQUA)
+                        : Text.translatable("faststats.consent.default_metrics.disabled").format(Text.Formatting.GRAY);
                 text.append("\n  - ").append(label);
             }
             if (registration.errorTracking()) {
                 final var label = state.errorTracking()
-                        ? Text.of("Error Tracking").format(Text.Formatting.AQUA)
-                        : Text.of("Error Tracking (disabled)").format(Text.Formatting.GRAY);
+                        ? Text.translatable("faststats.consent.error_tracking").format(Text.Formatting.AQUA)
+                        : Text.translatable("faststats.consent.error_tracking.disabled").format(Text.Formatting.GRAY);
                 text.append("\n  - ").append(label);
             }
             if (!registration.additionalMetrics().isEmpty()) {
                 final var label = state.additionalMetrics()
-                        ? Text.of("Additional Metrics:").format(Text.Formatting.AQUA)
-                        : Text.of("Additional Metrics (disabled):").format(Text.Formatting.GRAY);
+                        ? Text.translatable("faststats.consent.additional_metrics").format(Text.Formatting.AQUA)
+                        : Text.translatable("faststats.consent.additional_metrics.disabled").format(Text.Formatting.GRAY);
                 text.append("\n  - ").append(label);
                 registration.additionalMetrics()
                         .stream().sorted()
@@ -130,7 +120,7 @@ public final class OnboardingDefinition {
                         .forEach(metric -> text.append("\n    - ").append(metric));
             }
         });
-        return text.append("\n\nLearn more: ")
-                .append(Text.url("What data is collected?", INFO_URL));
+        return text.append("\n\n").append(Text.translatable("faststats.consent.learn_more",
+                Text.url(Text.translatable("faststats.consent.learn_more.link"), INFO_URL)));
     }
 }

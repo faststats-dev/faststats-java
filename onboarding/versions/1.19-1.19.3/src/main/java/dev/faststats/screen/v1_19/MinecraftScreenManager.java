@@ -15,6 +15,7 @@ import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.network.chat.Component;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
 
 public final class MinecraftScreenManager implements ScreenManager {
@@ -24,8 +25,8 @@ public final class MinecraftScreenManager implements ScreenManager {
     }
 
     @Override
-    public Text translatable(final String key) {
-        return new MinecraftText(Component.translatable(key));
+    public Text translatable(final String key, final Text... args) {
+        return new MinecraftText(Component.translatable(key, Arrays.stream(args).map(MinecraftScreenManager::component).toArray()));
     }
 
     @Override
@@ -44,7 +45,7 @@ public final class MinecraftScreenManager implements ScreenManager {
     }
 
     private static final class ConsentScreen extends net.minecraft.client.gui.screens.Screen {
-        private static final Component DESCRIPTION = Component.literal("Anonymous metrics and errors help mod developers improve their projects.");
+        private static final Component DESCRIPTION = Component.translatable("faststats.consent.summary");
         private static final float DISABLED_ALPHA = 0.45F;
         private static final int SPACING = 4;
         private static final int WIDGET_HEIGHT = 20;
@@ -67,10 +68,10 @@ public final class MinecraftScreenManager implements ScreenManager {
 
             final int linkWidth = (WIDTH - SPACING * 3) / 4;
             final int linkY = height - WIDGET_HEIGHT - SPACING;
-            addLink("Info", OnboardingDefinition.INFO_URL, x, linkY, linkWidth);
-            addLink("Mods", OnboardingDefinition.MODS_URL, x + linkWidth + SPACING, linkY, linkWidth);
-            addLink("Privacy", OnboardingDefinition.PRIVACY_URL, x + (linkWidth + SPACING) * 2, linkY, linkWidth);
-            addLink("Report", OnboardingDefinition.ABUSE_URL, x + (linkWidth + SPACING) * 3, linkY, linkWidth);
+            addLink("faststats.consent.link.info", OnboardingDefinition.INFO_URL, x, linkY, linkWidth);
+            addLink("faststats.consent.link.mods", OnboardingDefinition.MODS_URL, x + linkWidth + SPACING, linkY, linkWidth);
+            addLink("faststats.consent.link.privacy", OnboardingDefinition.PRIVACY_URL, x + (linkWidth + SPACING) * 2, linkY, linkWidth);
+            addLink("faststats.consent.link.report", OnboardingDefinition.ABUSE_URL, x + (linkWidth + SPACING) * 3, linkY, linkWidth);
         }
 
         // adds the element at the given position and returns its bottom edge
@@ -112,8 +113,8 @@ public final class MinecraftScreenManager implements ScreenManager {
             return y;
         }
 
-        private void addLink(final String label, final URI uri, final int x, final int y, final int width) {
-            addRenderableWidget(net.minecraft.client.gui.components.Button.builder(Component.literal(label), ignored -> {
+        private void addLink(final String key, final URI uri, final int x, final int y, final int width) {
+            addRenderableWidget(net.minecraft.client.gui.components.Button.builder(Component.translatable(key), ignored -> {
                 final var minecraft = this.minecraft;
                 assert minecraft != null;
                 minecraft.setScreen(new ConfirmLinkScreen(confirmed -> {
