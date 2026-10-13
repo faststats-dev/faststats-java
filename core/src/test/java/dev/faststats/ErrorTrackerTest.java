@@ -383,6 +383,28 @@ public class ErrorTrackerTest {
     }
 
     @Test
+    public void defaultThreadContextLoadersMatch() throws ClassNotFoundException {
+        final var className = PlatformLoaded.class.getName();
+        final var loader = definingLoader(ClassLoader.getPlatformClassLoader(), className);
+        loader.loadClass(className);
+        final var error = createErrorWithStackFrom(className);
+        final var thread = new Thread(() -> {
+        });
+
+        thread.setContextClassLoader(ClassLoader.getSystemClassLoader());
+        assertTrue(ErrorTracker.isSameLoader(thread, loader, error));
+
+        thread.setContextClassLoader(ClassLoader.getPlatformClassLoader());
+        assertTrue(ErrorTracker.isSameLoader(thread, loader, error));
+
+        thread.setContextClassLoader(new URLClassLoader(new URL[0], ClassLoader.getSystemClassLoader()));
+        assertFalse(ErrorTracker.isSameLoader(thread, loader, error));
+    }
+
+    public static final class PlatformLoaded {
+    }
+
+    @Test
     public void contextExclusionRulesExcludeErrorsFromTrackedLoader() throws InterruptedException {
         final var loader = getClass().getClassLoader();
         final var tracked = createErrorWithStackFrom(ErrorTrackerTest.class.getName());
@@ -422,23 +444,7 @@ public class ErrorTrackerTest {
     @Test
     public void contextAwareResolvesCallerClassLoader() throws Exception {
         final var callerName = ContextAwareCaller.class.getName();
-        final var parent = getClass().getClassLoader();
-        final var callerLoader = new ClassLoader(parent) {
-            @Override
-            protected Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
-                if (!name.equals(callerName)) return super.loadClass(name, resolve);
-                synchronized (getClassLoadingLock(name)) {
-                    final var loaded = findLoadedClass(name);
-                    if (loaded != null) return loaded;
-                    try (final var stream = parent.getResourceAsStream(name.replace('.', '/') + ".class")) {
-                        final var bytes = stream.readAllBytes();
-                        return defineClass(name, bytes, 0, bytes.length);
-                    } catch (final IOException e) {
-                        throw new ClassNotFoundException(name, e);
-                    }
-                }
-            }
-        };
+        final var callerLoader = definingLoader(getClass().getClassLoader(), callerName);
 
         @SuppressWarnings("unchecked") final var caller = (Supplier<ErrorTracker>) callerLoader
                 .loadClass(callerName).getDeclaredConstructor().newInstance();
@@ -448,6 +454,26 @@ public class ErrorTrackerTest {
         } finally {
             tracker.detachErrorContext();
         }
+    }
+
+    private ClassLoader definingLoader(final ClassLoader parent, final String className) {
+        final var source = getClass().getClassLoader();
+        return new ClassLoader(parent) {
+            @Override
+            protected Class<?> loadClass(final String name, final boolean resolve) throws ClassNotFoundException {
+                if (!name.equals(className)) return super.loadClass(name, resolve);
+                synchronized (getClassLoadingLock(name)) {
+                    final var loaded = findLoadedClass(name);
+                    if (loaded != null) return loaded;
+                    try (final var stream = source.getResourceAsStream(name.replace('.', '/') + ".class")) {
+                        final var bytes = stream.readAllBytes();
+                        return defineClass(name, bytes, 0, bytes.length);
+                    } catch (final IOException e) {
+                        throw new ClassNotFoundException(name, e);
+                    }
+                }
+            }
+        };
     }
 
     public static final class ContextAwareCaller implements Supplier<ErrorTracker> {

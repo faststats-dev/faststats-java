@@ -193,6 +193,8 @@ final class ErrorHelper {
 
     private static boolean isRelatedContextLoader(@Nullable final ClassLoader contextLoader, final ClassLoader loader) {
         if (contextLoader == null) return true;
+        if (contextLoader == ClassLoader.getSystemClassLoader()) return true;
+        if (contextLoader == ClassLoader.getPlatformClassLoader()) return true;
         return isSameClassLoader(contextLoader, loader) || isSameClassLoader(loader, contextLoader);
     }
 
