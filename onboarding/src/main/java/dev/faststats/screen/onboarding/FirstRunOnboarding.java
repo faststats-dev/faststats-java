@@ -12,7 +12,7 @@ public final class FirstRunOnboarding {
 
     public static boolean openIfNeeded() {
         final var registry = FastStatsRegistry.instance();
-        if (registry.registrations().isEmpty()) return false;
+        if (!registry.consentRequired()) return false;
         if (!registry.firstRun()) return false;
         if (!OPENED.compareAndSet(false, true)) return false;
         OnboardingDefinition.create().open();

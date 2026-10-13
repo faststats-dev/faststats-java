@@ -51,7 +51,7 @@ public final class NeoForgeContext extends SimpleContext {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No NeoForge compatibility layer found"));
         initializeManagedServices(factory);
-        FastStatsRegistry.instance().register(this);
+        FastStatsRegistry.instance().register(this, factory.consentRequired);
         switch (compatibilityLayer.getEnvironment()) {
             case CLIENT -> ready();
             case SERVER -> {
@@ -106,10 +106,26 @@ public final class NeoForgeContext extends SimpleContext {
     public static final class Factory extends SimpleContext.Factory<NeoForgeContext, Factory> {
         private final String modId;
         private final @Token String token;
+        private boolean consentRequired = false;
 
         public Factory(final String modId, @Token final String token) {
             this.modId = modId;
             this.token = token;
+        }
+
+        /**
+         * Requires the user to explicitly give consent on the client.
+         * <p>
+         * When at least one mod requires consent, the onboarding screen is opened
+         * on the first launch of the game. By default, no consent screen is shown.
+         *
+         * @return this factory
+         * @since 0.31.0
+         */
+        @Contract(value = " -> this", mutates = "this")
+        public Factory requireConsent() {
+            this.consentRequired = true;
+            return this;
         }
 
         @Override

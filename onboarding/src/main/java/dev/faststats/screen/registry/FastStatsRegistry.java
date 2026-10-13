@@ -26,7 +26,7 @@ public final class FastStatsRegistry {
         return INSTANCE;
     }
 
-    public synchronized void register(final SimpleContext context) {
+    public synchronized void register(final SimpleContext context, final boolean consentRequired) {
         final var additionalMetrics = context.metrics().map(metrics -> {
             return metrics.stream()
                     .map(Metric::getId)
@@ -41,7 +41,7 @@ public final class FastStatsRegistry {
                 context.errorTrackerService().isPresent(),
                 context.featureFlagService().isPresent(),
                 additionalMetrics
-        )));
+        ), consentRequired));
     }
 
     public synchronized void unregister(final SimpleContext context) {
@@ -60,6 +60,11 @@ public final class FastStatsRegistry {
         return new ArrayList<>(contexts.values());
     }
 
+    public synchronized boolean consentRequired() {
+        for (final var entry : contexts.values()) if (entry.consentRequired()) return true;
+        return false;
+    }
+
     public boolean firstRun() {
         for (final var context : contexts.keySet()) {
             if (((SimpleConfig) context.getConfig()).firstRun()) return true;
@@ -74,7 +79,8 @@ public final class FastStatsRegistry {
 
     private record Entry(
             SimpleContext context,
-            FastStatsRegistration registration
+            FastStatsRegistration registration,
+            boolean consentRequired
     ) {
     }
 }

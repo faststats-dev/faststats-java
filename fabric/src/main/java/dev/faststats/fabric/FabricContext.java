@@ -47,7 +47,7 @@ public final class FabricContext extends SimpleContext {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No Fabric compatibility layer found"));
         initializeManagedServices(factory);
-        FastStatsRegistry.instance().register(this);
+        FastStatsRegistry.instance().register(this, factory.consentRequired);
         switch (FabricLoader.getInstance().getEnvironmentType()) {
             case CLIENT -> {
                 ready();
@@ -105,10 +105,26 @@ public final class FabricContext extends SimpleContext {
     public static final class Factory extends SimpleContext.Factory<FabricContext, Factory> {
         private final String modId;
         private final @Token String token;
+        private boolean consentRequired = false;
 
         public Factory(final String modId, @Token final String token) {
             this.modId = modId;
             this.token = token;
+        }
+
+        /**
+         * Requires the user to explicitly give consent on the client.
+         * <p>
+         * When at least one mod requires consent, the onboarding screen is opened
+         * on the first launch of the game. By default, no consent screen is shown.
+         *
+         * @return this factory
+         * @since 0.31.0
+         */
+        @Contract(value = " -> this", mutates = "this")
+        public Factory requireConsent() {
+            this.consentRequired = true;
+            return this;
         }
 
         @Override
