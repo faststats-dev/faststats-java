@@ -2,7 +2,8 @@ extra.set("moduleName", "dev.faststats.fabric.compat.v26_1")
 extra.set("publishVersionSuffix", "mc26.1-26.3")
 
 plugins {
-    id("net.fabricmc.fabric-loom") version "1.15-SNAPSHOT"
+    id("net.fabricmc.fabric-loom")
+    id("faststats.fabric-compat")
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
@@ -26,8 +27,5 @@ dependencies {
 }
 
 dependencies {
-    "bundled"(project(mapOf(
-        "path" to ":onboarding:versions:26.1-26.3",
-        "configuration" to "runtimeElements"
-    )))
+    implementation(project(":onboarding:versions:26.1-26.3", "runtimeElements"))
 }

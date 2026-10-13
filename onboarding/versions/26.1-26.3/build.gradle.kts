@@ -1,7 +1,7 @@
 extra.set("moduleName", "dev.faststats.onboarding.minecraft.v26_1")
 
 plugins {
-    id("net.fabricmc.fabric-loom") version "1.15-SNAPSHOT"
+    id("net.fabricmc.fabric-loom")
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)

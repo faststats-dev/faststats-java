@@ -104,7 +104,8 @@ afterEvaluate {
                 }
             }
 
-            from(components["java"])
+            // shadow-conventions projects publish the shadowed jar along with their shadow dependencies
+            from(components[if (plugins.hasPlugin("com.gradleup.shadow")) "shadow" else "java"])
         }
 
         repositories {

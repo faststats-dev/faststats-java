@@ -1,6 +1,10 @@
 extra.set("moduleName", "dev.faststats.neoforge.compat.v26_1")
 extra.set("publishVersionSuffix", "mc26.1-26.2")
 
+plugins {
+    id("faststats.neoforge-compat")
+}
+
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 tasks.compileJava {
@@ -14,13 +18,6 @@ neoForge {
     version = "26.2.0.7-beta" // 26.2
 }
 
-configurations.configureEach {
-    resolutionStrategy.force("com.google.code.gson:gson:2.14.0")
-}
-
 dependencies {
-    "bundled"(project(mapOf(
-        "path" to ":onboarding:versions:26.1-26.3",
-        "configuration" to "runtimeElements"
-    )))
+    implementation(project(":onboarding:versions:26.1-26.3", "runtimeElements"))
 }

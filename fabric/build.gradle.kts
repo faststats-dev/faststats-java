@@ -1,10 +1,10 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
-import net.fabricmc.loom.task.RemapJarTask
-
 extra.set("moduleName", "dev.faststats.fabric")
+extra.set("publishArtifactId", "fabric")
+extra.set("publishDocsUrl", "https://docs.faststats.dev/java/platform/fabric")
 
 plugins {
-    id("net.fabricmc.fabric-loom") version "1.15-SNAPSHOT"
+    id("net.fabricmc.fabric-loom")
+    id("maven-publish")
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
@@ -22,51 +22,6 @@ tasks.processResources {
 
     filesMatching("fabric.mod.json") {
         expand("version" to project.version)
-    }
-}
-
-allprojects {
-    if (project.path == ":fabric:versions") return@allprojects
-    apply { plugin("maven-publish") }
-    extra.set("publishArtifactId", "fabric")
-    extra.set("publishDocsUrl", "https://docs.faststats.dev/java/platform/fabric")
-}
-
-subprojects {
-    if (parent?.path != ":fabric:versions") return@subprojects
-
-    afterEvaluate {
-        if (plugins.hasPlugin("net.fabricmc.fabric-loom-remap")) {
-            tasks.named<ShadowJar>("shadowJar") {
-                destinationDirectory.set(layout.buildDirectory.dir("devlibs"))
-            }
-            tasks.named<RemapJarTask>("remapJar") {
-                inputFile.set(tasks.named<ShadowJar>("shadowJar").flatMap { it.archiveFile })
-            }
-            configurations.named("shadowRuntimeElements") {
-                outgoing.artifacts.clear()
-                outgoing.artifact(tasks.named("remapJar"))
-            }
-        } else {
-            tasks.named<ShadowJar>("shadowJar") { archiveClassifier.set("") }
-        }
-    }
-
-    tasks.processResources {
-        from(project(":fabric").file("src/main/resources"))
-        inputs.property("version", provider { project.version })
-        filesMatching("fabric.mod.json") {
-            expand("version" to project.version)
-        }
-    }
-
-    dependencies {
-        compileOnlyApi(project(":fabric"))
-        compileOnlyApi(project(":onboarding"))
-        "bundled"(project(":core"))
-        "bundled"(project(":config"))
-        "bundled"(project(":onboarding"))
-        "bundled"(project(mapOf("path" to ":fabric", "configuration" to "runtimeElements")))
     }
 }
 

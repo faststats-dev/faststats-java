@@ -1,7 +1,3 @@
-pluginManagement.repositories {
-    gradlePluginPortal()
-}
-
 rootProject.name = "faststats-java"
 
 pluginManager.apply("faststats.core-projects")

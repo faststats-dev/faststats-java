@@ -3,6 +3,7 @@ extra.set("publishVersionSuffix", "mc1.19-1.19.3")
 
 plugins {
     id("net.fabricmc.fabric-loom-remap")
+    id("faststats.fabric-compat")
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
@@ -24,8 +25,5 @@ dependencies {
 }
 
 dependencies {
-    "bundled"(project(mapOf(
-        "path" to ":onboarding:versions:1.19-1.19.3",
-        "configuration" to "namedElements"
-    )))
+    implementation(project(":onboarding:versions:1.19-1.19.3", "namedElements"))
 }
