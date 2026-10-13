@@ -8,7 +8,7 @@ modId = "faststats"
 version = "${version}"
 displayName = "FastStats"
 description = "Analytics for developers"
-logoFile = "faststats.png"
+iconFile = "faststats.png"
 authors = "David | NonSwag"
 displayURL = "https://faststats.dev/mods"
 
