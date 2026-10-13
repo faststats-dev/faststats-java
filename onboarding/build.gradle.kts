@@ -24,6 +24,7 @@ subprojects {
     repositories { maven("https://maven.neoforged.net/releases") }
 
     dependencies {
+        "compileOnly"(catalog.log4j.api)
         "compileOnly"(catalog.modlauncher)
         "compileOnlyApi"(project(":onboarding"))
         "compileOnly"(catalog.fabric.loader)

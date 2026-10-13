@@ -1,6 +1,7 @@
 {
   "required": true,
-  "package": "dev.faststats.screen.v26_1.mixins",
+  "minVersion": "0.8",
+  "package": "dev.faststats.screen.mixin.v26_1",
   "compatibilityLevel": "JAVA_25",
   "client": [
     "TelemetryInfoScreenMixin",

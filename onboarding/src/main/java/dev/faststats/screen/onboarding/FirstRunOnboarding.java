@@ -10,12 +10,13 @@ public final class FirstRunOnboarding {
     private FirstRunOnboarding() {
     }
 
-    public static boolean openIfNeeded() {
+    /**
+     * @return whether the consent screen should be opened, only {@code true} once per launch
+     */
+    public static boolean shouldOpen() {
         final var registry = FastStatsRegistry.instance();
         if (!registry.consentRequired()) return false;
         if (!registry.firstRun()) return false;
-        if (!OPENED.compareAndSet(false, true)) return false;
-        OnboardingDefinition.create().open();
-        return true;
+        return OPENED.compareAndSet(false, true);
     }
 }

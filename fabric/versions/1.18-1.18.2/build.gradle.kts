@@ -13,17 +13,23 @@ tasks.compileJava {
 }
 
 sourceSets.main {
-    java.srcDir(project(":fabric:versions:1.19.4-1.21.8").file("src/main/java"))
-    resources.srcDir(project(":fabric:versions:1.19.4-1.21.8").file("src/main/resources"))
+    java.srcDir(project(":fabric:versions:1.19.4").file("src/main/java"))
+    resources.srcDir(project(":fabric:versions:1.19.4").file("src/main/resources"))
 }
 
 dependencies {
+    // minecraft(libs.minecraft.v1x18)
+    // minecraft(libs.minecraft.v1x18x1)
     minecraft(libs.minecraft.v1x18x2)
     mappings(loom.officialMojangMappings())
-    compileOnly(libs.fabric.api.v1x18x2)
+
+    // compileOnly(libs.fabric.api.v1x18) // 1.18
+    // compileOnly(libs.fabric.api.v1x18x1) // 1.18.1
+    compileOnly(libs.fabric.api.v1x18x2) // 1.18.2
+
     compileOnly(libs.fabric.loader)
 }
 
 dependencies {
-    implementation(project(":onboarding:versions:1.18-1.18.2", "namedElements"))
+    implementation(project(":onboarding:versions:1.17-1.18.2", "runtimeElements"))
 }
