@@ -13,40 +13,30 @@ import dev.faststats.screen.TextBox;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractScrollArea;
-import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.AbstractTextAreaWidget;
+import net.minecraft.client.gui.components.ImageWidget;
 import net.minecraft.client.gui.components.MultiLineTextWidget;
 import net.minecraft.client.gui.components.ScrollableLayout;
-import net.minecraft.client.gui.components.StringWidget;
-import net.minecraft.client.gui.layouts.FrameLayout;
+import net.minecraft.client.gui.components.events.ContainerEventHandler;
+import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
 import net.minecraft.client.gui.layouts.Layout;
 import net.minecraft.client.gui.layouts.LayoutElement;
 import net.minecraft.client.gui.layouts.LinearLayout;
-import net.minecraft.client.gui.layouts.SpacerElement;
+import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.resources.Identifier;
 import net.minecraft.network.chat.Component;
 
-import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-public final class MinecraftScreenManager implements ScreenManager {
-    private static final float DISABLED_ALPHA = 0.45F;
-    private static final int BOTTOM_CONTENT_MARGIN = 10;
-    private static final int BOTTOM_SECTION_GAP = 10;
-    private static final int CONTENT_MARGIN = 16;
-    private static final int CONTENT_MAX_WIDTH = 600;
-    private static final int FOOTER_HEIGHT = 38;
-    private static final int FOOTER_MAX_WIDTH = 316;
-    private static final int HEADER_HEIGHT = 34;
-    private static final int PANEL_BACKGROUND = 0xD0000000;
-    private static final int PANEL_BORDER = 0xFFFFFFFF;
-    private static final int ROOT_GAP = 16;
-    private static final int SCROLLBAR_RESERVE = 20;
-    private static final int SEPARATOR_COLOR = 0xFF404040;
-    private static final int TEXT_PADDING_X = 24;
-    private static final int TEXT_PADDING_Y = 16;
+import static net.minecraft.client.gui.GuiGraphicsExtractor.HoveredTextEffects.NONE;
+import static net.minecraft.client.gui.GuiGraphicsExtractor.HoveredTextEffects.TOOLTIP_AND_CURSOR;
 
+public final class MinecraftScreenManager implements ScreenManager {
     @Override
     public Text newText() {
         return new MinecraftText(Component.empty());
@@ -66,22 +56,24 @@ public final class MinecraftScreenManager implements ScreenManager {
 
     @Override
     public void openScreen(final Screen screen) {
-        Minecraft.getInstance().setScreenAndShow(wrap(screen));
+        Minecraft.getInstance().setScreenAndShow(new WrappedScreen(screen));
     }
 
     private static Component component(final Text text) {
         return ((MinecraftText) text).text();
     }
 
-    private net.minecraft.client.gui.screens.Screen wrap(final Screen screen) {
-        return new WrappedScreen(screen);
-    }
-
     private static final class WrappedScreen extends net.minecraft.client.gui.screens.Screen {
+        private static final float DISABLED_ALPHA = 0.45F;
+        private static final int CONTENT_MAX_WIDTH = 600;
+        private static final int FOOTER_MAX_WIDTH = 308;
+        private static final int MARGIN = 20;
+        private static final int SCROLLBAR_RESERVE = 20;
+        private static final int SPACING = 8;
+
         private final Screen screen;
-        private final Map<Object, Double> savedScrollAmounts = new IdentityHashMap<>();
         private final Map<Object, AbstractScrollArea> scrollAreas = new IdentityHashMap<>();
-        private final List<AbstractScrollArea> scrollAreasByPriority = new ArrayList<>();
+        private final Map<Object, Double> scrollAmounts = new IdentityHashMap<>();
 
         private WrappedScreen(final Screen screen) {
             super(component(screen.title()));
@@ -90,65 +82,51 @@ public final class MinecraftScreenManager implements ScreenManager {
 
         @Override
         protected void init() {
-            scrollAreas.clear();
-            scrollAreasByPriority.clear();
-
-            final int topSeparator = topSeparator();
-            final int bottomSeparator = bottomSeparator();
-            final int contentWidth = clamp(width - CONTENT_MARGIN * 2, 1, CONTENT_MAX_WIDTH);
-            final int contentX = (width - contentWidth) / 2;
-            final int contentY = topSeparator + CONTENT_MARGIN;
-            final int contentHeight = Math.max(1, bottomSeparator - contentY - BOTTOM_CONTENT_MARGIN);
-            final int titleHeight = font.lineHeight;
-
-            final var title = frame(width, titleHeight,
-                    new StringWidget(component(screen.title()), font), 0.5F, 0.5F);
-            title.setPosition(0, Math.max(0, (topSeparator - titleHeight) / 2));
-            title.visitWidgets(this::addRenderableWidget);
-
-            final Layout bottom;
-            final int bottomHeight;
-            if (screen.bottom().isEmpty()) {
-                bottom = null;
-                bottomHeight = 0;
-            } else {
-                bottom = buildRootDocument(screen.bottom(), contentWidth, contentHeight);
-                bottomHeight = bottom.getHeight();
-            }
-
-            final int mainHeight = Math.max(1,
-                    contentHeight - bottomHeight - (bottomHeight == 0 ? 0 : BOTTOM_SECTION_GAP));
-            final var content = buildRootLayout(screen.elements(), contentWidth, mainHeight);
-            content.setPosition(contentX, contentY);
-            content.visitWidgets(this::addRenderableWidget);
-
-            if (bottom != null) {
-                bottom.setPosition(contentX, contentY + contentHeight - bottomHeight);
-                bottom.visitWidgets(this::addRenderableWidget);
-            }
+            final var layout = new HeaderAndFooterLayout(this);
+            layout.addTitleHeader(title, font);
 
             if (!screen.footer().isEmpty()) {
-                final int footerWidth = clamp(width - CONTENT_MARGIN * 2, 1, FOOTER_MAX_WIDTH);
-                final var footer = buildRootDocument(screen.footer(), footerWidth, FOOTER_HEIGHT);
-                footer.setPosition((width - footerWidth) / 2,
-                        bottomSeparator + Math.max(0, (height - bottomSeparator - footer.getHeight()) / 2));
-                footer.visitWidgets(this::addRenderableWidget);
+                final var footer = column(screen.footer(), Math.min(width - MARGIN * 2, FOOTER_MAX_WIDTH), 0);
+                layout.addToFooter(footer);
+                layout.setFooterHeight(Math.max(HeaderAndFooterLayout.DEFAULT_HEADER_AND_FOOTER_HEIGHT,
+                        footer.getHeight() + HeaderAndFooterLayout.MAGIC_PADDING));
             }
 
-            scrollAreas.forEach((element, area) -> area.setScrollAmount(savedScrollAmounts.getOrDefault(element, 0.0)));
+            final int contentWidth = Math.min(width - MARGIN * 2, CONTENT_MAX_WIDTH);
+            final int available = layout.getContentHeight() - SPACING * 2;
+            final var bottom = column(screen.bottom(), contentWidth, available);
+            final int mainHeight = available - (screen.bottom().isEmpty() ? 0 : bottom.getHeight() + SPACING);
+
+            Layout main = column(screen.elements(), contentWidth, mainHeight);
+            if (main.getHeight() > mainHeight) {
+                main = scrollable(screen, column(screen.elements(), contentWidth - SCROLLBAR_RESERVE, mainHeight), contentWidth, mainHeight);
+            }
+
+            final var content = LinearLayout.vertical().spacing(SPACING);
+            content.addChild(main);
+            if (!screen.bottom().isEmpty()) content.addChild(bottom);
+            layout.addToContents(content, settings -> settings.paddingBottom(SPACING));
+
+            layout.visitWidgets(this::addRenderableWidget);
+            layout.arrangeElements();
+            scrollAreas.forEach((element, area) -> area.setScrollAmount(scrollAmounts.getOrDefault(element, 0.0)));
+
+            final boolean inWorld = minecraft.level != null;
+            final var header = separator(inWorld ? INWORLD_HEADER_SEPARATOR : HEADER_SEPARATOR);
+            final var footer = separator(inWorld ? INWORLD_FOOTER_SEPARATOR : FOOTER_SEPARATOR);
+            header.setPosition(0, layout.getHeaderHeight() - 2);
+            footer.setPosition(0, height - layout.getFooterHeight());
+        }
+
+        private ImageWidget separator(final Identifier texture) {
+            return addRenderableOnly(ImageWidget.texture(width, 2, texture, 32, 2));
         }
 
         @Override
-        public void extractRenderState(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
-            graphics.fill(0, topSeparator(), width, topSeparator() + 1, SEPARATOR_COLOR);
-            graphics.fill(0, bottomSeparator(), width, bottomSeparator() + 1, SEPARATOR_COLOR);
-            super.extractRenderState(graphics, mouseX, mouseY, a);
-        }
-
-        @Override
-        protected void repositionElements() {
-            saveScrollAmounts();
-            super.repositionElements();
+        protected void rebuildWidgets() {
+            scrollAreas.forEach((element, area) -> scrollAmounts.put(element, area.scrollAmount()));
+            scrollAreas.clear();
+            super.rebuildWidgets();
         }
 
         @Override
@@ -157,426 +135,160 @@ public final class MinecraftScreenManager implements ScreenManager {
         }
 
         @Override
-        public boolean mouseScrolled(final double mouseX, final double mouseY, final double horizontalAmount, final double verticalAmount) {
-            final var rootScrollArea = scrollAreas.get(screen);
-            if (rootScrollArea != null && !rootScrollArea.isMouseOver(mouseX, mouseY)) {
-                return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
-            }
-
-            for (int index = scrollAreasByPriority.size() - 1; index >= 0; index--) {
-                final var scrollArea = scrollAreasByPriority.get(index);
-                if (scrollArea.maxScrollAmount() > 0 && scrollArea.isMouseOver(mouseX, mouseY)) {
-                    return scrollArea.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
-                }
-            }
-            return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+        public boolean mouseScrolled(final double mouseX, final double mouseY, final double scrollX, final double scrollY) {
+            return scroll(children(), mouseX, mouseY, scrollX, scrollY)
+                    || super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
         }
 
-        private void saveScrollAmounts() {
-            scrollAreas.forEach((element, area) -> savedScrollAmounts.put(element, area.scrollAmount()));
+        // routes the scroll to the innermost scroll area under the mouse that can still scroll
+        private static boolean scroll(final List<? extends GuiEventListener> children, final double mouseX, final double mouseY,
+                                      final double scrollX, final double scrollY) {
+            for (final var child : children) {
+                if (!child.isMouseOver(mouseX, mouseY)) continue;
+                if (child instanceof final ContainerEventHandler container
+                        && scroll(container.children(), mouseX, mouseY, scrollX, scrollY)) return true;
+                return child instanceof final AbstractScrollArea area && area.maxScrollAmount() > 0
+                        && area.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+            }
+            return false;
         }
 
-        private Layout buildRootLayout(final List<Element<?>> elements, final int width, final int availableHeight) {
-            if (!elements.isEmpty() && elements.stream().allMatch(ScrollableTextBox.class::isInstance)) {
-                return buildFlexibleTextBoxLayout(elements, width, availableHeight);
+        private Layout column(final List<Element<?>> elements, final int width, final int height) {
+            final var column = LinearLayout.vertical().spacing(SPACING);
+            final int referenceHeight = height - SPACING * Math.max(0, elements.size() - 1);
+            for (final var element : elements) {
+                column.addChild(build(element, percentage(width, element.width()), referenceHeight));
             }
-
-            final var content = buildRootDocument(elements, width, availableHeight);
-            if (content.getHeight() <= availableHeight) return content;
-
-            scrollAreas.clear();
-            scrollAreasByPriority.clear();
-            final int documentWidth = scrollContentWidth(width);
-            return wrapScrollable(screen, buildRootDocument(elements, documentWidth, availableHeight),
-                    width, availableHeight);
+            column.arrangeElements();
+            return column;
         }
 
-        private Layout buildFlexibleTextBoxLayout(final List<Element<?>> elements,
-                                                  final int width, final int availableHeight) {
-            final int gap = elements.size() >= 2 ? ROOT_GAP : 0;
-            final int available = Math.max(0, availableHeight - gap * Math.max(0, elements.size() - 1));
-            final int[] preferredHeights = new int[elements.size()];
-            int preferredTotal = 0;
-            for (int index = 0; index < elements.size(); index++) {
-                final var textBox = (ScrollableTextBox) elements.get(index);
-                preferredHeights[index] = naturalScrollableTextBoxHeight(textBox.text(), width);
-                preferredTotal += preferredHeights[index];
-            }
-
-            final int[] heights = preferredTotal <= available
-                    ? preferredHeights
-                    : distributeCapped(available, elements, preferredHeights);
-            final var layout = LinearLayout.vertical().spacing(gap);
-            layout.defaultCellSetting().alignHorizontallyLeft();
-            for (int index = 0; index < elements.size(); index++) {
-                layout.addChild(wrapSized(elements.get(index), width, heights[index]));
-            }
-            layout.arrangeElements();
-            return frame(width, 0, layout, 0.0F, 0.0F);
-        }
-
-        private int[] distributeCapped(final int available, final List<Element<?>> elements,
-                                       final int[] preferredSizes) {
-            final int[] result = new int[elements.size()];
-            final boolean[] fixed = new boolean[elements.size()];
-            int remaining = available;
-            int remainingWeight = totalHeightWeight(elements, fixed);
-
-            boolean changed;
-            do {
-                changed = false;
-                for (int index = 0; index < elements.size(); index++) {
-                    if (fixed[index]) continue;
-                    final int weight = Math.max(1, elements.get(index).height());
-                    final int share = remainingWeight == 0 ? 0
-                            : (int) ((long) remaining * weight / remainingWeight);
-                    if (preferredSizes[index] <= share) {
-                        result[index] = preferredSizes[index];
-                        remaining -= preferredSizes[index];
-                        fixed[index] = true;
-                        remainingWeight -= weight;
-                        changed = true;
+        private LayoutElement build(final Element<?> element, final int width, final int height) {
+            return switch (element) {
+                case final Division division -> division(division, width, height);
+                case final Scrollable scrollable -> {
+                    final int scrollableHeight = percentage(height, scrollable.height());
+                    final var content = LinearLayout.vertical().spacing(scrollable.gap());
+                    for (final var child : scrollable.elements()) {
+                        content.addChild(build(child, percentage(width - SCROLLBAR_RESERVE, child.width()), scrollableHeight));
                     }
+                    content.arrangeElements();
+                    yield scrollable(element, content, width, scrollableHeight);
                 }
-            } while (changed && remainingWeight > 0);
-
-            int assigned = 0;
-            int cumulativeWeight = 0;
-            for (int index = 0; index < elements.size(); index++) {
-                if (fixed[index]) continue;
-                cumulativeWeight += Math.max(1, elements.get(index).height());
-                final int cumulativeSize = remainingWeight == 0 ? remaining
-                        : (int) ((long) remaining * cumulativeWeight / remainingWeight);
-                result[index] = Math.max(0, cumulativeSize - assigned);
-                assigned = cumulativeSize;
-            }
-            return result;
-        }
-
-        private int totalHeightWeight(final List<Element<?>> elements, final boolean[] fixed) {
-            int result = 0;
-            for (int index = 0; index < elements.size(); index++) {
-                if (!fixed[index]) result += Math.max(1, elements.get(index).height());
-            }
-            return result;
-        }
-
-        private Layout buildRootDocument(final List<Element<?>> elements, final int width, final int availableHeight) {
-            final List<LayoutElement> children = new ArrayList<>(elements.size());
-            int childrenHeight = 0;
-            for (final var element : elements) {
-                final var child = wrapNatural(element, percentage(width, element.width()), availableHeight);
-                children.add(child);
-                childrenHeight += child.getHeight();
-            }
-
-            final int gap = elements.size() >= 2 ? clamp((availableHeight - childrenHeight) / (elements.size() - 1), 0, ROOT_GAP) : 0;
-            final var layout = LinearLayout.vertical().spacing(gap);
-            layout.defaultCellSetting().alignHorizontallyLeft();
-            children.forEach(layout::addChild);
-            layout.arrangeElements();
-            return frame(width, 0, layout, 0.0F, 0.0F);
-        }
-
-        private Layout buildSizedLayout(final List<Element<?>> elements, final Division.Orientation orientation,
-                                        final int width, final int height, final int gap) {
-            final var layout = orientation == Division.Orientation.HORIZONTAL
-                    ? LinearLayout.horizontal()
-                    : LinearLayout.vertical();
-            layout.spacing(Math.max(0, gap));
-            if (orientation == Division.Orientation.HORIZONTAL) {
-                layout.defaultCellSetting().alignVerticallyMiddle();
-            } else {
-                layout.defaultCellSetting().alignHorizontallyCenter();
-            }
-
-            final int available = Math.max(0,
-                    (orientation == Division.Orientation.HORIZONTAL ? width : height)
-                            - Math.max(0, elements.size() - 1) * Math.max(0, gap));
-            final int[] sizes = distribute(available, elements, orientation);
-            for (int index = 0; index < elements.size(); index++) {
-                final var element = elements.get(index);
-                final int childWidth;
-                final int childHeight;
-                if (orientation == Division.Orientation.HORIZONTAL) {
-                    childWidth = sizes[index];
-                    childHeight = percentage(height, element.height());
-                } else {
-                    childWidth = percentage(width, element.width());
-                    childHeight = sizes[index];
+                case final ScrollableTextBox textBox ->
+                        textArea(element, textBox.text(), width, percentage(height, textBox.height()));
+                case final TextBox textBox ->
+                        textArea(element, textBox.text(), width, percentage(height, textBox.height()));
+                case final Checkbox checkbox -> checkbox(checkbox, width);
+                case final Button button -> {
+                    final var widget = net.minecraft.client.gui.components.Button.builder(component(button.label()),
+                            ignored -> button.onClick(screen)).width(width).build();
+                    widget.active = button.enabled();
+                    yield widget;
                 }
-                layout.addChild(wrapSized(element, childWidth, childHeight));
-            }
-
-            if (elements.isEmpty()) {
-                layout.addChild(new SpacerElement(width, height));
-            }
-            layout.arrangeElements();
-            return layout;
+                case null, default -> throw new IllegalArgumentException(
+                        "Unsupported screen element: " + element.getClass().getName()
+                );
+            };
         }
 
-        private LayoutElement wrapSized(final Element<?> element, int width, int height) {
-            width = Math.max(1, width);
-            height = Math.max(1, height);
-            if (element instanceof final Division division) {
-                return buildSizedLayout(division.elements(), division.orientation(), width, height, division.gap());
-            } else if (element instanceof final Scrollable scrollable) {
-                return wrapScrollable(element,
-                        buildDocument(scrollable.elements(), width, height, scrollable.gap()), width, height);
-            } else if (element instanceof final ScrollableTextBox textBox) {
-                return wrapScrollableTextBox(element, textBox.text(), width, height);
-            } else if (element instanceof final TextBox textBox) {
-                return wrapTextBox(textBox.text(), width, height);
-            } else if (element instanceof final Checkbox checkbox) {
-                return frame(width, height, wrap(checkbox, width), 0.0F, 0.5F);
-            } else if (element instanceof final Button button) {
-                return frame(width, height, wrap(button, width, height), 0.0F, 0.5F);
-            }
-            throw new IllegalArgumentException("Unsupported screen element: " + element.getClass().getName());
-        }
-
-        private Layout buildDocument(final List<Element<?>> elements, final int width, final int viewportHeight, final int gap) {
-            final int innerWidth = Math.max(1, width);
-            final var layout = LinearLayout.vertical().spacing(Math.max(0, gap));
-            layout.defaultCellSetting().alignHorizontallyLeft();
-            for (final var element : elements) {
-                layout.addChild(wrapNatural(element, percentage(innerWidth, element.width()), viewportHeight));
-            }
-            layout.arrangeElements();
-            return frame(innerWidth, 0, layout, 0.0F, 0.0F);
-        }
-
-        private LayoutElement wrapNatural(final Element<?> element, int width, final int referenceHeight) {
-            width = Math.max(1, width);
-            if (element instanceof final Division division) {
-                return buildNaturalDivision(division, width, referenceHeight);
-            } else if (element instanceof final Scrollable scrollable) {
-                final int height = percentage(referenceHeight, scrollable.height());
-                return wrapScrollable(element,
-                        buildDocument(scrollable.elements(), width, height, scrollable.gap()), width, height);
-            } else if (element instanceof final ScrollableTextBox textBox) {
-                final int maxHeight = percentage(referenceHeight, textBox.height());
-                final int height = Math.min(maxHeight, naturalScrollableTextBoxHeight(textBox.text(), width));
-                return wrapScrollableTextBox(element, textBox.text(), width, height);
-            } else if (element instanceof final TextBox textBox) {
-                final int innerWidth = Math.max(1, width - TEXT_PADDING_X * 2);
-                final var widget = textWidget(textBox.text(), innerWidth);
-                final int naturalHeight = widget.getHeight() + TEXT_PADDING_Y * 2;
-                final int height = textBox.height() == 100
-                        ? naturalHeight
-                        : percentage(referenceHeight, textBox.height());
-                return wrapTextBox(textBox.text(), width, height);
-            } else if (element instanceof final Checkbox checkbox) {
-                return wrap(checkbox, width);
-            } else if (element instanceof final Button button) {
-                return wrap(button, width, net.minecraft.client.gui.components.Button.DEFAULT_HEIGHT);
-            }
-            throw new IllegalArgumentException("Unsupported screen element: " + element.getClass().getName());
-        }
-
-        private Layout buildNaturalDivision(final Division division, final int width, final int referenceHeight) {
+        private Layout division(final Division division, final int width, final int height) {
+            final var elements = division.elements();
             if (division.orientation() == Division.Orientation.VERTICAL) {
-                final var layout = LinearLayout.vertical().spacing(Math.max(0, division.gap()));
-                layout.defaultCellSetting().alignHorizontallyLeft();
-                for (final var element : division.elements()) {
-                    layout.addChild(wrapNatural(element, percentage(width, element.width()), referenceHeight));
-                }
-                layout.arrangeElements();
-                return frame(width, 0, layout, 0.0F, 0.0F);
+                final var layout = LinearLayout.vertical().spacing(division.gap());
+                elements.forEach(element -> layout.addChild(build(element, percentage(width, element.width()), height)));
+                return layout;
             }
 
-            final var layout = LinearLayout.horizontal().spacing(Math.max(0, division.gap()));
+            final var layout = LinearLayout.horizontal().spacing(division.gap());
             layout.defaultCellSetting().alignVerticallyMiddle();
-            final int available = Math.max(0,
-                    width - Math.max(0, division.elements().size() - 1) * Math.max(0, division.gap()));
-            final int[] widths = distribute(available, division.elements(), Division.Orientation.HORIZONTAL);
-            for (int index = 0; index < division.elements().size(); index++) {
-                final var child = wrapNatural(division.elements().get(index), widths[index], referenceHeight);
-                layout.addChild(frame(widths[index], child.getHeight(), child, 0.0F, 0.5F));
-            }
-            layout.arrangeElements();
+            final int available = width - division.gap() * Math.max(0, elements.size() - 1);
+            final int totalWeight = elements.stream().mapToInt(Element::width).sum();
+            elements.forEach(element -> layout.addChild(build(element,
+                    totalWeight == 0 ? available / elements.size() : available * element.width() / totalWeight,
+                    percentage(height, element.height()))));
             return layout;
         }
 
-        private LayoutElement wrapTextBox(final Text text, final int width, final int height) {
-            final int paddingX = clamp((width - 1) / 2, 0, TEXT_PADDING_X);
-            final int paddingY = textPaddingY(height);
-            final var widget = textWidget(text, Math.max(1, width - paddingX * 2));
-            widget.setMaxRows(Math.max(1, (height - paddingY * 2) / font.lineHeight));
-            final var panel = new FrameLayout(width, height);
-            panel.addChild(new PanelWidget(width, height));
-            panel.addChild(widget, settings -> settings.padding(paddingX, paddingY).align(0.0F, 0.0F));
-            panel.arrangeElements();
-            return panel;
+        private TextArea textArea(final Element<?> element, final Text text, final int width, final int maxHeight) {
+            final var area = new TextArea(component(text), width, maxHeight);
+            scrollAreas.put(element, area);
+            return area;
         }
 
-        private LayoutElement wrapScrollableTextBox(final Element<?> element, final Text text, final int width, final int height) {
-            final int panelWidth = Math.max(1, width - AbstractScrollArea.SCROLLBAR_WIDTH);
-            final int paddingX = clamp((panelWidth - 1) / 2, 0, TEXT_PADDING_X);
-            final int paddingY = textPaddingY(height);
-            final int textWidth = Math.max(1, panelWidth - paddingX * 2);
-            final int documentWidth = scrollContentWidth(width);
-            final int documentPaddingLeft = Math.max(1, paddingX - SCROLLBAR_RESERVE / 2);
-            final var textWidget = textWidget(text, textWidth);
-            final var document = new FrameLayout(documentWidth, textWidget.getHeight() + (paddingY + 1) * 2);
-            document.addChild(textWidget, settings -> settings
-                    .paddingLeft(documentPaddingLeft)
-                    .paddingVertical(paddingY + 1)
-                    .align(0.0F, 0.0F));
-            document.arrangeElements();
-            final var scrollable = wrapScrollable(element, document, width, height);
-            final var panel = new FrameLayout(width, height);
-            panel.addChild(new PanelWidget(panelWidth, height, true, false), settings -> settings.align(0.0F, 0.0F));
-            panel.addChild(scrollable, settings -> settings.align(0.0F, 0.0F));
-            panel.addChild(new PanelWidget(panelWidth, height, false, true), settings -> settings.align(0.0F, 0.0F));
-            panel.arrangeElements();
-            return panel;
-        }
-
-        private int naturalScrollableTextBoxHeight(final Text text, final int width) {
-            final int panelWidth = Math.max(1, width - AbstractScrollArea.SCROLLBAR_WIDTH);
-            final int paddingX = clamp((panelWidth - 1) / 2, 0, TEXT_PADDING_X);
-            final int textWidth = Math.max(1, panelWidth - paddingX * 2);
-            return Math.max(1, textWidget(text, textWidth).getHeight() + (TEXT_PADDING_Y + 1) * 2);
-        }
-
-        private int textPaddingY(final int height) {
-            final int spaceAroundOneLine = Math.max(0, height - font.lineHeight - 2);
-            return Math.min(TEXT_PADDING_Y, spaceAroundOneLine / 2);
-        }
-
-        private MultiLineTextWidget textWidget(final Text text, final int width) {
-            final var widget = new MultiLineTextWidget(component(text), font).setMaxWidth(Math.max(1, width));
-            widget.setComponentClickHandler(style -> {
-                if (style.getClickEvent() != null) {
-                    defaultHandleClickEvent(style.getClickEvent(), minecraft, this);
-                }
-            });
-            widget.active = true;
-            return widget;
-        }
-
-        private net.minecraft.client.gui.components.Checkbox wrap(final Checkbox checkbox, final int width) {
+        private net.minecraft.client.gui.components.Checkbox checkbox(final Checkbox checkbox, final int width) {
             final var widget = net.minecraft.client.gui.components.Checkbox.builder(component(checkbox.label()), font)
-                    .maxWidth(Math.max(1, width))
+                    .maxWidth(width)
+                    .selected(checkbox.value())
                     .onValueChange((self, value) -> {
                         checkbox.selected(value);
                         checkbox.onStateChange(screen);
-                        screenExecutor.execute(() -> {
-                            saveScrollAmounts();
-                            rebuildWidgets();
-                        });
+                        screenExecutor.execute(this::rebuildWidgets);
                     })
-                    .selected(checkbox.enabled() && checkbox.selected())
                     .build();
             widget.active = checkbox.enabled();
             widget.setAlpha(checkbox.enabled() ? 1.0F : DISABLED_ALPHA);
             return widget;
         }
 
-        private net.minecraft.client.gui.components.Button wrap(final Button button, final int width, final int height) {
-            final var widget = net.minecraft.client.gui.components.Button.builder(component(button.label()), ignored -> button.onClick(screen))
-                    .size(Math.max(1, width), Math.max(1, height))
-                    .build();
-            widget.active = button.enabled();
-            return widget;
-        }
-
-        private ScrollableLayout wrapScrollable(final Object element, final Layout content, final int width, final int height) {
-            final var scrollable = new ScrollableLayout(minecraft, content, Math.max(1, height));
-            scrollable.setMinWidth(scrollContentWidth(width));
-            scrollable.setMinHeight(Math.max(1, height));
-            scrollable.setMaxHeight(Math.max(1, height));
+        private ScrollableLayout scrollable(final Object element, final Layout content, final int width, final int height) {
+            final var scrollable = new ScrollableLayout(minecraft, content, height);
+            scrollable.setMinWidth(width - SCROLLBAR_RESERVE);
             scrollable.arrangeElements();
             scrollable.visitWidgets(widget -> {
-                if (widget instanceof final AbstractScrollArea scrollArea) {
-                    scrollAreas.put(element, scrollArea);
-                    scrollAreasByPriority.add(0, scrollArea);
-                }
+                if (widget instanceof final AbstractScrollArea area) scrollAreas.put(element, area);
             });
             return scrollable;
         }
 
-        private FrameLayout frame(final int width, final int height, final LayoutElement child, final float alignX, final float alignY) {
-            final var frame = new FrameLayout(Math.max(1, width), Math.max(1, height));
-            frame.addChild(child, settings -> settings.align(alignX, alignY));
-            frame.arrangeElements();
-            return frame;
+        private static int percentage(final int available, final int percentage) {
+            return Math.max(1, available * percentage / 100);
         }
 
-        private int[] distribute(final int available, final List<Element<?>> elements, final Division.Orientation orientation) {
-            final int[] result = new int[elements.size()];
-            if (elements.isEmpty()) return result;
+        // a bordered, scrollable text area like FittingMultiLineTextWidget, but with clickable links
+        private final class TextArea extends AbstractTextAreaWidget {
+            private final MultiLineTextWidget text;
 
-            long totalWeight = 0;
-            for (final var element : elements) {
-                totalWeight += Math.max(0,
-                        orientation == Division.Orientation.HORIZONTAL ? element.width() : element.height());
-            }
-            final boolean useEqualWeights = totalWeight == 0;
-            if (useEqualWeights) totalWeight = elements.size();
-
-            int assigned = 0;
-            long cumulativeWeight = 0;
-            for (int index = 0; index < elements.size(); index++) {
-                final int weight = Math.max(0,
-                        orientation == Division.Orientation.HORIZONTAL
-                                ? elements.get(index).width()
-                                : elements.get(index).height());
-                cumulativeWeight += useEqualWeights ? 1 : weight;
-                final int cumulativeSize = (int) (available * cumulativeWeight / totalWeight);
-                result[index] = Math.max(0, cumulativeSize - assigned);
-                assigned = cumulativeSize;
-            }
-            return result;
-        }
-
-        private int percentage(final int available, final int percentage) {
-            return Math.max(1, (int) ((long) Math.max(0, available) * Math.max(0, percentage) / 100));
-        }
-
-        private int scrollContentWidth(final int width) {
-            return Math.max(1, width - SCROLLBAR_RESERVE);
-        }
-
-        private int topSeparator() {
-            return clamp(height / 3, 1, HEADER_HEIGHT);
-        }
-
-        private int bottomSeparator() {
-            return Math.max(topSeparator() + 1, height - clamp(height / 3, 1, FOOTER_HEIGHT));
-        }
-
-        public static int clamp(final long value, final int min, final int max) {
-            if (min > max) throw new IllegalArgumentException(min + " > " + max);
-            return (int) Math.min(max, Math.max(value, min));
-        }
-
-        private static final class PanelWidget extends AbstractWidget {
-            private final boolean background;
-            private final boolean border;
-
-            private PanelWidget(final int width, final int height) {
-                this(width, height, true, true);
-            }
-
-            private PanelWidget(final int width, final int height, final boolean background, final boolean border) {
-                super(0, 0, Math.max(1, width), Math.max(1, height), Component.empty());
-                this.background = background;
-                this.border = border;
-                active = false;
+            private TextArea(final Component message, final int width, final int maxHeight) {
+                super(0, 0, Math.max(1, width - SCROLLBAR_WIDTH), 0, message, defaultSettings(font.lineHeight));
+                this.text = new MultiLineTextWidget(message, font).setMaxWidth(getWidth() - totalInnerPadding());
+                this.text.setComponentClickHandler(style -> {
+                    if (style.getClickEvent() != null)
+                        defaultHandleClickEvent(style.getClickEvent(), minecraft, WrappedScreen.this);
+                });
+                setHeight(Math.clamp(contentHeight(), 1, maxHeight));
             }
 
             @Override
-            protected void extractWidgetRenderState(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
-                if (background) {
-                    graphics.fill(getX() + 1, getY() + 1, getRight() - 1, getBottom() - 1, PANEL_BACKGROUND);
-                }
-                if (border) graphics.outline(getX(), getY(), getWidth(), getHeight(), PANEL_BORDER);
+            public void setX(final int x) {
+                super.setX(x);
+                text.setX(getInnerLeft());
+            }
+
+            @Override
+            public void setY(final int y) {
+                super.setY(y);
+                text.setY(getInnerTop());
+            }
+
+            @Override
+            protected int getInnerHeight() {
+                return text.getHeight();
+            }
+
+            @Override
+            protected void extractContents(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY, final float a) {
+                text.visitLines(graphics.textRendererForWidget(this, isHovered() ? TOOLTIP_AND_CURSOR : NONE));
+            }
+
+            @Override
+            public void onClick(final MouseButtonEvent event, final boolean doubleClick) {
+                text.onClick(new MouseButtonEvent(event.x(), event.y() + scrollAmount(), event.buttonInfo()), doubleClick);
             }
 
             @Override
             protected void updateWidgetNarration(final NarrationElementOutput output) {
+                output.add(NarratedElementType.TITLE, getMessage());
             }
         }
     }

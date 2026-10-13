@@ -4,7 +4,6 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 module dev.faststats.onboarding.minecraft.v26_1 {
     requires dev.faststats.onboarding;
-    requires java.desktop;
 
     requires static net.fabricmc.loader;
     requires static org.jspecify;

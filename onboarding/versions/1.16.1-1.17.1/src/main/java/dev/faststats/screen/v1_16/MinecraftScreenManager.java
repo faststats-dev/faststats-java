@@ -1,18 +1,23 @@
 package dev.faststats.screen.v1_16;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import dev.faststats.screen.Button;
 import dev.faststats.screen.Checkbox;
+import dev.faststats.screen.Division;
+import dev.faststats.screen.Element;
 import dev.faststats.screen.Screen;
 import dev.faststats.screen.ScreenManager;
 import dev.faststats.screen.Text;
+import dev.faststats.screen.onboarding.OnboardingDefinition;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 
-import java.awt.Desktop;
 import java.net.URI;
+import java.util.List;
 
 public final class MinecraftScreenManager implements ScreenManager {
     @Override
@@ -21,101 +26,116 @@ public final class MinecraftScreenManager implements ScreenManager {
     }
 
     @Override
-    public Text translatable(final String k) {
-        return new MinecraftText(new TranslatableComponent(k));
+    public Text translatable(final String key) {
+        return new MinecraftText(new TranslatableComponent(key));
     }
 
     @Override
-    public void openScreen(final Screen s) {
-        Minecraft.getInstance().setScreen(new ConsentScreen(s));
+    public void openScreen(final Screen screen) {
+        Minecraft.getInstance().setScreen(new ConsentScreen(screen));
     }
 
     @Override
-    public void closeScreen(final Screen s) {
+    public void closeScreen(final Screen screen) {
         Minecraft.getInstance().setScreen(null);
-        s.onClose().ifPresent(Runnable::run);
+        screen.onClose().ifPresent(Runnable::run);
+    }
+
+    private static Component component(final Text text) {
+        return ((MinecraftText) text).component();
     }
 
     private static final class ConsentScreen extends net.minecraft.client.gui.screens.Screen {
+        private static final Component DESCRIPTION = new TextComponent("Anonymous metrics and errors help mod developers improve their projects.");
+        private static final float DISABLED_ALPHA = 0.45F;
+        private static final int SPACING = 4;
+        private static final int WIDGET_HEIGHT = 20;
+        private static final int WIDTH = 308;
+
         private final Screen model;
 
-        ConsentScreen(final Screen s) {
-            super(((MinecraftText) s.title()).component());
-            model = s;
+        private ConsentScreen(final Screen model) {
+            super(component(model.title()));
+            this.model = model;
         }
 
         @Override
         protected void init() {
-            final int x = Math.max(8, width / 2 - 150);
-            final int w = Math.min(300, width - 16);
-            int y = Math.max(44, height / 2 - 70);
-            toggle("submit_metrics", x, y, w);
-            toggle("submit_additional_metrics", x, y += 24, w);
-            toggle("submit_errors", x, y += 24, w);
-            y += 28;
-            addRenderableWidget(new Button(x, y, (w - 4) / 2, 20, new TextComponent("Unselect All"), b -> all(false)));
-            addRenderableWidget(new Button(x + (w + 4) / 2, y, (w - 4) / 2, 20, new TextComponent("Select All"), b -> all(true)));
-            addRenderableWidget(new Button(x, y + 24, w, 20, new TranslatableComponent("gui.done"), b -> close()));
-            link("Info", "https://faststats.dev/info", x, height - 24, w / 2 - 1);
-            link("Privacy", "https://faststats.dev/privacy", x + w / 2 + 1, height - 24, w / 2 - 1);
+            final int x = (width - WIDTH) / 2;
+            int y = Math.max(48, height / 2 - 70);
+            for (final var element : model.bottom()) y = add(element, x, y, WIDTH) + SPACING;
+            y += SPACING;
+            for (final var element : model.footer()) y = add(element, x, y, WIDTH) + SPACING;
+
+            final int linkWidth = (WIDTH - SPACING * 3) / 4;
+            final int linkY = height - WIDGET_HEIGHT - SPACING;
+            addLink("Info", OnboardingDefinition.INFO_URL, x, linkY, linkWidth);
+            addLink("Mods", OnboardingDefinition.MODS_URL, x + linkWidth + SPACING, linkY, linkWidth);
+            addLink("Privacy", OnboardingDefinition.PRIVACY_URL, x + (linkWidth + SPACING) * 2, linkY, linkWidth);
+            addLink("Report", OnboardingDefinition.ABUSE_URL, x + (linkWidth + SPACING) * 3, linkY, linkWidth);
         }
 
-        private void toggle(final String id, final int x, final int y, final int w) {
-            final Checkbox c = model.findSelect(id).orElseThrow();
-            final Button b = new Button(x, y, w, 20, label(c), ignored -> {
-                c.selected(!c.value());
-                c.onStateChange(model);
-                refresh();
-            });
-            b.active = c.enabled();
-            addRenderableWidget(b);
-        }
-
-        private Component label(final Checkbox c) {
-            return new TextComponent(c.value() ? "[x] " : "[ ] ").append(((MinecraftText) c.label()).component());
-        }
-
-        private void all(final boolean v) {
-            final Checkbox m = model.findSelect("submit_metrics").orElseThrow();
-            m.selected(v);
-            m.onStateChange(model);
-            final Checkbox a = model.findSelect("submit_additional_metrics").orElseThrow();
-            a.enabled(v).selected(v);
-            a.onStateChange(model);
-            final Checkbox e = model.findSelect("submit_errors").orElseThrow();
-            e.selected(v);
-            e.onStateChange(model);
-            refresh();
-        }
-
-        private void link(final String l, final String u, final int x, final int y, final int w) {
-            addRenderableWidget(new Button(x, y, w, 20, new TextComponent(l), b -> {
-                if (Desktop.isDesktopSupported()) try {
-                    Desktop.getDesktop().browse(URI.create(u));
-                } catch (final Exception ignored) {
+        // adds the element at the given position and returns its bottom edge
+        private int add(final Element<?> element, final int x, final int y, final int width) {
+            if (element instanceof final Division division) {
+                final List<Element<?>> elements = division.elements();
+                if (elements.isEmpty()) return y;
+                if (division.orientation() == Division.Orientation.VERTICAL) {
+                    int bottom = y;
+                    for (final var child : elements) bottom = add(child, x, bottom, width) + division.gap();
+                    return bottom - division.gap();
                 }
+                final int childWidth = (width - division.gap() * (elements.size() - 1)) / elements.size();
+                int bottom = y;
+                for (int index = 0; index < elements.size(); index++) {
+                    bottom = Math.max(bottom, add(elements.get(index), x + index * (childWidth + division.gap()), y, childWidth));
+                }
+                return bottom;
+            } else if (element instanceof final Checkbox checkbox) {
+                final var widget = addRenderableWidget(new net.minecraft.client.gui.components.Checkbox(x, y, width, WIDGET_HEIGHT, component(checkbox.label()), checkbox.value()) {
+                    @Override
+                    public void onPress() {
+                        super.onPress();
+                        checkbox.selected(selected());
+                        checkbox.onStateChange(model);
+                        clearWidgets();
+                        init();
+                    }
+                });
+                widget.active = checkbox.enabled();
+                widget.setAlpha(checkbox.enabled() ? 1.0F : DISABLED_ALPHA);
+                return y + WIDGET_HEIGHT;
+            } else if (element instanceof final Button button) {
+                final var widget = addRenderableWidget(new net.minecraft.client.gui.components.Button(x, y, width, WIDGET_HEIGHT,
+                        component(button.label()), ignored -> button.onClick(model)));
+                widget.active = button.enabled();
+                return y + WIDGET_HEIGHT;
+            }
+            return y;
+        }
+
+        private void addLink(final String label, final URI uri, final int x, final int y, final int width) {
+            addRenderableWidget(new net.minecraft.client.gui.components.Button(x, y, width, WIDGET_HEIGHT, new TextComponent(label), ignored -> {
+                final var minecraft = this.minecraft;
+                assert minecraft != null;
+                minecraft.setScreen(new ConfirmLinkScreen(confirmed -> {
+                    if (confirmed) Util.getPlatform().openUri(uri);
+                    minecraft.setScreen(this);
+                }, uri.toString(), true));
             }));
-        }
-
-        private void refresh() {
-            minecraft.setScreen(new ConsentScreen(model));
-        }
-
-        private void close() {
-            model.close();
         }
 
         @Override
         public void onClose() {
-            close();
+            model.close();
         }
 
         @Override
-        public void render(final PoseStack p, final int mx, final int my, final float d) {
-            renderBackground(p);
-            drawCenteredString(p, font, title, width / 2, 16, 0xffffff);
-            drawCenteredString(p, font, "Anonymous metrics and errors help mod developers.", width / 2, 30, 0xcccccc);
-            super.render(p, mx, my, d);
+        public void render(final PoseStack pose, final int mouseX, final int mouseY, final float delta) {
+            renderBackground(pose);
+            drawCenteredString(pose, font, title, width / 2, 16, 0xFFFFFF);
+            drawCenteredString(pose, font, DESCRIPTION, width / 2, 30, 0xCCCCCC);
+            super.render(pose, mouseX, mouseY, delta);
         }
     }
 }

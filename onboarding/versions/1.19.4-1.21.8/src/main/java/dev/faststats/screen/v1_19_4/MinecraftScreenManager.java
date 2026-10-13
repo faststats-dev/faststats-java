@@ -1,16 +1,23 @@
 package dev.faststats.screen.v1_19_4;
 
+import dev.faststats.screen.Button;
 import dev.faststats.screen.Checkbox;
+import dev.faststats.screen.Division;
+import dev.faststats.screen.Element;
 import dev.faststats.screen.Screen;
 import dev.faststats.screen.ScreenManager;
 import dev.faststats.screen.Text;
+import dev.faststats.screen.onboarding.OnboardingDefinition;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.MultiLineTextWidget;
+import net.minecraft.client.gui.components.StringWidget;
+import net.minecraft.client.gui.layouts.HeaderAndFooterLayout;
+import net.minecraft.client.gui.layouts.LinearLayout;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.network.chat.Component;
 
-import java.awt.Desktop;
 import java.net.URI;
+import java.util.List;
 
 public final class MinecraftScreenManager implements ScreenManager {
     @Override
@@ -34,88 +41,87 @@ public final class MinecraftScreenManager implements ScreenManager {
         screen.onClose().ifPresent(Runnable::run);
     }
 
+    private static Component component(final Text text) {
+        return ((MinecraftText) text).component();
+    }
+
     private static final class ConsentScreen extends net.minecraft.client.gui.screens.Screen {
+        private static final Component DESCRIPTION = Component.literal("Anonymous metrics and errors help mod developers improve their projects.");
+        private static final float DISABLED_ALPHA = 0.45F;
+        private static final int FOOTER_HEIGHT = 33;
+        private static final int SPACING = 4;
+        private static final int WIDTH = 308;
+
         private final Screen model;
 
         private ConsentScreen(final Screen model) {
-            super(((MinecraftText) model.title()).component());
+            super(component(model.title()));
             this.model = model;
         }
 
         @Override
         protected void init() {
-            final int left = Math.max(8, width / 2 - 150);
-            final int w = Math.min(300, width - 16);
-            int y = Math.max(48, height / 2 - 70);
-            addToggle("submit_metrics", left, y, w);
-            y += 24;
-            addToggle("submit_additional_metrics", left, y, w);
-            y += 24;
-            addToggle("submit_errors", left, y, w);
-            y += 28;
-            addRenderableWidget(Button.builder(Component.literal("Unselect All"), ignored -> setAll(false)).bounds(left, y, (w - 4) / 2, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Select All"), ignored -> setAll(true)).bounds(left + (w + 4) / 2, y, (w - 4) / 2, 20).build());
-            y += 24;
-            addRenderableWidget(Button.builder(Component.translatable("gui.done"), ignored -> close()).bounds(left, y, w, 20).build());
-            final int linkWidth = Math.max(45, (w - 6) / 4);
-            addLink("Info", URI.create("https://faststats.dev/info"), left, height - 24, linkWidth);
-            addLink("Mods", URI.create("https://faststats.dev/mods"), left + linkWidth + 2, height - 24, linkWidth);
-            addLink("Privacy", URI.create("https://faststats.dev/privacy"), left + (linkWidth + 2) * 2, height - 24, linkWidth);
-            addLink("Report", URI.create("https://faststats.dev/abuse"), left + (linkWidth + 2) * 3, height - 24, linkWidth);
+            final var header = LinearLayout.vertical().spacing(SPACING);
+            header.defaultCellSetting().alignHorizontallyCenter();
+            header.addChild(new StringWidget(title, font));
+            header.addChild(new MultiLineTextWidget(DESCRIPTION, font).setMaxWidth(width - 16).setCentered(true));
+            header.arrangeElements();
+            final var layout = new HeaderAndFooterLayout(this, header.getHeight() + 16, FOOTER_HEIGHT);
+            layout.addToHeader(header);
+
+            final var content = layout.addToContents(LinearLayout.vertical().spacing(SPACING));
+            content.defaultCellSetting().alignHorizontallyLeft();
+            model.bottom().forEach(element -> add(content, element, WIDTH));
+            final var links = content.addChild(LinearLayout.horizontal().spacing(SPACING));
+            final int linkWidth = (WIDTH - SPACING * 3) / 4;
+            addLink(links, "Info", OnboardingDefinition.INFO_URL, linkWidth);
+            addLink(links, "Mods", OnboardingDefinition.MODS_URL, linkWidth);
+            addLink(links, "Privacy", OnboardingDefinition.PRIVACY_URL, linkWidth);
+            addLink(links, "Report", OnboardingDefinition.ABUSE_URL, linkWidth);
+
+            final var footer = layout.addToFooter(LinearLayout.vertical().spacing(SPACING));
+            model.footer().forEach(element -> add(footer, element, WIDTH));
+
+            layout.visitWidgets(this::addRenderableWidget);
+            layout.arrangeElements();
         }
 
-        private void addToggle(final String id, final int x, final int y, final int width) {
-            final Checkbox checkbox = model.findSelect(id).orElseThrow();
-            final Button widget = Button.builder(label(checkbox), ignored -> {
-                checkbox.selected(!checkbox.value());
-                checkbox.onStateChange(model);
-                rebuildWidgets();
-            }).bounds(x, y, width, 20).build();
-            widget.active = checkbox.enabled();
-            addRenderableWidget(widget);
+        private void add(final LinearLayout parent, final Element<?> element, final int width) {
+            if (element instanceof final Division division) {
+                final List<Element<?>> elements = division.elements();
+                final boolean horizontal = division.orientation() == Division.Orientation.HORIZONTAL;
+                final var layout = parent.addChild((horizontal ? LinearLayout.horizontal() : LinearLayout.vertical()).spacing(division.gap()));
+                layout.defaultCellSetting().alignHorizontallyLeft();
+                final int childWidth = horizontal && !elements.isEmpty()
+                        ? (width - division.gap() * (elements.size() - 1)) / elements.size()
+                        : width;
+                elements.forEach(child -> add(layout, child, childWidth));
+            } else if (element instanceof final Checkbox checkbox) {
+                final var widget = parent.addChild(net.minecraft.client.gui.components.Checkbox.builder(component(checkbox.label()), font)
+                        .selected(checkbox.value())
+                        .onValueChange((self, value) -> {
+                            checkbox.selected(value);
+                            checkbox.onStateChange(model);
+                            rebuildWidgets();
+                        })
+                        .build());
+                widget.active = checkbox.enabled();
+                widget.setAlpha(checkbox.enabled() ? 1.0F : DISABLED_ALPHA);
+            } else if (element instanceof final Button button) {
+                final var widget = parent.addChild(net.minecraft.client.gui.components.Button.builder(component(button.label()),
+                        ignored -> button.onClick(model)).width(width).build());
+                widget.active = button.enabled();
+            }
         }
 
-        private Component label(final Checkbox checkbox) {
-            return Component.literal(checkbox.value() ? "[x] " : "[ ] ").append(((MinecraftText) checkbox.label()).component());
-        }
-
-        private void setAll(final boolean selected) {
-            final Checkbox metrics = model.findSelect("submit_metrics").orElseThrow();
-            metrics.selected(selected);
-            metrics.onStateChange(model);
-            final Checkbox additional = model.findSelect("submit_additional_metrics").orElseThrow();
-            additional.enabled(selected).selected(selected);
-            additional.onStateChange(model);
-            final Checkbox errors = model.findSelect("submit_errors").orElseThrow();
-            errors.selected(selected);
-            errors.onStateChange(model);
-            rebuildWidgets();
-        }
-
-        private void addLink(final String label, final URI uri, final int x, final int y, final int width) {
-            addRenderableWidget(Button.builder(Component.literal(label), ignored -> {
-                if (Desktop.isDesktopSupported()) try {
-                    Desktop.getDesktop().browse(uri);
-                } catch (final Exception ignoredException) {
-                }
-            }).bounds(x, y, width, 20).build());
-        }
-
-        private void close() {
-            model.close();
+        private void addLink(final LinearLayout parent, final String label, final URI uri, final int width) {
+            parent.addChild(net.minecraft.client.gui.components.Button.builder(Component.literal(label),
+                    ConfirmLinkScreen.confirmLink(this, uri.toString())).width(width).build());
         }
 
         @Override
         public void onClose() {
-            close();
-        }
-
-        @Override
-        public void render(final GuiGraphics graphics, final int mouseX, final int mouseY, final float delta) {
-            renderBackground(graphics, mouseX, mouseY, delta);
-            graphics.drawCenteredString(font, title, width / 2, 18, 0xFFFFFF);
-            graphics.drawCenteredString(font, "Anonymous metrics and errors help mod developers improve their projects.", width / 2, 34, 0xCCCCCC);
-            super.render(graphics, mouseX, mouseY, delta);
+            model.close();
         }
     }
 }

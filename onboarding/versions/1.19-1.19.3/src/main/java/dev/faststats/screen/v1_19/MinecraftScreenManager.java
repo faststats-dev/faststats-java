@@ -1,13 +1,21 @@
 package dev.faststats.screen.v1_19;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import dev.faststats.screen.Button;
 import dev.faststats.screen.Checkbox;
+import dev.faststats.screen.Division;
+import dev.faststats.screen.Element;
 import dev.faststats.screen.Screen;
 import dev.faststats.screen.ScreenManager;
 import dev.faststats.screen.Text;
+import dev.faststats.screen.onboarding.OnboardingDefinition;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.ConfirmLinkScreen;
 import net.minecraft.network.chat.Component;
+
+import java.net.URI;
+import java.util.List;
 
 public final class MinecraftScreenManager implements ScreenManager {
     @Override
@@ -16,75 +24,116 @@ public final class MinecraftScreenManager implements ScreenManager {
     }
 
     @Override
-    public Text translatable(final String k) {
-        return new MinecraftText(Component.translatable(k));
+    public Text translatable(final String key) {
+        return new MinecraftText(Component.translatable(key));
     }
 
     @Override
-    public void openScreen(final Screen s) {
-        Minecraft.getInstance().setScreen(new Wrapper(s));
+    public void openScreen(final Screen screen) {
+        Minecraft.getInstance().setScreen(new ConsentScreen(screen));
     }
 
     @Override
-    public void closeScreen(final Screen s) {
+    public void closeScreen(final Screen screen) {
         Minecraft.getInstance().setScreen(null);
-        s.onClose().ifPresent(Runnable::run);
+        screen.onClose().ifPresent(Runnable::run);
     }
 
-    private static final class Wrapper extends net.minecraft.client.gui.screens.Screen {
-        final Screen model;
+    private static Component component(final Text text) {
+        return ((MinecraftText) text).component();
+    }
 
-        Wrapper(final Screen s) {
-            super(((MinecraftText) s.title()).component());
-            model = s;
+    private static final class ConsentScreen extends net.minecraft.client.gui.screens.Screen {
+        private static final Component DESCRIPTION = Component.literal("Anonymous metrics and errors help mod developers improve their projects.");
+        private static final float DISABLED_ALPHA = 0.45F;
+        private static final int SPACING = 4;
+        private static final int WIDGET_HEIGHT = 20;
+        private static final int WIDTH = 308;
+
+        private final Screen model;
+
+        private ConsentScreen(final Screen model) {
+            super(component(model.title()));
+            this.model = model;
         }
 
         @Override
         protected void init() {
-            final int x = width / 2 - 150;
-            final int y = Math.max(45, height / 2 - 65);
-            toggle("submit_metrics", x, y);
-            toggle("submit_additional_metrics", x, y + 24);
-            toggle("submit_errors", x, y + 48);
-            addRenderableWidget(Button.builder(Component.literal("Unselect All"), b -> all(false)).bounds(x, y + 76, 148, 20).build());
-            addRenderableWidget(Button.builder(Component.literal("Select All"), b -> all(true)).bounds(x + 152, y + 76, 148, 20).build());
-            addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> close()).bounds(x, y + 100, 300, 20).build());
+            final int x = (width - WIDTH) / 2;
+            int y = Math.max(48, height / 2 - 70);
+            for (final var element : model.bottom()) y = add(element, x, y, WIDTH) + SPACING;
+            y += SPACING;
+            for (final var element : model.footer()) y = add(element, x, y, WIDTH) + SPACING;
+
+            final int linkWidth = (WIDTH - SPACING * 3) / 4;
+            final int linkY = height - WIDGET_HEIGHT - SPACING;
+            addLink("Info", OnboardingDefinition.INFO_URL, x, linkY, linkWidth);
+            addLink("Mods", OnboardingDefinition.MODS_URL, x + linkWidth + SPACING, linkY, linkWidth);
+            addLink("Privacy", OnboardingDefinition.PRIVACY_URL, x + (linkWidth + SPACING) * 2, linkY, linkWidth);
+            addLink("Report", OnboardingDefinition.ABUSE_URL, x + (linkWidth + SPACING) * 3, linkY, linkWidth);
         }
 
-        void toggle(final String id, final int x, final int y) {
-            final Checkbox c = model.findSelect(id).orElseThrow();
-            final Button b = Button.builder(Component.literal(c.value() ? "[x] " : "[ ] ").append(((MinecraftText) c.label()).component()), ignored -> {
-                c.selected(!c.value());
-                c.onStateChange(model);
-                minecraft.setScreen(new Wrapper(model));
-            }).bounds(x, y, 300, 20).build();
-            b.active = c.enabled();
-            addRenderableWidget(b);
-        }
-
-        void all(final boolean v) {
-            for (final String id : new String[]{"submit_metrics", "submit_additional_metrics", "submit_errors"}) {
-                final Checkbox c = model.findSelect(id).orElseThrow();
-                c.enabled(!id.equals("submit_additional_metrics") || v).selected(v);
-                c.onStateChange(model);
+        // adds the element at the given position and returns its bottom edge
+        private int add(final Element<?> element, final int x, final int y, final int width) {
+            if (element instanceof final Division division) {
+                final List<Element<?>> elements = division.elements();
+                if (elements.isEmpty()) return y;
+                if (division.orientation() == Division.Orientation.VERTICAL) {
+                    int bottom = y;
+                    for (final var child : elements) bottom = add(child, x, bottom, width) + division.gap();
+                    return bottom - division.gap();
+                }
+                final int childWidth = (width - division.gap() * (elements.size() - 1)) / elements.size();
+                int bottom = y;
+                for (int index = 0; index < elements.size(); index++) {
+                    bottom = Math.max(bottom, add(elements.get(index), x + index * (childWidth + division.gap()), y, childWidth));
+                }
+                return bottom;
+            } else if (element instanceof final Checkbox checkbox) {
+                final var widget = addRenderableWidget(new net.minecraft.client.gui.components.Checkbox(x, y, width, WIDGET_HEIGHT, component(checkbox.label()), checkbox.value()) {
+                    @Override
+                    public void onPress() {
+                        super.onPress();
+                        checkbox.selected(selected());
+                        checkbox.onStateChange(model);
+                        clearWidgets();
+                        init();
+                    }
+                });
+                widget.active = checkbox.enabled();
+                widget.setAlpha(checkbox.enabled() ? 1.0F : DISABLED_ALPHA);
+                return y + WIDGET_HEIGHT;
+            } else if (element instanceof final Button button) {
+                final var widget = addRenderableWidget(net.minecraft.client.gui.components.Button.builder(component(button.label()),
+                        ignored -> button.onClick(model)).bounds(x, y, width, WIDGET_HEIGHT).build());
+                widget.active = button.enabled();
+                return y + WIDGET_HEIGHT;
             }
-            minecraft.setScreen(new Wrapper(model));
+            return y;
         }
 
-        void close() {
-            model.close();
+        private void addLink(final String label, final URI uri, final int x, final int y, final int width) {
+            addRenderableWidget(net.minecraft.client.gui.components.Button.builder(Component.literal(label), ignored -> {
+                final var minecraft = this.minecraft;
+                assert minecraft != null;
+                minecraft.setScreen(new ConfirmLinkScreen(confirmed -> {
+                    if (confirmed) Util.getPlatform().openUri(uri);
+                    minecraft.setScreen(this);
+                }, uri.toString(), true));
+            }).bounds(x, y, width, WIDGET_HEIGHT).build());
         }
 
         @Override
         public void onClose() {
-            close();
+            model.close();
         }
 
         @Override
-        public void render(final PoseStack p, final int x, final int y, final float d) {
-            renderBackground(p);
-            drawCenteredString(p, font, title, width / 2, 18, 0xffffff);
-            super.render(p, x, y, d);
+        public void render(final PoseStack pose, final int mouseX, final int mouseY, final float delta) {
+            renderBackground(pose);
+            drawCenteredString(pose, font, title, width / 2, 16, 0xFFFFFF);
+            drawCenteredString(pose, font, DESCRIPTION, width / 2, 30, 0xCCCCCC);
+            super.render(pose, mouseX, mouseY, delta);
         }
     }
 }
