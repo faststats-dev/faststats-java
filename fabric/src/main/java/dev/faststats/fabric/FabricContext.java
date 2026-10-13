@@ -115,7 +115,7 @@ public final class FabricContext extends SimpleContext {
         /**
          * Requires the user to explicitly give consent on the client.
          * <p>
-         * When at least one mod requires consent, the onboarding screen is opened
+         * When at least one mod requires consent, the consent screen is opened
          * on the first launch of the game. By default, no consent screen is shown.
          *
          * @return this factory
