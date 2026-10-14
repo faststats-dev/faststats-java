@@ -24,7 +24,7 @@ configurations.runtimeClasspath {
 
 tasks.processResources {
     filesMatching("META-INF/neoforge.mods.toml") {
-        expand("version" to project.version)
+        expand("version" to project.version, "minecraft" to "[1.20.6,)")
     }
 }
 
@@ -41,4 +41,8 @@ dependencies {
     implementation(project(":config"))
     compileOnlyApi(project(":onboarding"))
     compileOnly(libs.neoforged.bus)
+}
+
+subprojects {
+    if (parent?.path == ":neoforge:versions") pluginManager.apply("faststats.neoforge-compat")
 }

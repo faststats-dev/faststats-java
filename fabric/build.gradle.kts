@@ -21,7 +21,7 @@ tasks.processResources {
     inputs.property("version", project.version)
 
     filesMatching("fabric.mod.json") {
-        expand("version" to project.version)
+        expand("version" to project.version, "minecraft" to "*")
     }
 }
 
@@ -32,4 +32,8 @@ dependencies {
     minecraft(libs.minecraft.v26x1x2)
     compileOnly(libs.fabric.api.v26x1x2)
     compileOnly(libs.fabric.loader)
+}
+
+subprojects {
+    if (parent?.path == ":fabric:versions") pluginManager.apply("faststats.fabric-compat")
 }

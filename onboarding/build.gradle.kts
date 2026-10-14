@@ -11,23 +11,3 @@ dependencies {
     api(project(":core"))
     compileOnlyApi(libs.jspecify)
 }
-
-val catalog = libs
-
-subprojects {
-    if (parent?.path != ":onboarding:versions") return@subprojects
-
-    tasks.jar {
-        manifest.attributes["MixinConfigs"] = "faststats-onboarding.mixins.json"
-    }
-
-    repositories { maven("https://maven.neoforged.net/releases") }
-
-    dependencies {
-        "compileOnly"(catalog.log4j.api)
-        "compileOnly"(catalog.modlauncher)
-        "compileOnlyApi"(project(":onboarding"))
-        "compileOnly"(catalog.fabric.loader)
-        "compileOnly"(catalog.sponge.mixin)
-    }
-}

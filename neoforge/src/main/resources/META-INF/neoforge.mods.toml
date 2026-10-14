@@ -14,3 +14,10 @@ displayURL = "https://faststats.dev/mods"
 
 [[mixins]]
 config = "faststats-onboarding.mixins.json"
+
+[[dependencies.faststats]]
+modId = "minecraft"
+type = "required"
+versionRange = "${minecraft}"
+ordering = "NONE"
+side = "BOTH"
