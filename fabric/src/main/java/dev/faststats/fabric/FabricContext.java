@@ -41,7 +41,7 @@ public final class FabricContext extends SimpleContext {
     private final boolean consentRequired;
 
     private FabricContext(final Factory factory, final dev.faststats.internal.LoggerFactory loggerFactory, final String modId, @Token final String token) {
-        super(factory, loggerFactory, SimpleConfig.read(configPath(), loggerFactory), "fabric", token);
+        super(factory, loggerFactory, SimpleConfig.read(configPath(), loggerFactory, isClient()), "fabric", token);
         this.mod = FabricLoader.getInstance().getModContainer(modId).orElseThrow(() -> {
             return new IllegalArgumentException("Mod not found: " + modId);
         });
@@ -82,7 +82,11 @@ public final class FabricContext extends SimpleContext {
         final var config = (SimpleConfig) getConfig();
         if (!config.preSubmissionStart(this)) return false;
         if (!consentRequired || config.consentScreenShown()) return true;
-        return FabricLoader.getInstance().getEnvironmentType() != EnvType.CLIENT;
+        return !isClient();
+    }
+
+    private static boolean isClient() {
+        return FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT;
     }
 
     @Override

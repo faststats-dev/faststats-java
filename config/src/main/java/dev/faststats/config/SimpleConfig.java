@@ -21,7 +21,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 @ApiStatus.Internal
 public final class SimpleConfig implements Config {
-    private static final int CONFIG_VERSION = 4;
+    private static final int CONFIG_VERSION = 3;
+    private static final String CONSENT_SCREEN_SHOWN = "consent-screen-shown";
 
     private static final String COMMENT = """
              FastStats (https://faststats.dev) collects pseudonymous usage statistics and errors.
@@ -55,6 +56,7 @@ public final class SimpleConfig implements Config {
     private final UUID serverId;
     private final boolean debug;
     private final boolean firstRun;
+    private final boolean client;
     private volatile boolean additionalMetrics;
     private volatile boolean enabled;
     private volatile boolean errorTracking;
@@ -70,6 +72,7 @@ public final class SimpleConfig implements Config {
             final boolean submitMetrics,
             final boolean errorTracking,
             final boolean firstRun,
+            final boolean client,
             final boolean consentScreenShown
     ) {
         this.file = file;
@@ -80,6 +83,7 @@ public final class SimpleConfig implements Config {
         this.submitMetrics = submitMetrics;
         this.errorTracking = errorTracking;
         this.firstRun = firstRun;
+        this.client = client;
         this.consentScreenShown = consentScreenShown;
     }
 
@@ -150,6 +154,16 @@ public final class SimpleConfig implements Config {
 
     @Contract(mutates = "io")
     public static SimpleConfig read(final Path file, final LoggerFactory factory) throws RuntimeException {
+        return read(file, factory, false);
+    }
+
+    /**
+     * Reads the config from the given file.
+     *
+     * @param client whether the config belongs to a client, only clients store client specific options
+     */
+    @Contract(mutates = "io")
+    public static SimpleConfig read(final Path file, final LoggerFactory factory, final boolean client) throws RuntimeException {
         final var logger = factory.getLogger(SimpleConfig.class);
 
         final var debugFlag = Boolean.getBoolean("faststats.debug");
@@ -171,7 +185,7 @@ public final class SimpleConfig implements Config {
         final var errorTracking = parse(properties, saveConfig, "submitErrors", () -> true, Boolean::parseBoolean, logger);
         final var additionalMetrics = parse(properties, saveConfig, "submitAdditionalMetrics", () -> true, Boolean::parseBoolean, logger);
         final var debug = parse(properties, saveConfig, "debug", () -> false, Boolean::parseBoolean, logger);
-        final var consentScreenShown = parse(properties, saveConfig, "consent-screen-shown", () -> false, Boolean::parseBoolean, logger);
+        final var consentScreenShown = client && parse(properties, saveConfig, CONSENT_SCREEN_SHOWN, () -> false, Boolean::parseBoolean, logger);
 
         if (configVersion == null || configVersion < CONFIG_VERSION) saveConfig.set(true);
         else if (configVersion > CONFIG_VERSION) saveConfig.set(false);
@@ -191,7 +205,7 @@ public final class SimpleConfig implements Config {
                 store.setProperty("serverId", serverId.toString());
 
                 store.setProperty("debug", Boolean.toString(debug));
-                store.setProperty("consent-screen-shown", Boolean.toString(consentScreenShown));
+                if (client) store.setProperty(CONSENT_SCREEN_SHOWN, Boolean.toString(consentScreenShown));
                 store.setProperty("configVersion", Integer.toString(CONFIG_VERSION));
 
                 store.store(writer, COMMENT);
@@ -209,6 +223,7 @@ public final class SimpleConfig implements Config {
                 enabled && enabledFlag && submitMetrics,
                 enabled && enabledFlag && errorTracking,
                 firstRun,
+                client,
                 consentScreenShown
         );
     }
@@ -228,7 +243,8 @@ public final class SimpleConfig implements Config {
         properties.setProperty("submitAdditionalMetrics", Boolean.toString(additionalMetrics()));
         properties.setProperty("submitErrors", Boolean.toString(errorTracking()));
         properties.setProperty("submitMetrics", Boolean.toString(submitMetrics()));
-        properties.setProperty("consent-screen-shown", Boolean.toString(consentScreenShown()));
+        if (client) properties.setProperty(CONSENT_SCREEN_SHOWN, Boolean.toString(consentScreenShown()));
+        else properties.remove(CONSENT_SCREEN_SHOWN);
 
         try {
             Files.createDirectories(file.getParent());
@@ -307,6 +323,7 @@ public final class SimpleConfig implements Config {
                 "serverId=" + serverId +
                 ", debug=" + debug +
                 ", firstRun=" + firstRun +
+                ", client=" + client +
                 ", consentScreenShown=" + consentScreenShown +
                 ", additionalMetrics=" + additionalMetrics +
                 ", enabled=" + enabled +

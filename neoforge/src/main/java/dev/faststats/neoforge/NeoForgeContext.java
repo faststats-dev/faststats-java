@@ -44,13 +44,18 @@ public final class NeoForgeContext extends SimpleContext {
     private final boolean consentRequired;
 
     private NeoForgeContext(final Factory factory, final LoggerFactory loggerFactory, final String modId, @Token final String token) {
-        super(factory, loggerFactory, SimpleConfig.read(configPath(), loggerFactory), "neoforge", token);
+        this(factory, loggerFactory, modId, token, ServiceLoader.load(CompatibilityLayer.class)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No NeoForge compatibility layer found")));
+    }
+
+    private NeoForgeContext(final Factory factory, final LoggerFactory loggerFactory, final String modId, @Token final String token, final CompatibilityLayer compatibilityLayer) {
+        super(factory, loggerFactory, SimpleConfig.read(configPath(), loggerFactory,
+                compatibilityLayer.getEnvironment() == CompatibilityLayer.Environment.CLIENT), "neoforge", token);
         this.mod = ModList.get().getModContainerById(modId).map(ModContainer::getModInfo).orElseThrow(() -> {
             return new IllegalArgumentException("Mod not found: " + modId);
         });
-        this.compatibilityLayer = ServiceLoader.load(CompatibilityLayer.class)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No NeoForge compatibility layer found"));
+        this.compatibilityLayer = compatibilityLayer;
         this.consentRequired = factory.consentRequired;
         initializeManagedServices(factory);
         FastStatsRegistry.instance().register(this, factory.consentRequired);
