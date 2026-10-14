@@ -64,7 +64,7 @@ final class TextArea extends AbstractScrollWidget {
     @Override
     public boolean mouseClicked(final double mouseX, final double mouseY, final int button) {
         if (button == 0 && isWithin(mouseX, mouseY)
-                && onClick.test(styleAt(mouseX - getX() + innerPadding(), mouseY - getY() + innerPadding() + scrollAmount()))) return true;
+                && onClick.test(styleAt(mouseX - getX() - innerPadding(), mouseY - getY() - innerPadding() + scrollAmount()))) return true;
         return super.mouseClicked(mouseX, mouseY, button);
     }
 
