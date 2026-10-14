@@ -1,7 +1,7 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "dev.faststats.screen.mixin.v1_16_2",
+  "package": "dev.faststats.screen.v1_16_2.mixin",
   "compatibilityLevel": "JAVA_17",
   "client": [
     "OptionsScreenMixin",
