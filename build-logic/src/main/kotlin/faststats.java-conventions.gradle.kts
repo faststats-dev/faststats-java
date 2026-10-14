@@ -74,6 +74,14 @@ tasks.javadoc {
     }
 }
 
+val publishingLock = gradle.sharedServices.registerIfAbsent("publishingLock", PublishingLock::class) {
+    maxParallelUsages.set(1)
+}
+
+tasks.withType<AbstractPublishToMaven>().configureEach {
+    usesService(publishingLock)
+}
+
 afterEvaluate {
     val publishArtifactId = ownProperty("publishArtifactId")
     if (!plugins.hasPlugin("maven-publish") && publishArtifactId == null) return@afterEvaluate
