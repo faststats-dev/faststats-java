@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 @ApiStatus.Internal
-// todo: revise
 public abstract class SimpleMetrics extends SubmissionService implements Metrics {
     private static final String COLLECT_PATH = "/v1/collect";
 
