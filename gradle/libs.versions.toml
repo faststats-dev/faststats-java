@@ -36,7 +36,7 @@ velocity-api = "com.velocitypowered:velocity-api:4.2.0"
 
 # mod loaders
 fabric-loader = "net.fabricmc:fabric-loader:0.19.5"
-modlauncher = "cpw.mods:modlauncher:10.0.9"
+modlauncher = "cpw.mods:modlauncher:10.1.12"
 log4j-api = "org.apache.logging.log4j:log4j-api:2.24.3"
 neoforged-bus = "net.neoforged:bus:8.0.5"
 sponge-mixin = "net.fabricmc:sponge-mixin:0.17.5+mixin.0.8.7"
