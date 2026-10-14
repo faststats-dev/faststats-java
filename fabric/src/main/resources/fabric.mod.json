@@ -16,9 +16,12 @@
     "David | NonSwag"
   ],
   "environment": "*",
+  "mixins": [
+    "faststats-onboarding.mixins.json"
+  ],
   "depends": {
     "fabricloader": ">=0.18.4",
-    "minecraft": "*",
+    "minecraft": "${minecraft}",
     "fabric-api": "*"
   }
 }

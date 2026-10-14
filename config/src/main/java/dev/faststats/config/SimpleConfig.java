@@ -9,7 +9,6 @@ import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
@@ -21,16 +20,9 @@ import java.util.function.Supplier;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 @ApiStatus.Internal
-public record SimpleConfig(
-        UUID serverId,
-        boolean enabled,
-        boolean additionalMetrics,
-        boolean debug,
-        boolean submitMetrics,
-        boolean errorTracking,
-        boolean firstRun
-) implements Config {
+public final class SimpleConfig implements Config {
     private static final int CONFIG_VERSION = 3;
+    private static final String CONSENT_SCREEN_SHOWN = "consent-screen-shown";
 
     private static final String COMMENT = """
              FastStats (https://faststats.dev) collects pseudonymous usage statistics and errors.
@@ -58,14 +50,124 @@ public record SimpleConfig(
             Learn more at: https://faststats.dev/info
             
             Since this is your first start with FastStats, submission will not start
-            until you restart the server to allow you to opt out if you prefer.""";
+            until after a restart, to allow you to opt out if you prefer.""";
+
+    private final Path file;
+    private final UUID serverId;
+    private final boolean debug;
+    private final boolean firstRun;
+    private final boolean client;
+    private volatile boolean additionalMetrics;
+    private volatile boolean enabled;
+    private volatile boolean errorTracking;
+    private volatile boolean submitMetrics;
+    private volatile boolean consentScreenShown;
+
+    public SimpleConfig(
+            final Path file,
+            final UUID serverId,
+            final boolean enabled,
+            final boolean additionalMetrics,
+            final boolean debug,
+            final boolean submitMetrics,
+            final boolean errorTracking,
+            final boolean firstRun,
+            final boolean client,
+            final boolean consentScreenShown
+    ) {
+        this.file = file;
+        this.serverId = serverId;
+        this.enabled = enabled;
+        this.additionalMetrics = additionalMetrics;
+        this.debug = debug;
+        this.submitMetrics = submitMetrics;
+        this.errorTracking = errorTracking;
+        this.firstRun = firstRun;
+        this.client = client;
+        this.consentScreenShown = consentScreenShown;
+    }
+
+    @Override
+    public UUID serverId() {
+        return serverId;
+    }
+
+    @Override
+    public boolean enabled() {
+        return enabled;
+    }
+
+    public void enabled(final boolean enabled) {
+        this.enabled = enabled;
+    }
+
+    @Override
+    public boolean additionalMetrics() {
+        return additionalMetrics;
+    }
+
+    public void additionalMetrics(final boolean additionalMetrics) {
+        this.additionalMetrics = additionalMetrics;
+    }
+
+    @Override
+    public boolean debug() {
+        return debug;
+    }
+
+    @Override
+    public boolean submitMetrics() {
+        return submitMetrics;
+    }
+
+    public void submitMetrics(final boolean submitMetrics) {
+        this.submitMetrics = submitMetrics;
+    }
+
+    @Override
+    public boolean errorTracking() {
+        return errorTracking;
+    }
+
+    public void errorTracking(final boolean errorTracking) {
+        this.errorTracking = errorTracking;
+    }
+
+    public boolean firstRun() {
+        return firstRun;
+    }
+
+    public boolean consentScreenShown() {
+        return consentScreenShown;
+    }
+
+    public void consentScreenShown(final boolean consentScreenShown) {
+        this.consentScreenShown = consentScreenShown;
+    }
+
+    /**
+     * @return {@code false} if FastStats was disabled using {@code -Dfaststats.enabled=false}
+     */
+    public static boolean enabledFlag() {
+        return Boolean.parseBoolean(System.getProperty("faststats.enabled", "true"));
+    }
 
     @Contract(mutates = "io")
     public static SimpleConfig read(final Path file, final LoggerFactory factory) throws RuntimeException {
+        return read(file, factory, false);
+    }
+
+    /**
+     * Reads the config from the given file.
+     *
+     * @param client whether the config belongs to a client, only clients store client specific options
+     */
+    @Contract(mutates = "io")
+    public static SimpleConfig read(final Path file, final LoggerFactory factory, final boolean client) throws RuntimeException {
         final var logger = factory.getLogger(SimpleConfig.class);
 
         final var debugFlag = Boolean.getBoolean("faststats.debug");
-        final var enabledFlag = Boolean.parseBoolean(System.getProperty("faststats.enabled", "true"));
+        final var enabledFlag = enabledFlag();
 
         final var properties = readOrEmpty(file);
         final var firstRun = properties == null;
@@ -83,6 +185,7 @@ public record SimpleConfig(
         final var errorTracking = parse(properties, saveConfig, "submitErrors", () -> true, Boolean::parseBoolean, logger);
         final var additionalMetrics = parse(properties, saveConfig, "submitAdditionalMetrics", () -> true, Boolean::parseBoolean, logger);
         final var debug = parse(properties, saveConfig, "debug", () -> false, Boolean::parseBoolean, logger);
+        final var consentScreenShown = client && parse(properties, saveConfig, CONSENT_SCREEN_SHOWN, () -> false, Boolean::parseBoolean, logger);
 
         if (configVersion == null || configVersion < CONFIG_VERSION) saveConfig.set(true);
         else if (configVersion > CONFIG_VERSION) saveConfig.set(false);
@@ -91,8 +194,7 @@ public record SimpleConfig(
             if (configVersion != null && configVersion < CONFIG_VERSION)
                 logger.info("Updating config version from %s to %s", configVersion, CONFIG_VERSION);
             Files.createDirectories(file.getParent());
-            try (final var out = Files.newOutputStream(file);
-                 final var writer = new OutputStreamWriter(out, UTF_8)) {
+            try (final var writer = Files.newBufferedWriter(file, UTF_8)) {
                 final var store = new Properties();
 
                 store.setProperty("enabled", Boolean.toString(enabled));
@@ -103,6 +205,7 @@ public record SimpleConfig(
                 store.setProperty("serverId", serverId.toString());
 
                 store.setProperty("debug", Boolean.toString(debug));
+                if (client) store.setProperty(CONSENT_SCREEN_SHOWN, Boolean.toString(consentScreenShown));
                 store.setProperty("configVersion", Integer.toString(CONFIG_VERSION));
 
                 store.store(writer, COMMENT);
@@ -112,14 +215,47 @@ public record SimpleConfig(
         }
 
         return new SimpleConfig(
+                file,
                 serverId,
                 enabled && enabledFlag,
                 enabled && enabledFlag && additionalMetrics,
                 debug || debugFlag,
                 enabled && enabledFlag && submitMetrics,
                 enabled && enabledFlag && errorTracking,
-                firstRun
+                firstRun,
+                client,
+                consentScreenShown
         );
+    }
+
+    @Contract(mutates = "io")
+    public synchronized void persist() throws RuntimeException {
+        var properties = readOrEmpty(file);
+        if (properties == null) {
+            // the file was deleted after it was read, recreate it
+            properties = new Properties();
+            properties.setProperty("serverId", serverId.toString());
+            properties.setProperty("debug", Boolean.toString(debug));
+            properties.setProperty("configVersion", Integer.toString(CONFIG_VERSION));
+        }
+
+        properties.setProperty("enabled", Boolean.toString(enabled()));
+        properties.setProperty("submitAdditionalMetrics", Boolean.toString(additionalMetrics()));
+        properties.setProperty("submitErrors", Boolean.toString(errorTracking()));
+        properties.setProperty("submitMetrics", Boolean.toString(submitMetrics()));
+        if (client) properties.setProperty(CONSENT_SCREEN_SHOWN, Boolean.toString(consentScreenShown()));
+        else properties.remove(CONSENT_SCREEN_SHOWN);
+
+        try {
+            Files.createDirectories(file.getParent());
+        } catch (final IOException e) {
+            throw new RuntimeException("Failed to create metrics config directory", e);
+        }
+        try (final var writer = Files.newBufferedWriter(file, UTF_8)) {
+            properties.store(writer, COMMENT);
+        } catch (final IOException e) {
+            throw new RuntimeException("Failed to save metrics config", e);
+        }
     }
 
     // fixme: this code sucks ass
@@ -179,5 +315,20 @@ public record SimpleConfig(
             return false;
         }
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return "SimpleConfig{" +
+                "serverId=" + serverId +
+                ", debug=" + debug +
+                ", firstRun=" + firstRun +
+                ", client=" + client +
+                ", consentScreenShown=" + consentScreenShown +
+                ", additionalMetrics=" + additionalMetrics +
+                ", enabled=" + enabled +
+                ", errorTracking=" + errorTracking +
+                ", submitMetrics=" + submitMetrics +
+                '}';
     }
 }

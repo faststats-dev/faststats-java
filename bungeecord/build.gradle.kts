@@ -19,5 +19,5 @@ repositories {
 dependencies {
     api(project(":core"))
     implementation(project(":config"))
-    compileOnly("net.md-5:bungeecord-api:26.1-R0.1-SNAPSHOT")
+    compileOnly(libs.bungeecord.api)
 }

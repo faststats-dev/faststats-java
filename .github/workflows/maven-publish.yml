@@ -21,4 +21,4 @@ jobs:
         env:
           REPOSITORY_USER: ${{ secrets.REPOSITORY_USER }}
           REPOSITORY_TOKEN: ${{ secrets.REPOSITORY_TOKEN }}
-        run: ./gradlew publish publishPlatformCompat
+        run: ./gradlew publish

@@ -1,7 +1,10 @@
 extra.set("moduleName", "dev.faststats.fabric")
+extra.set("publishArtifactId", "fabric")
+extra.set("publishDocsUrl", "https://docs.faststats.dev/java/platform/fabric")
 
 plugins {
-    id("net.fabricmc.fabric-loom") version "1.15-SNAPSHOT"
+    id("net.fabricmc.fabric-loom")
+    id("maven-publish")
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
@@ -15,37 +18,23 @@ configurations.compileClasspath {
 }
 
 tasks.processResources {
-    inputs.property("version", project.version)
+    val version = provider { project.version.toString() }
+    inputs.property("version", version)
 
     filesMatching("fabric.mod.json") {
-        expand("version" to project.version)
-    }
-}
-
-allprojects {
-    if (project.path == ":fabric:versions") return@allprojects
-    apply { plugin("maven-publish") }
-    extra.set("publishArtifactId", "fabric")
-    extra.set("publishDocsUrl", "https://docs.faststats.dev/java/platform/fabric")
-}
-
-subprojects {
-    dependencies {
-        compileOnlyApi(project(":fabric"))
-    }
-
-    tasks.jar {
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        from(project(":fabric").sourceSets["main"].output)
-        from(project(":config").sourceSets["main"].output)
-        from(project(":core").sourceSets["main"].output)
+        expand("version" to version.get(), "minecraft" to "*")
     }
 }
 
 dependencies {
     compileOnlyApi(project(":core"))
     compileOnly(project(":config"))
-    minecraft("com.mojang:minecraft:26.1.2")
-    compileOnly("net.fabricmc.fabric-api:fabric-api:0.150.0+26.1.2")
-    compileOnly("net.fabricmc:fabric-loader:0.19.5")
+    compileOnly(project(":onboarding"))
+    minecraft(libs.minecraft.v26x1x2)
+    compileOnly(libs.fabric.api.v26x1x2)
+    compileOnly(libs.fabric.loader)
+}
+
+subprojects {
+    if (parent?.path == ":fabric:versions") pluginManager.apply("faststats.fabric-compat")
 }

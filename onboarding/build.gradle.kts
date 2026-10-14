@@ -1,0 +1,13 @@
+extra.set("moduleName", "dev.faststats.onboarding")
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
+
+tasks.compileJava {
+    options.release.set(17)
+}
+
+dependencies {
+    api(project(":config"))
+    api(project(":core"))
+    compileOnlyApi(libs.jspecify)
+}

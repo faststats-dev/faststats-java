@@ -11,6 +11,7 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 @ApiStatus.Internal
 public abstract class SimpleMetrics extends SubmissionService implements Metrics {
@@ -26,7 +27,7 @@ public abstract class SimpleMetrics extends SubmissionService implements Metrics
     @Contract(mutates = "io")
     protected SimpleMetrics(final Factory factory) {
         super(factory.context);
-        this.metrics = context.getConfig().additionalMetrics() ? Set.copyOf(factory.metrics) : Set.of();
+        this.metrics = Set.copyOf(factory.metrics);
         this.flush = factory.flush;
     }
 
@@ -43,6 +44,7 @@ public abstract class SimpleMetrics extends SubmissionService implements Metrics
     }
 
     private boolean submit() {
+        if (!context.submissionActive || !context.getConfig().submitMetrics()) return false;
         try {
             if (submit(url, createData(), "metrics")) {
                 if (flush != null) flush.run();
@@ -78,6 +80,7 @@ public abstract class SimpleMetrics extends SubmissionService implements Metrics
     }
 
     private void appendCustomData(final JsonObject metrics) {
+        if (!context.getConfig().additionalMetrics()) return;
         this.metrics.forEach(metric -> {
             try {
                 if (metrics.has(metric.getId())) {
@@ -122,6 +125,11 @@ public abstract class SimpleMetrics extends SubmissionService implements Metrics
         } catch (final Throwable t) {
             logger.error("Failed to submit metrics on shutdown", t);
         }
+    }
+
+    @Contract(pure = true)
+    public Stream<Metric<?>> stream() {
+        return metrics.stream();
     }
 
     public abstract static class Factory implements Metrics.Factory {

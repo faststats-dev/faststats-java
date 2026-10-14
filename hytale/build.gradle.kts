@@ -19,5 +19,5 @@ repositories {
 dependencies {
     api(project(":core"))
     implementation(project(":config"))
-    compileOnly("com.hypixel.hytale:Server:+")
+    compileOnly(libs.hytale.server)
 }

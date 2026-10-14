@@ -1,7 +1,11 @@
 extra.set("moduleName", "dev.faststats.neoforge")
+extra.set("publishArtifactId", "neoforge")
+extra.set("publishDocsUrl", "https://docs.faststats.dev/java/platform/neoforge")
 
 plugins {
-    id("net.neoforged.moddev") version "2.0.148"
+    id("net.neoforged.moddev")
+    id("faststats.shadow-conventions")
+    id("maven-publish")
 }
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(25)
@@ -19,50 +23,28 @@ configurations.runtimeClasspath {
 }
 
 tasks.processResources {
+    val version = provider { project.version.toString() }
+    inputs.property("version", version)
     filesMatching("META-INF/neoforge.mods.toml") {
-        expand("version" to project.version)
-    }
-}
-
-allprojects {
-    if (project.path == ":neoforge:versions") return@allprojects
-    apply { plugin("maven-publish") }
-    extra.set("publishArtifactId", "neoforge")
-    extra.set("publishDocsUrl", "https://docs.faststats.dev/java/platform/neoforge")
-}
-
-subprojects {
-    apply { plugin("net.neoforged.moddev") }
-
-    dependencies {
-        compileOnly("net.neoforged:bus:8.0.5")
-        compileOnlyApi(project(":neoforge"))
-    }
-
-    tasks.jar {
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        from(project(":neoforge").sourceSets["main"].output)
-        from(project(":config").sourceSets["main"].output)
-        from(project(":core").sourceSets["main"].output)
+        expand("version" to version.get(), "minecraft" to "[1.20.6,)")
     }
 }
 
 neoForge {
-    version = "21.8.53" // lowest bound, 1.20.6
+    version = libs.versions.neoforge.v1x21x8.get() // lowest bound, 1.20.6
 }
 
 configurations.configureEach {
-    resolutionStrategy.force("com.google.code.gson:gson:2.14.0")
+    resolutionStrategy.force(libs.gson)
 }
 
 dependencies {
-    compileOnlyApi(project(":core"))
-    compileOnly(project(":config"))
-    compileOnly("net.neoforged:bus:8.0.5")
+    implementation(project(":core"))
+    implementation(project(":config"))
+    compileOnlyApi(project(":onboarding"))
+    compileOnly(libs.neoforged.bus)
 }
 
-tasks.jar {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    from(project(":config").sourceSets["main"].output)
-    from(project(":core").sourceSets["main"].output)
+subprojects {
+    if (parent?.path == ":neoforge:versions") pluginManager.apply("faststats.neoforge-compat")
 }

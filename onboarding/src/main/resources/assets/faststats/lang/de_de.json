@@ -1,0 +1,23 @@
+{
+  "faststats.consent.title": "FastStats-Metriken",
+  "faststats.consent.summary": "Anonyme Metriken und Fehlerberichte helfen Mod-Entwicklern, ihre Projekte zu verbessern.",
+  "faststats.consent.description": "%1$s sammelt anonyme Nutzungsstatistiken und Fehlerberichte.\nWenn du Metriken und Fehlerberichte aktiviert lässt, hilfst du Entwicklern, ihre Mods zu verbessern.\n\nFalls du vermutest, dass ein Entwickler personenbezogene Daten sammelt oder eine Opt-out-Option umgeht,\nmelde es bitte unter: %2$s\n\nDatenschutzerklärung: %3$s",
+  "faststats.consent.installed_mods": "> Installierte Mods, die FastStats verwenden:",
+  "faststats.consent.default_metrics": "Standardmetriken",
+  "faststats.consent.default_metrics.disabled": "Standardmetriken (deaktiviert)",
+  "faststats.consent.error_tracking": "Fehlerberichte",
+  "faststats.consent.error_tracking.disabled": "Fehlerberichte (deaktiviert)",
+  "faststats.consent.additional_metrics": "Zusätzliche Metriken:",
+  "faststats.consent.additional_metrics.disabled": "Zusätzliche Metriken (deaktiviert):",
+  "faststats.consent.learn_more": "Mehr erfahren: %s",
+  "faststats.consent.learn_more.link": "Welche Daten werden gesammelt?",
+  "faststats.consent.submit_metrics": "Metriken senden",
+  "faststats.consent.submit_additional_metrics": "Zusätzliche Metriken senden (vom Entwickler bereitgestellt)",
+  "faststats.consent.submit_errors": "Fehlerberichte senden (hilft Entwicklern, Fehler in ihren Mods zu beheben)",
+  "faststats.consent.select_all": "Alle auswählen",
+  "faststats.consent.unselect_all": "Alle abwählen",
+  "faststats.consent.link.info": "Info",
+  "faststats.consent.link.mods": "Mods",
+  "faststats.consent.link.privacy": "Datenschutz",
+  "faststats.consent.link.report": "Melden"
+}

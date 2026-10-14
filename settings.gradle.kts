@@ -1,5 +1,10 @@
 pluginManagement {
     includeBuild("build-logic")
+    repositories {
+        gradlePluginPortal()
+        maven("https://maven.fabricmc.net/")
+        maven("https://maven.neoforged.net/releases")
+    }
 }
 
 plugins {

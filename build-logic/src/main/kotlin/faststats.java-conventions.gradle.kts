@@ -17,11 +17,13 @@ java {
 val generateFastStatsProperties = tasks.register("generateFastStatsProperties") {
     description = "Generates the META-INF/faststats.properties file"
     val outputDir = layout.buildDirectory.dir("generated/resources/faststats")
+    val version = provider { project.version.toString() }
+    inputs.property("version", version)
     outputs.dir(outputDir)
     doLast {
         val file = outputDir.get().file("META-INF/faststats.properties").asFile
         file.parentFile.mkdirs()
-        file.writeText("version=${project.version}\n")
+        file.writeText("version=${version.get()}\n")
     }
 }
 
@@ -72,6 +74,14 @@ tasks.javadoc {
     }
 }
 
+val publishingLock = gradle.sharedServices.registerIfAbsent("publishingLock", PublishingLock::class) {
+    maxParallelUsages.set(1)
+}
+
+tasks.withType<AbstractPublishToMaven>().configureEach {
+    usesService(publishingLock)
+}
+
 afterEvaluate {
     val publishArtifactId = ownProperty("publishArtifactId")
     if (!plugins.hasPlugin("maven-publish") && publishArtifactId == null) return@afterEvaluate
@@ -104,7 +114,8 @@ afterEvaluate {
                 }
             }
 
-            from(components["java"])
+            // shadow-conventions projects publish the shadowed jar along with their shadow dependencies
+            from(components[if (plugins.hasPlugin("com.gradleup.shadow")) "shadow" else "java"])
         }
 
         repositories {

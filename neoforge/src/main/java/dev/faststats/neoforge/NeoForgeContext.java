@@ -1,5 +1,6 @@
 package dev.faststats.neoforge;
 
+import dev.faststats.screen.registry.FastStatsRegistry;
 import dev.faststats.Metrics;
 import dev.faststats.SimpleContext;
 import dev.faststats.SimpleMetrics;
@@ -17,6 +18,7 @@ import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforgespi.language.IModInfo;
 import org.jetbrains.annotations.Contract;
 
+import java.nio.file.Path;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -39,18 +41,24 @@ public final class NeoForgeContext extends SimpleContext {
     private final Set<Future<?>> tasks = new CopyOnWriteArraySet<>();
     private final CompatibilityLayer compatibilityLayer;
     private final IModInfo mod;
+    private final boolean consentRequired;
 
     private NeoForgeContext(final Factory factory, final LoggerFactory loggerFactory, final String modId, @Token final String token) {
-        super(factory, loggerFactory, SimpleConfig.read(FMLPaths.CONFIGDIR.get()
-                .resolve("faststats").resolve("config.properties"), loggerFactory
-        ), "neoforge", token);
+        this(factory, loggerFactory, modId, token, ServiceLoader.load(CompatibilityLayer.class)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No NeoForge compatibility layer found")));
+    }
+
+    private NeoForgeContext(final Factory factory, final LoggerFactory loggerFactory, final String modId, @Token final String token, final CompatibilityLayer compatibilityLayer) {
+        super(factory, loggerFactory, SimpleConfig.read(configPath(), loggerFactory,
+                compatibilityLayer.getEnvironment() == CompatibilityLayer.Environment.CLIENT), "neoforge", token);
         this.mod = ModList.get().getModContainerById(modId).map(ModContainer::getModInfo).orElseThrow(() -> {
             return new IllegalArgumentException("Mod not found: " + modId);
         });
-        this.compatibilityLayer = ServiceLoader.load(CompatibilityLayer.class)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No NeoForge compatibility layer found"));
-        initializeServices(factory);
+        this.compatibilityLayer = compatibilityLayer;
+        this.consentRequired = factory.consentRequired;
+        initializeManagedServices(factory);
+        FastStatsRegistry.instance().register(this, factory.consentRequired);
         switch (compatibilityLayer.getEnvironment()) {
             case CLIENT -> ready();
             case SERVER -> {
@@ -76,7 +84,10 @@ public final class NeoForgeContext extends SimpleContext {
 
     @Override
     protected boolean preSubmissionStart() {
-        return ((SimpleConfig) getConfig()).preSubmissionStart(this);
+        final var config = (SimpleConfig) getConfig();
+        if (!config.preSubmissionStart(this)) return false;
+        if (!consentRequired || config.consentScreenShown()) return true;
+        return compatibilityLayer.getEnvironment() != CompatibilityLayer.Environment.CLIENT;
     }
 
     @Override
@@ -91,19 +102,41 @@ public final class NeoForgeContext extends SimpleContext {
 
     @Override
     public void shutdown() {
+        FastStatsRegistry.instance().unregister(this);
         super.shutdown();
         tasks.forEach(task -> task.cancel(true));
         tasks.clear();
         executor.shutdown();
     }
 
+    private static Path configPath() {
+        return FMLPaths.CONFIGDIR.get().resolve("faststats").resolve("config.properties");
+    }
+
     public static final class Factory extends SimpleContext.Factory<NeoForgeContext, Factory> {
         private final String modId;
         private final @Token String token;
+        private boolean consentRequired = false;
 
         public Factory(final String modId, @Token final String token) {
             this.modId = modId;
             this.token = token;
+        }
+
+        /**
+         * Requires the user to explicitly give consent on the client.
+         * <p>
+         * When at least one mod requires consent, the consent screen is opened
+         * on the client until it was shown once, nothing is submitted before that.
+         * By default, no consent screen is shown.
+         *
+         * @return this factory
+         * @since 0.31.0
+         */
+        @Contract(value = " -> this", mutates = "this")
+        public Factory requireConsent() {
+            this.consentRequired = true;
+            return this;
         }
 
         @Override

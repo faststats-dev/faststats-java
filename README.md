@@ -23,14 +23,17 @@ Use `build` for the reusable FastStats libraries:
 ```
 
 Library jars are written to each module's `build/libs` directory. Fabric and NeoForge compatibility artifacts are
-published under stable Maven artifact IDs with Minecraft range suffixes:
+published under stable Maven artifact IDs for every supported Minecraft version:
 
 ```text
-dev.faststats.metrics:fabric:<sdk-version>+mc26.1-26.2
-dev.faststats.metrics:neoforge:<sdk-version>+mc26.1-26.2
+dev.faststats.metrics:fabric:<sdk-version>+mc26.1.2
+dev.faststats.metrics:neoforge:<sdk-version>+mc26.1.2
 ```
 
-Use `checkPlatformCompat` to compile all Fabric and NeoForge compatibility modules.
+Each artifact only declares the Minecraft version it was built for in its `fabric.mod.json` or `neoforge.mods.toml`.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how the version-specific code is organized and how to add a Minecraft
+version.
 
 ### Building everything
 
@@ -40,10 +43,3 @@ To compile and test all modules with the standard lifecycle, run:
 ./gradlew build
 ```
 
-### Platform compatibility checks
-
-Compile all published platform compatibility modules with:
-
-```sh
-./gradlew checkPlatformCompat
-```
