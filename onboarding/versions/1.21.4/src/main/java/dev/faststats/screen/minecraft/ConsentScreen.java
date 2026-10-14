@@ -31,13 +31,19 @@ public final class ConsentScreen extends Screen {
     private static final int SPACING = 8;
 
     private final @Nullable Screen parent;
+    private final boolean firstRun;
     private final ConsentState state = new ConsentState(FastStatsRegistry.instance().anyConfig());
     private @Nullable TextArea text;
     private double scroll;
 
     public ConsentScreen(final @Nullable Screen parent) {
+        this(parent, false);
+    }
+
+    public ConsentScreen(final @Nullable Screen parent, final boolean firstRun) {
         super(Component.translatable(ConsentText.TITLE));
         this.parent = parent;
+        this.firstRun = firstRun;
     }
 
     @Override
@@ -51,9 +57,9 @@ public final class ConsentScreen extends Screen {
 
         final int width = Math.min(this.width - MARGIN * 2, CONTENT_MAX_WIDTH);
         final var checkboxes = column();
-        addBelow(checkboxes, checkbox(ConsentText.SUBMIT_METRICS, state.submitMetrics(), true, state::submitMetrics, width), 0);
-        addBelow(checkboxes, checkbox(ConsentText.SUBMIT_ADDITIONAL_METRICS, state.additionalMetrics(), state.submitMetrics(), state::additionalMetrics, width), 4);
-        addBelow(checkboxes, checkbox(ConsentText.SUBMIT_ERRORS, state.errorTracking(), true, state::errorTracking, width), 4);
+        addBelow(checkboxes, checkbox(ConsentText.SUBMIT_METRICS, state.submitMetrics(), state.editable(), state::submitMetrics, width), 0);
+        addBelow(checkboxes, checkbox(ConsentText.SUBMIT_ADDITIONAL_METRICS, state.additionalMetrics(), state.editable() && state.submitMetrics(), state::additionalMetrics, width), 4);
+        addBelow(checkboxes, checkbox(ConsentText.SUBMIT_ERRORS, state.errorTracking(), state.editable(), state::errorTracking, width), 4);
         checkboxes.arrangeElements();
 
         final int textHeight = height - HEADER_AND_FOOTER_HEIGHT * 2 - checkboxes.getHeight() - SPACING * 3;
@@ -64,14 +70,19 @@ public final class ConsentScreen extends Screen {
         layout.addToContents(content);
 
         final var footer = row();
-        addRight(footer, Button.builder(Component.translatable(ConsentText.UNSELECT_ALL), button -> selectAll(false)).width(BUTTON_WIDTH).build(), 0);
-        addRight(footer, Button.builder(Component.translatable(ConsentText.SELECT_ALL), button -> selectAll(true)).width(BUTTON_WIDTH).build(), SPACING);
+        addRight(footer, editable(Button.builder(Component.translatable(ConsentText.UNSELECT_ALL), button -> selectAll(false)).width(BUTTON_WIDTH).build()), 0);
+        addRight(footer, editable(Button.builder(Component.translatable(ConsentText.SELECT_ALL), button -> selectAll(true)).width(BUTTON_WIDTH).build()), SPACING);
         addRight(footer, Button.builder(Component.translatable(ConsentText.DONE), button -> onClose()).width(BUTTON_WIDTH).build(), SPACING);
         layout.addToFooter(footer);
 
         layout.visitWidgets(this::addRenderableWidget);
         layout.arrangeElements();
         text.scrollPosition(scroll);
+    }
+
+    @Override
+    public boolean shouldCloseOnEsc() {
+        return !firstRun;
     }
 
     @Override
@@ -97,6 +108,11 @@ public final class ConsentScreen extends Screen {
         checkbox.active = enabled;
         checkbox.setAlpha(enabled ? 1.0F : DISABLED_ALPHA);
         return checkbox;
+    }
+
+    private Button editable(final Button button) {
+        button.active = state.editable();
+        return button;
     }
 
     private void selectAll(final boolean selected) {

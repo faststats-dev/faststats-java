@@ -128,7 +128,7 @@ public abstract class SimpleMetrics extends SubmissionService implements Metrics
         }
     }
 
-    @Override
+    @Contract(pure = true)
     public Stream<Metric<?>> stream() {
         return metrics.stream();
     }

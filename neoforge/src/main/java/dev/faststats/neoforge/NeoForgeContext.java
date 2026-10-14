@@ -41,6 +41,7 @@ public final class NeoForgeContext extends SimpleContext {
     private final Set<Future<?>> tasks = new CopyOnWriteArraySet<>();
     private final CompatibilityLayer compatibilityLayer;
     private final IModInfo mod;
+    private final boolean consentRequired;
 
     private NeoForgeContext(final Factory factory, final LoggerFactory loggerFactory, final String modId, @Token final String token) {
         super(factory, loggerFactory, SimpleConfig.read(configPath(), loggerFactory), "neoforge", token);
@@ -50,6 +51,7 @@ public final class NeoForgeContext extends SimpleContext {
         this.compatibilityLayer = ServiceLoader.load(CompatibilityLayer.class)
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No NeoForge compatibility layer found"));
+        this.consentRequired = factory.consentRequired;
         initializeManagedServices(factory);
         FastStatsRegistry.instance().register(this, factory.consentRequired);
         switch (compatibilityLayer.getEnvironment()) {
@@ -77,7 +79,10 @@ public final class NeoForgeContext extends SimpleContext {
 
     @Override
     protected boolean preSubmissionStart() {
-        return ((SimpleConfig) getConfig()).preSubmissionStart(this);
+        final var config = (SimpleConfig) getConfig();
+        if (!config.preSubmissionStart(this)) return false;
+        if (!consentRequired || config.consentScreenShown()) return true;
+        return compatibilityLayer.getEnvironment() != CompatibilityLayer.Environment.CLIENT;
     }
 
     @Override
@@ -117,7 +122,8 @@ public final class NeoForgeContext extends SimpleContext {
          * Requires the user to explicitly give consent on the client.
          * <p>
          * When at least one mod requires consent, the consent screen is opened
-         * on the first launch of the game. By default, no consent screen is shown.
+         * on the client until it was shown once, nothing is submitted before that.
+         * By default, no consent screen is shown.
          *
          * @return this factory
          * @since 0.31.0

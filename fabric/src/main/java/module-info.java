@@ -9,7 +9,6 @@ module dev.faststats.fabric {
     requires dev.faststats.config;
     requires dev.faststats.onboarding;
     requires dev.faststats;
-    requires java.desktop;
     requires java.logging;
     requires net.fabricmc.loader;
     requires org.slf4j;

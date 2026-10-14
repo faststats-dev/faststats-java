@@ -30,13 +30,19 @@ public final class ConsentScreen extends Screen {
     private static final int SPACING = 8;
 
     private final @Nullable Screen parent;
+    private final boolean firstRun;
     private final ConsentState state = new ConsentState(FastStatsRegistry.instance().anyConfig());
     private @Nullable TextArea text;
     private double scroll;
 
     public ConsentScreen(final @Nullable Screen parent) {
+        this(parent, false);
+    }
+
+    public ConsentScreen(final @Nullable Screen parent, final boolean firstRun) {
         super(new TranslatableComponent(ConsentText.TITLE));
         this.parent = parent;
+        this.firstRun = firstRun;
     }
 
     @Override
@@ -46,14 +52,14 @@ public final class ConsentScreen extends Screen {
 
         final int buttonsLeft = (this.width - BUTTON_WIDTH * 3 - SPACING * 2) / 2;
         final int buttonsY = height - (HEADER_AND_FOOTER_HEIGHT + 20) / 2;
-        addButton(new Button(buttonsLeft, buttonsY, BUTTON_WIDTH, 20, new TranslatableComponent(ConsentText.UNSELECT_ALL), button -> selectAll(false)));
-        addButton(new Button(buttonsLeft + BUTTON_WIDTH + SPACING, buttonsY, BUTTON_WIDTH, 20, new TranslatableComponent(ConsentText.SELECT_ALL), button -> selectAll(true)));
+        addButton(editable(new Button(buttonsLeft, buttonsY, BUTTON_WIDTH, 20, new TranslatableComponent(ConsentText.UNSELECT_ALL), button -> selectAll(false))));
+        addButton(editable(new Button(buttonsLeft + BUTTON_WIDTH + SPACING, buttonsY, BUTTON_WIDTH, 20, new TranslatableComponent(ConsentText.SELECT_ALL), button -> selectAll(true))));
         addButton(new Button(buttonsLeft + (BUTTON_WIDTH + SPACING) * 2, buttonsY, BUTTON_WIDTH, 20, new TranslatableComponent(ConsentText.DONE), button -> onClose()));
 
         final int checkboxesY = height - HEADER_AND_FOOTER_HEIGHT - SPACING - 20 * 3 - 4 * 2;
-        addButton(checkbox(ConsentText.SUBMIT_METRICS, left, checkboxesY, state.submitMetrics(), true, state::submitMetrics));
-        addButton(checkbox(ConsentText.SUBMIT_ADDITIONAL_METRICS, left, checkboxesY + 24, state.additionalMetrics(), state.submitMetrics(), state::additionalMetrics));
-        addButton(checkbox(ConsentText.SUBMIT_ERRORS, left, checkboxesY + 48, state.errorTracking(), true, state::errorTracking));
+        addButton(checkbox(ConsentText.SUBMIT_METRICS, left, checkboxesY, state.submitMetrics(), state.editable(), state::submitMetrics));
+        addButton(checkbox(ConsentText.SUBMIT_ADDITIONAL_METRICS, left, checkboxesY + 24, state.additionalMetrics(), state.editable() && state.submitMetrics(), state::additionalMetrics));
+        addButton(checkbox(ConsentText.SUBMIT_ERRORS, left, checkboxesY + 48, state.errorTracking(), state.editable(), state::errorTracking));
 
         final int textY = HEADER_AND_FOOTER_HEIGHT + SPACING;
         text = addButton(new TextArea(font, component(ConsentText.create(state)), left, textY, width, checkboxesY - SPACING - textY, this::clickLink));
@@ -65,6 +71,11 @@ public final class ConsentScreen extends Screen {
         renderBackground(pose);
         drawCenteredString(pose, font, title, width / 2, (HEADER_AND_FOOTER_HEIGHT - font.lineHeight) / 2, 0xFFFFFF);
         super.render(pose, mouseX, mouseY, delta);
+    }
+
+    @Override
+    public boolean shouldCloseOnEsc() {
+        return !firstRun;
     }
 
     @Override
@@ -91,6 +102,11 @@ public final class ConsentScreen extends Screen {
         checkbox.active = enabled;
         checkbox.setAlpha(enabled ? 1.0F : DISABLED_ALPHA);
         return checkbox;
+    }
+
+    private Button editable(final Button button) {
+        button.active = state.editable();
+        return button;
     }
 
     private void selectAll(final boolean selected) {

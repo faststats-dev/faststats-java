@@ -1,12 +1,11 @@
 package dev.faststats.screen.registry;
 
-import dev.faststats.Config;
 import dev.faststats.SimpleContext;
+import dev.faststats.SimpleMetrics;
 import dev.faststats.config.SimpleConfig;
 import dev.faststats.data.Metric;
 import org.jetbrains.annotations.Contract;
 
-import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,19 +26,17 @@ public final class FastStatsRegistry {
     }
 
     public synchronized void register(final SimpleContext context, final boolean consentRequired) {
-        final var additionalMetrics = context.metrics().map(metrics -> {
-            return metrics.stream()
-                    .map(Metric::getId)
-                    .collect(Collectors.toUnmodifiableSet());
-        }).orElseGet(Set::of);
+        final var additionalMetrics = context.metrics()
+                .filter(SimpleMetrics.class::isInstance)
+                .map(metrics -> ((SimpleMetrics) metrics).stream()
+                        .map(Metric::getId)
+                        .collect(Collectors.toUnmodifiableSet()))
+                .orElseGet(Set::of);
 
-        contexts.put(context, new Entry(context, new FastStatsRegistration(
+        contexts.put(context, new Entry(new FastStatsRegistration(
                 context.getProjectName(),
-                context.getSdkInfo().getName(),
-                context.getSdkInfo().getVersion(),
                 context.metrics().isPresent(),
                 context.errorTrackerService().isPresent(),
-                context.featureFlagService().isPresent(),
                 additionalMetrics
         ), consentRequired));
     }
@@ -48,39 +45,31 @@ public final class FastStatsRegistry {
         contexts.remove(context);
     }
 
-    public List<FastStatsRegistration> registrations() {
+    public synchronized boolean isEmpty() {
+        return contexts.isEmpty();
+    }
+
+    public synchronized List<FastStatsRegistration> registrations() {
         return contexts.values().stream().map(Entry::registration).toList();
     }
 
-    public Set<SimpleContext> contexts() {
-        return contexts.keySet();
+    public synchronized List<SimpleContext> contexts() {
+        return List.copyOf(contexts.keySet());
     }
 
-    private synchronized List<Entry> entries() {
-        return new ArrayList<>(contexts.values());
-    }
-
-    public synchronized boolean consentRequired() {
-        for (final var entry : contexts.values()) if (entry.consentRequired()) return true;
-        return false;
-    }
-
-    public boolean firstRun() {
-        for (final var context : contexts.keySet()) {
-            if (((SimpleConfig) context.getConfig()).firstRun()) return true;
+    public synchronized boolean consentPending() {
+        for (final var entry : contexts.entrySet()) {
+            if (!entry.getValue().consentRequired()) continue;
+            if (!((SimpleConfig) entry.getKey().getConfig()).consentScreenShown()) return true;
         }
         return false;
     }
 
-    public Config anyConfig() {
-        for (final var context : contexts.keySet()) return context.getConfig();
+    public synchronized SimpleConfig anyConfig() throws IllegalStateException {
+        for (final var context : contexts.keySet()) return (SimpleConfig) context.getConfig();
         throw new IllegalStateException("Config not found!");
     }
 
-    private record Entry(
-            SimpleContext context,
-            FastStatsRegistration registration,
-            boolean consentRequired
-    ) {
+    private record Entry(FastStatsRegistration registration, boolean consentRequired) {
     }
 }

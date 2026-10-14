@@ -18,6 +18,6 @@ public abstract class TitleScreenMixin extends Screen {
 
     @Inject(method = "init", at = @At("TAIL"))
     private void faststats$openOnboarding(final CallbackInfo callback) {
-        if (FirstRunOnboarding.shouldOpen()) minecraft.setScreenAndShow(new ConsentScreen(this));
+        if (FirstRunOnboarding.shouldOpen()) minecraft.setScreenAndShow(new ConsentScreen(this, true));
     }
 }

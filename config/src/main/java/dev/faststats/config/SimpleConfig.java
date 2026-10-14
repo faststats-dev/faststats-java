@@ -21,7 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 @ApiStatus.Internal
 public final class SimpleConfig implements Config {
-    private static final int CONFIG_VERSION = 3;
+    private static final int CONFIG_VERSION = 4;
 
     private static final String COMMENT = """
              FastStats (https://faststats.dev) collects pseudonymous usage statistics and errors.
@@ -59,6 +59,7 @@ public final class SimpleConfig implements Config {
     private volatile boolean enabled;
     private volatile boolean errorTracking;
     private volatile boolean submitMetrics;
+    private volatile boolean consentScreenShown;
 
     public SimpleConfig(
             final Path file,
@@ -68,7 +69,8 @@ public final class SimpleConfig implements Config {
             final boolean debug,
             final boolean submitMetrics,
             final boolean errorTracking,
-            final boolean firstRun
+            final boolean firstRun,
+            final boolean consentScreenShown
     ) {
         this.file = file;
         this.serverId = serverId;
@@ -78,6 +80,7 @@ public final class SimpleConfig implements Config {
         this.submitMetrics = submitMetrics;
         this.errorTracking = errorTracking;
         this.firstRun = firstRun;
+        this.consentScreenShown = consentScreenShown;
     }
 
     @Override
@@ -130,12 +133,27 @@ public final class SimpleConfig implements Config {
         return firstRun;
     }
 
+    public boolean consentScreenShown() {
+        return consentScreenShown;
+    }
+
+    public void consentScreenShown(final boolean consentScreenShown) {
+        this.consentScreenShown = consentScreenShown;
+    }
+
+    /**
+     * @return {@code false} if FastStats was disabled using {@code -Dfaststats.enabled=false}
+     */
+    public static boolean enabledFlag() {
+        return Boolean.parseBoolean(System.getProperty("faststats.enabled", "true"));
+    }
+
     @Contract(mutates = "io")
     public static SimpleConfig read(final Path file, final LoggerFactory factory) throws RuntimeException {
         final var logger = factory.getLogger(SimpleConfig.class);
 
         final var debugFlag = Boolean.getBoolean("faststats.debug");
-        final var enabledFlag = Boolean.parseBoolean(System.getProperty("faststats.enabled", "true"));
+        final var enabledFlag = enabledFlag();
 
         final var properties = readOrEmpty(file);
         final var firstRun = properties == null;
@@ -153,6 +171,7 @@ public final class SimpleConfig implements Config {
         final var errorTracking = parse(properties, saveConfig, "submitErrors", () -> true, Boolean::parseBoolean, logger);
         final var additionalMetrics = parse(properties, saveConfig, "submitAdditionalMetrics", () -> true, Boolean::parseBoolean, logger);
         final var debug = parse(properties, saveConfig, "debug", () -> false, Boolean::parseBoolean, logger);
+        final var consentScreenShown = parse(properties, saveConfig, "consent-screen-shown", () -> false, Boolean::parseBoolean, logger);
 
         if (configVersion == null || configVersion < CONFIG_VERSION) saveConfig.set(true);
         else if (configVersion > CONFIG_VERSION) saveConfig.set(false);
@@ -172,6 +191,7 @@ public final class SimpleConfig implements Config {
                 store.setProperty("serverId", serverId.toString());
 
                 store.setProperty("debug", Boolean.toString(debug));
+                store.setProperty("consent-screen-shown", Boolean.toString(consentScreenShown));
                 store.setProperty("configVersion", Integer.toString(CONFIG_VERSION));
 
                 store.store(writer, COMMENT);
@@ -188,20 +208,33 @@ public final class SimpleConfig implements Config {
                 debug || debugFlag,
                 enabled && enabledFlag && submitMetrics,
                 enabled && enabledFlag && errorTracking,
-                firstRun
+                firstRun,
+                consentScreenShown
         );
     }
 
     @Contract(mutates = "io")
-    public void persist() throws RuntimeException {
-        final var properties = readOrEmpty(file);
-        if (properties == null) throw new IllegalStateException("Metrics config has not been initialized");
+    public synchronized void persist() throws RuntimeException {
+        var properties = readOrEmpty(file);
+        if (properties == null) {
+            // the file was deleted after it was read, recreate it
+            properties = new Properties();
+            properties.setProperty("serverId", serverId.toString());
+            properties.setProperty("debug", Boolean.toString(debug));
+            properties.setProperty("configVersion", Integer.toString(CONFIG_VERSION));
+        }
 
         properties.setProperty("enabled", Boolean.toString(enabled()));
         properties.setProperty("submitAdditionalMetrics", Boolean.toString(additionalMetrics()));
         properties.setProperty("submitErrors", Boolean.toString(errorTracking()));
         properties.setProperty("submitMetrics", Boolean.toString(submitMetrics()));
+        properties.setProperty("consent-screen-shown", Boolean.toString(consentScreenShown()));
 
+        try {
+            Files.createDirectories(file.getParent());
+        } catch (final IOException e) {
+            throw new RuntimeException("Failed to create metrics config directory", e);
+        }
         try (final var writer = Files.newBufferedWriter(file, UTF_8)) {
             properties.store(writer, COMMENT);
         } catch (final IOException e) {
@@ -274,6 +307,7 @@ public final class SimpleConfig implements Config {
                 "serverId=" + serverId +
                 ", debug=" + debug +
                 ", firstRun=" + firstRun +
+                ", consentScreenShown=" + consentScreenShown +
                 ", additionalMetrics=" + additionalMetrics +
                 ", enabled=" + enabled +
                 ", errorTracking=" + errorTracking +

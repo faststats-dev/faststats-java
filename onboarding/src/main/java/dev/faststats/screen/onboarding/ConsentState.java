@@ -4,10 +4,19 @@ import dev.faststats.Config;
 import dev.faststats.config.SimpleConfig;
 import dev.faststats.screen.registry.FastStatsRegistry;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
 public final class ConsentState {
-    private boolean submitMetrics;
-    private boolean additionalMetrics;
-    private boolean errorTracking;
+    private static final Executor PERSISTENCE = Executors.newSingleThreadExecutor(runnable -> {
+        final var thread = new Thread(runnable, "faststats-config-writer");
+        thread.setDaemon(true);
+        return thread;
+    });
+
+    private volatile boolean submitMetrics;
+    private volatile boolean additionalMetrics;
+    private volatile boolean errorTracking;
 
     public ConsentState(final Config config) {
         this(config.submitMetrics(), config.additionalMetrics(), config.errorTracking());
@@ -50,15 +59,35 @@ public final class ConsentState {
         errorTracking = selected;
     }
 
+    public boolean editable() {
+        return SimpleConfig.enabledFlag();
+    }
+
     public synchronized void apply(final FastStatsRegistry registry) {
-        registry.contexts().forEach(context -> {
+        if (!editable()) return;
+
+        final var contexts = registry.contexts();
+        if (contexts.isEmpty()) return;
+
+        final var enabled = submitMetrics || errorTracking;
+        contexts.forEach(context -> {
             final var config = (SimpleConfig) context.getConfig();
             config.submitMetrics(submitMetrics);
             config.additionalMetrics(additionalMetrics());
             config.errorTracking(errorTracking);
-            config.enabled(submitMetrics || errorTracking);
-            config.persist();
-            context.submissionActive = config.enabled();
+            config.enabled(enabled);
+            config.consentScreenShown(true);
+            context.submissionActive = enabled;
+        });
+
+        final var context = contexts.get(0);
+        final var config = (SimpleConfig) context.getConfig();
+        PERSISTENCE.execute(() -> {
+            try {
+                config.persist();
+            } catch (final Throwable t) {
+                context.getLoggerFactory().getLogger(ConsentState.class).error("Failed to save FastStats consent", t);
+            }
         });
     }
 }

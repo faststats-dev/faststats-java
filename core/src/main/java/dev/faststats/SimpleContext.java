@@ -12,11 +12,9 @@ import java.io.UncheckedIOException;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-// todo: revise
 public non-sealed abstract class SimpleContext implements FastStatsContext {
     private final @Token String token;
     private final Config config;

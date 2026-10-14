@@ -8,6 +8,7 @@ import dev.faststats.config.SimpleConfig;
 import dev.faststats.fabric.compat.CompatibilityLayer;
 import dev.faststats.internal.PlatformLoggerFactory;
 import dev.faststats.screen.registry.FastStatsRegistry;
+import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
@@ -37,6 +38,7 @@ public final class FabricContext extends SimpleContext {
     private final Set<Future<?>> tasks = new CopyOnWriteArraySet<>();
     private final CompatibilityLayer compatibilityLayer;
     private final ModContainer mod;
+    private final boolean consentRequired;
 
     private FabricContext(final Factory factory, final dev.faststats.internal.LoggerFactory loggerFactory, final String modId, @Token final String token) {
         super(factory, loggerFactory, SimpleConfig.read(configPath(), loggerFactory), "fabric", token);
@@ -46,6 +48,7 @@ public final class FabricContext extends SimpleContext {
         this.compatibilityLayer = ServiceLoader.load(CompatibilityLayer.class)
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No Fabric compatibility layer found"));
+        this.consentRequired = factory.consentRequired;
         initializeManagedServices(factory);
         FastStatsRegistry.instance().register(this, factory.consentRequired);
         switch (FabricLoader.getInstance().getEnvironmentType()) {
@@ -76,7 +79,10 @@ public final class FabricContext extends SimpleContext {
 
     @Override
     protected boolean preSubmissionStart() {
-        return ((SimpleConfig) getConfig()).preSubmissionStart(this);
+        final var config = (SimpleConfig) getConfig();
+        if (!config.preSubmissionStart(this)) return false;
+        if (!consentRequired || config.consentScreenShown()) return true;
+        return FabricLoader.getInstance().getEnvironmentType() != EnvType.CLIENT;
     }
 
     @Override
@@ -116,7 +122,8 @@ public final class FabricContext extends SimpleContext {
          * Requires the user to explicitly give consent on the client.
          * <p>
          * When at least one mod requires consent, the consent screen is opened
-         * on the first launch of the game. By default, no consent screen is shown.
+         * on the client until it was shown once, nothing is submitted before that.
+         * By default, no consent screen is shown.
          *
          * @return this factory
          * @since 0.31.0
