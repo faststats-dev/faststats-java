@@ -32,9 +32,8 @@ dev.faststats.metrics:neoforge:<sdk-version>+mc26.1.2
 
 Each artifact only declares the Minecraft version it was built for in its `fabric.mod.json` or `neoforge.mods.toml`.
 
-The supported Minecraft versions are listed in `build-logic/src/main/kotlin/MinecraftVersions.kt`. Every version is
-built from the sources in `<platform>/versions/<version>`, or from the closest older version that has a directory there.
-A new Minecraft version that needs no code changes only has to be added to that list and the version catalog.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how the version-specific code is organized and how to add a Minecraft
+version.
 
 ### Building everything
 
