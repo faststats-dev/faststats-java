@@ -18,10 +18,11 @@ configurations.compileClasspath {
 }
 
 tasks.processResources {
-    inputs.property("version", project.version)
+    val version = provider { project.version.toString() }
+    inputs.property("version", version)
 
     filesMatching("fabric.mod.json") {
-        expand("version" to project.version, "minecraft" to "*")
+        expand("version" to version.get(), "minecraft" to "*")
     }
 }
 

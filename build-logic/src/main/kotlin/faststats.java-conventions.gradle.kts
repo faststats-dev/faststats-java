@@ -17,11 +17,13 @@ java {
 val generateFastStatsProperties = tasks.register("generateFastStatsProperties") {
     description = "Generates the META-INF/faststats.properties file"
     val outputDir = layout.buildDirectory.dir("generated/resources/faststats")
+    val version = provider { project.version.toString() }
+    inputs.property("version", version)
     outputs.dir(outputDir)
     doLast {
         val file = outputDir.get().file("META-INF/faststats.properties").asFile
         file.parentFile.mkdirs()
-        file.writeText("version=${project.version}\n")
+        file.writeText("version=${version.get()}\n")
     }
 }
 

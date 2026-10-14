@@ -1,4 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+import org.gradle.kotlin.dsl.support.serviceOf
 
 plugins {
     id("java-library")
@@ -49,8 +50,11 @@ fun shadowSources(filter: (ProjectComponentIdentifier) -> Boolean = { true }) = 
     }.files
 })
 
-fun CopySpec.fromSourcesJars(sources: FileCollection) {
-    from(sources.elements.map { files -> files.map { zipTree(it) } }) {
+val archives = serviceOf<ArchiveOperations>()
+
+// takes the archive operations as a parameter, as the configuration cache can't store a reference to this script
+fun CopySpec.fromSourcesJars(sources: FileCollection, archives: ArchiveOperations) {
+    from(sources.elements.map { files -> files.map { archives.zipTree(it) } }) {
         exclude("module-info.java", "META-INF/**")
     }
 }
@@ -59,7 +63,7 @@ tasks.named<Jar>("sourcesJar") {
     val sources = shadowSources()
     dependsOn(sources)
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    fromSourcesJars(sources)
+    fromSourcesJars(sources, archives)
 }
 
 val javadocSources = tasks.register<Sync>("javadocSources") {
@@ -68,7 +72,7 @@ val javadocSources = tasks.register<Sync>("javadocSources") {
     // split packages across the shaded projects would otherwise clash, e.g. their package-info.java
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from(sourceSets.main.map { it.allJava }) { exclude("module-info.java") }
-    fromSourcesJars(sources)
+    fromSourcesJars(sources, archives)
     include("**/*.java")
     into(layout.buildDirectory.dir("javadocSources"))
 }

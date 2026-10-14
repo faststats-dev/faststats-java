@@ -23,8 +23,10 @@ configurations.runtimeClasspath {
 }
 
 tasks.processResources {
+    val version = provider { project.version.toString() }
+    inputs.property("version", version)
     filesMatching("META-INF/neoforge.mods.toml") {
-        expand("version" to project.version, "minecraft" to "[1.20.6,)")
+        expand("version" to version.get(), "minecraft" to "[1.20.6,)")
     }
 }
 
