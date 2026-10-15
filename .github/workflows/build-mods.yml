@@ -1,0 +1,28 @@
+name: Build Mods
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ fabric, forge, neoforge ]
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v7.0.1
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'temurin'
+          java-version: 25
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+      - name: Build with Gradle
+        run: ./gradlew build -PmodPlatforms=${{ matrix.platform }} -p ${{ matrix.platform }}

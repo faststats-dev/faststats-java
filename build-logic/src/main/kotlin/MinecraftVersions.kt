@@ -70,11 +70,12 @@ val minecraftVersions = listOf(
 private val platformVersions = mapOf(
     "fabric" to minecraftVersions,
     "neoforge" to minecraftVersions.dropWhile { it.name != "1.20.6" },
+    "forge" to minecraftVersions.dropWhile { it.name != "1.20.6" }.filter { it.name != "1.21.2" },
     "onboarding" to minecraftVersions,
 )
 
 // the platforms with a project per Minecraft version, the onboarding sources are compiled into them
-val minecraftPlatforms = setOf("fabric", "neoforge")
+val minecraftPlatforms = setOf("fabric", "forge", "neoforge")
 
 fun minecraftVersions(platform: String): List<MinecraftVersion> = platformVersions.getValue(platform)
 
