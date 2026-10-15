@@ -6,7 +6,6 @@ plugins {
     id("maven-publish")
 }
 
-// version projects are configured by their parent before they have a catalog of their own
 val libs = rootProject.the<VersionCatalogsExtension>().named("libs")
 val minecraft = minecraftVersion
 

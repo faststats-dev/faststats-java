@@ -1,5 +1,6 @@
 include(
     "fabric",
+    "forge",
     "neoforge",
     "onboarding"
 )

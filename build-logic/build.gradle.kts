@@ -14,6 +14,7 @@ fun plugin(plugin: Provider<PluginDependency>) = plugin.map {
 
 dependencies {
     implementation(plugin(libs.plugins.fabric.loom))
+    implementation(plugin(libs.plugins.forgegradle))
     implementation(plugin(libs.plugins.moddev))
     implementation(plugin(libs.plugins.shadow))
 }
