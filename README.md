@@ -45,3 +45,9 @@ To compile and test all modules with the standard lifecycle, run:
 ./gradlew build
 ```
 
+To build everything except the Fabric, Forge and NeoForge mod platforms, which is much faster, run:
+
+```sh
+./gradlew build -PmodPlatforms=none
+```
+

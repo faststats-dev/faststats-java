@@ -20,4 +20,4 @@ jobs:
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
       - name: Build with Gradle
-        run: ./gradlew build
+        run: ./gradlew build -PmodPlatforms=none

@@ -17,6 +17,14 @@ Minecraft version. To work on a single version, build only its project:
 ./gradlew :neoforge:versions:1.21.10:build
 ```
 
+The `modPlatforms` property limits which mod platforms are part of the build at all, which skips configuring them.
+CI uses it to build the plugin modules and each mod platform in separate jobs:
+
+```sh
+./gradlew build -PmodPlatforms=none                # everything except Fabric, Forge and NeoForge
+./gradlew build -PmodPlatforms=fabric -p fabric    # only Fabric and its Minecraft versions
+```
+
 ## Minecraft versions
 
 Fabric, Forge and NeoForge are built and published once per Minecraft version, as
