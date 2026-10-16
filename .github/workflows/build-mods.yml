@@ -24,5 +24,21 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+          # cached by the Mavenizer steps, keyed by the Forge versions instead of every commit
+          gradle-home-cache-excludes: caches/minecraftforge/forgegradle/mavenizer
+      - name: Restore Forge Mavenizer cache
+        id: mavenizer
+        if: matrix.platform == 'forge'
+        uses: actions/cache/restore@v5
+        with:
+          path: ~/.gradle/caches/minecraftforge/forgegradle/mavenizer/caches
+          key: mavenizer-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: mavenizer-
       - name: Build with Gradle
         run: ./gradlew build -PmodPlatforms=${{ matrix.platform }} -p ${{ matrix.platform }}
+      - name: Save Forge Mavenizer cache
+        if: matrix.platform == 'forge' && github.ref == 'refs/heads/main' && steps.mavenizer.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v5
+        with:
+          path: ~/.gradle/caches/minecraftforge/forgegradle/mavenizer/caches
+          key: mavenizer-${{ hashFiles('gradle/libs.versions.toml') }}

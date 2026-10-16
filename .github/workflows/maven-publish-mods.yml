@@ -22,6 +22,15 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+          # cached by the Mavenizer steps, keyed by the Forge versions instead of every commit
+          gradle-home-cache-excludes: caches/minecraftforge/forgegradle/mavenizer
+      - name: Restore Forge Mavenizer cache
+        if: matrix.platform == 'forge'
+        uses: actions/cache/restore@v5
+        with:
+          path: ~/.gradle/caches/minecraftforge/forgegradle/mavenizer/caches
+          key: mavenizer-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: mavenizer-
       - name: Publish with Gradle to Repository
         env:
           REPOSITORY_USER: ${{ secrets.REPOSITORY_USER }}
