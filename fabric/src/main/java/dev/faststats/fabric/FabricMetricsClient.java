@@ -21,6 +21,6 @@ final class FabricMetricsClient extends FabricMetrics {
     protected void appendDefaultData(final JsonObject metrics) {
         metrics.addProperty("online_mode", compatibilityLayer.clientOnlineMode());
         metrics.addProperty("player_count", compatibilityLayer.clientPlayerCount());
-        appendFabricData(metrics, "Fabric Client");
+        appendFabricData(metrics, true);
     }
 }

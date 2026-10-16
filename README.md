@@ -34,6 +34,10 @@ dev.faststats.metrics:neoforge:<sdk-version>+mc26.3
 Each artifact only declares the Minecraft version it was built for in its `fabric.mod.json`, `mods.toml` or
 `neoforge.mods.toml`.
 
+The Fabric artifact also supports Quilt, which loads Fabric mods.
+On Quilt it reports Quilt and the Quilt Loader version instead of Fabric.
+It needs Quilt Loader 0.30.0 or newer and Fabric API or Quilted Fabric API.
+
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how the version-specific code is organized and how to add a Minecraft
 version.
 
