@@ -265,9 +265,7 @@ public final class FeatureFlagTest {
                 }
 
                 final var body = new String(bodyChars, 0, read);
-                final var e = new Request(path, headers, body.isEmpty() ? new JsonObject() : JsonParser.parseString(body).getAsJsonObject());
-                System.out.println("parsed body: " + body + ", " + e.body);
-                requests.add(e);
+                requests.add(new Request(path, headers, body.isEmpty() ? new JsonObject() : JsonParser.parseString(body).getAsJsonObject()));
 
                 final var response = responses.poll(1, TimeUnit.SECONDS);
                 if (response == null) throw new AssertionError("No response enqueued");
