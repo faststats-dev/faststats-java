@@ -45,7 +45,15 @@ final class SimpleFeatureFlagService extends SubmissionService implements Featur
 
     @SuppressWarnings("unchecked")
     <T> CompletableFuture<T> fetch(final SimpleFeatureFlag<T> flag) {
-        return (CompletableFuture<T>) fetchesInProgress.computeIfAbsent(flag.getId(), ignored -> createFetch(flag));
+        final var future = new CompletableFuture<T>();
+        final var existing = fetchesInProgress.putIfAbsent(flag.getId(), future);
+        if (existing != null) return (CompletableFuture<T>) existing;
+        createFetch(flag).whenComplete((value, throwable) -> {
+            fetchesInProgress.remove(flag.getId(), future);
+            if (throwable != null) future.completeExceptionally(throwable);
+            else future.complete(value);
+        });
+        return future;
     }
 
     <T> CompletableFuture<T> optIn(final SimpleFeatureFlag<T> flag) {
@@ -72,8 +80,7 @@ final class SimpleFeatureFlagService extends SubmissionService implements Featur
         final var request = createRequest(CHECK_PATH, requestBody);
         logger.info("Fetching %s: %s", request.uri(), requestBody.toString());
         return HTTP_CLIENT.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenApply(response -> handleFetchResponse(flag, response))
-                .whenComplete((ignored, throwable) -> fetchesInProgress.remove(flag.getId()));
+                .thenApply(response -> handleFetchResponse(flag, response));
     }
 
     private JsonObject createRequestBody(final SimpleFeatureFlag<?> flag) {
