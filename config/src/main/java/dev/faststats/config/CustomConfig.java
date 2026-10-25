@@ -1,7 +1,6 @@
 package dev.faststats.config;
 
 import dev.faststats.Config;
-import dev.faststats.SimpleContext;
 import dev.faststats.internal.Logger;
 import dev.faststats.internal.LoggerFactory;
 import org.jetbrains.annotations.Contract;
@@ -62,8 +61,33 @@ public final class CustomConfig implements Config {
             ENABLED, SUBMIT_METRICS, SUBMIT_ADDITIONAL_METRICS, SUBMIT_ERRORS, SERVER_ID, DEBUG, CONFIG_VERSION
     );
 
-    public static final String DEFAULT_COMMENT = SimpleConfig.COMMENT;
-    public static final String DEFAULT_ONBOARDING_MESSAGE = SimpleConfig.ONBOARDING_MESSAGE;
+    public static final String DEFAULT_COMMENT = """
+             FastStats (https://faststats.dev) collects pseudonymous usage statistics and errors.
+            # This helps developers understand how their projects are used in the real world.
+            #
+            # No IP addresses, player data, or personal information is collected.
+            # The server ID below is randomly generated and can be regenerated at any time.
+            #
+            # Enabling metrics has no noticeable performance impact.
+            # Keeping FastStats enabled is recommended.
+            # To disable all FastStats features, set 'enabled=false'.
+            # To disable only metrics submission, set 'submitMetrics=false'.
+            # To disable only additional metrics, set 'submitAdditionalMetrics=false'.
+            # To disable only error tracking, set 'submitErrors=false'.
+            #
+            # If you suspect a developer is collecting personal data or bypassing any opt-out option,
+            # please report it at: https://faststats.dev/abuse
+            #
+            # For more information, visit: https://faststats.dev/info
+            """;
+    public static final String DEFAULT_ONBOARDING_MESSAGE = """
+            This plugin uses FastStats to collect pseudonymous usage statistics and errors.
+            No personal or identifying information is ever collected.
+            To opt out, set 'enabled=false' in the metrics configuration file.
+            Learn more at: https://faststats.dev/info
+            
+            Since this is your first start with FastStats, submission will not start
+            until after a restart, to allow you to opt out if you prefer.""";
 
     private final Path file;
     private final @Nullable String comment;
@@ -104,7 +128,7 @@ public final class CustomConfig implements Config {
             write(store);
         }
 
-        final var enabled = get(ENABLED) && SimpleConfig.enabledFlag();
+        final var enabled = get(ENABLED) && enabledFlag();
         set(ENABLED, enabled);
         set(SUBMIT_METRICS, enabled && get(SUBMIT_METRICS));
         set(SUBMIT_ERRORS, enabled && get(SUBMIT_ERRORS));
@@ -167,6 +191,25 @@ public final class CustomConfig implements Config {
     }
 
     /**
+     * @return {@code false} if FastStats was disabled using {@code -Dfaststats.enabled=false}
+     */
+    public static boolean enabledFlag() {
+        return Boolean.parseBoolean(System.getProperty("faststats.enabled", "true"));
+    }
+
+    /**
+     * Whether the given field is registered in this config.
+     *
+     * @param field the field
+     * @return {@code true} if the field is registered, {@code false} otherwise
+     * @since 0.32.0
+     */
+    @Contract(pure = true)
+    public boolean has(final Field<?> field) {
+        return field.equals(fields.get(field.key()));
+    }
+
+    /**
      * Gets the value of a field.
      *
      * @param field the field
@@ -198,7 +241,7 @@ public final class CustomConfig implements Config {
     }
 
     private void requireRegistered(final Field<?> field) {
-        if (!field.equals(fields.get(field.key())))
+        if (!has(field))
             throw new IllegalArgumentException("Field '" + field.key() + "' is not registered in this config");
     }
 
@@ -243,7 +286,7 @@ public final class CustomConfig implements Config {
         }
     }
 
-    public boolean preSubmissionStart(final SimpleContext context) {
+    public boolean preSubmissionStart(final LoggerFactory loggerFactory) {
         if (Boolean.getBoolean("faststats.first-run")) return false;
         if (!firstRun()) return true;
 
@@ -252,7 +295,7 @@ public final class CustomConfig implements Config {
             final var split = onboardingMessage.split("\n");
             for (final var s : split) if (s.length() > separatorLength) separatorLength = s.length();
 
-            final var logger = context.getLoggerFactory().getLogger(getClass());
+            final var logger = loggerFactory.getLogger(getClass());
             logger.print(Logger.LogLevel.INFO, null, "-".repeat(separatorLength));
             for (final var s : split) logger.print(Logger.LogLevel.INFO, null, s);
             logger.print(Logger.LogLevel.INFO, null, "-".repeat(separatorLength));

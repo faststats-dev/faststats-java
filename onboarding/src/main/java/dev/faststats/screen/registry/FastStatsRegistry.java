@@ -3,8 +3,9 @@ package dev.faststats.screen.registry;
 import dev.faststats.FastStatsContext;
 import dev.faststats.SimpleContext;
 import dev.faststats.SimpleMetrics;
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.config.CustomConfig;
 import dev.faststats.data.Metric;
+import dev.faststats.screen.onboarding.ConsentState;
 import org.jetbrains.annotations.Contract;
 
 import java.util.IdentityHashMap;
@@ -46,7 +47,7 @@ public final class FastStatsRegistry {
                 context.metrics().isPresent(),
                 context.errorTrackerService().isPresent(),
                 additionalMetrics
-        ), (SimpleConfig) context.getConfig(), consentRequired));
+        ), (CustomConfig) context.getConfig(), consentRequired));
     }
 
     public synchronized void unregister(final FastStatsContext context) {
@@ -67,12 +68,12 @@ public final class FastStatsRegistry {
 
     public synchronized boolean consentPending() {
         for (final var entry : contexts.values()) {
-            if (entry.consentRequired() && !entry.config().consentScreenShown()) return true;
+            if (entry.consentRequired() && !ConsentState.consentScreenShown(entry.config())) return true;
         }
         return false;
     }
 
-    public synchronized SimpleConfig anyConfig() throws IllegalStateException {
+    public synchronized CustomConfig anyConfig() throws IllegalStateException {
         for (final var entry : contexts.values()) return entry.config();
         throw new IllegalStateException("Config not found!");
     }
@@ -88,13 +89,16 @@ public final class FastStatsRegistry {
      * @param errorTracking     whether error tracking was allowed
      * @return the updated config to persist, if any context is registered
      */
-    public synchronized Optional<SimpleConfig> applyConsent(final boolean submitMetrics, final boolean additionalMetrics, final boolean errorTracking) {
-        SimpleConfig updated = null;
+    public synchronized Optional<CustomConfig> applyConsent(final boolean submitMetrics, final boolean additionalMetrics, final boolean errorTracking) {
+        CustomConfig updated = null;
         for (final var registered : contexts.entrySet()) {
             final var context = registered.getKey();
-            final var entry = registered.getValue();
-            final var config = entry.config().withConsent(submitMetrics, additionalMetrics, errorTracking);
-            registered.setValue(new Entry(entry.registration(), config, entry.consentRequired()));
+            final var config = registered.getValue().config();
+            config.submitMetrics(submitMetrics);
+            config.additionalMetrics(submitMetrics && additionalMetrics);
+            config.errorTracking(errorTracking);
+            config.enabled(submitMetrics || errorTracking);
+            if (config.has(ConsentState.CONSENT_SCREEN_SHOWN)) config.set(ConsentState.CONSENT_SCREEN_SHOWN, true);
             context.updateConfig(config);
             if (config.enabled()) context.startSubmission();
             else context.stopSubmission();
@@ -103,6 +107,6 @@ public final class FastStatsRegistry {
         return Optional.ofNullable(updated);
     }
 
-    private record Entry(FastStatsRegistration registration, SimpleConfig config, boolean consentRequired) {
+    private record Entry(FastStatsRegistration registration, CustomConfig config, boolean consentRequired) {
     }
 }
