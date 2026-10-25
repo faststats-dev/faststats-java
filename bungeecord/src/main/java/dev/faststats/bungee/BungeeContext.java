@@ -4,7 +4,7 @@ import dev.faststats.Metrics;
 import dev.faststats.SimpleContext;
 import dev.faststats.SimpleMetrics;
 import dev.faststats.Token;
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.config.CustomConfig;
 import dev.faststats.internal.LoggerFactory;
 import dev.faststats.internal.PlatformLoggerFactory;
 import net.md_5.bungee.api.plugin.Plugin;
@@ -25,9 +25,9 @@ public final class BungeeContext extends SimpleContext {
     private final Plugin plugin;
 
     private BungeeContext(final Factory factory, final LoggerFactory loggerFactory, final Plugin plugin, @Token final String token) {
-        super(factory, loggerFactory, SimpleConfig.read(plugin.getProxy().getPluginsFolder().toPath()
+        super(factory, loggerFactory, CustomConfig.builder(plugin.getProxy().getPluginsFolder().toPath()
                 .resolve("faststats").resolve("config.properties"), loggerFactory
-        ), "bungeecord", token);
+        ).build(), "bungeecord", token);
         this.plugin = plugin;
         initializeServices(factory);
     }
@@ -45,7 +45,7 @@ public final class BungeeContext extends SimpleContext {
 
     @Override
     protected boolean preSubmissionStart() {
-        return ((SimpleConfig) getConfig()).preSubmissionStart(this);
+        return ((CustomConfig) getConfig()).preSubmissionStart(this);
     }
 
     @Override

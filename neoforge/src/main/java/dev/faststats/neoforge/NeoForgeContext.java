@@ -1,11 +1,12 @@
 package dev.faststats.neoforge;
 
+import dev.faststats.screen.onboarding.ConsentState;
 import dev.faststats.screen.registry.FastStatsRegistry;
 import dev.faststats.Metrics;
 import dev.faststats.SimpleContext;
 import dev.faststats.SimpleMetrics;
 import dev.faststats.Token;
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.config.CustomConfig;
 import dev.faststats.internal.LoggerFactory;
 import dev.faststats.internal.PlatformLoggerFactory;
 import dev.faststats.neoforge.compat.CompatibilityLayer;
@@ -50,7 +51,7 @@ public final class NeoForgeContext extends SimpleContext {
     }
 
     private NeoForgeContext(final Factory factory, final LoggerFactory loggerFactory, final String modId, @Token final String token, final CompatibilityLayer compatibilityLayer) {
-        super(factory, loggerFactory, SimpleConfig.read(configPath(), loggerFactory,
+        super(factory, loggerFactory, ConsentState.readConfig(configPath(), loggerFactory,
                 compatibilityLayer.getEnvironment() == CompatibilityLayer.Environment.CLIENT), "neoforge", token);
         this.mod = ModList.get().getModContainerById(modId).map(ModContainer::getModInfo).orElseThrow(() -> {
             return new IllegalArgumentException("Mod not found: " + modId);
@@ -84,9 +85,9 @@ public final class NeoForgeContext extends SimpleContext {
 
     @Override
     protected boolean preSubmissionStart() {
-        final var config = (SimpleConfig) getConfig();
+        final var config = (CustomConfig) getConfig();
         if (!config.preSubmissionStart(this)) return false;
-        if (!consentRequired || config.consentScreenShown()) return true;
+        if (!consentRequired || ConsentState.consentScreenShown(config)) return true;
         return compatibilityLayer.getEnvironment() != CompatibilityLayer.Environment.CLIENT;
     }
 

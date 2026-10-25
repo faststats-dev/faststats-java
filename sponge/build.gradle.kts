@@ -18,5 +18,6 @@ repositories {
 
 dependencies {
     api(project(":core"))
+    implementation(project(":config"))
     compileOnly(libs.spongeapi)
 }

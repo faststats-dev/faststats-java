@@ -1,11 +1,12 @@
 package dev.faststats.forge;
 
+import dev.faststats.screen.onboarding.ConsentState;
 import dev.faststats.screen.registry.FastStatsRegistry;
 import dev.faststats.Metrics;
 import dev.faststats.SimpleContext;
 import dev.faststats.SimpleMetrics;
 import dev.faststats.Token;
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.config.CustomConfig;
 import dev.faststats.forge.compat.CompatibilityLayer;
 import dev.faststats.internal.LoggerFactory;
 import dev.faststats.internal.PlatformLoggerFactory;
@@ -43,7 +44,7 @@ public final class ForgeContext extends SimpleContext {
     }
 
     private ForgeContext(final Factory factory, final LoggerFactory loggerFactory, final String modId, @Token final String token, final CompatibilityLayer compatibilityLayer) {
-        super(factory, loggerFactory, SimpleConfig.read(
+        super(factory, loggerFactory, ConsentState.readConfig(
                 compatibilityLayer.configDirectory().resolve("faststats").resolve("config.properties"), loggerFactory,
                 compatibilityLayer.getEnvironment() == CompatibilityLayer.Environment.CLIENT), "forge", token);
         this.modVersion = compatibilityLayer.modVersion(modId).orElseThrow(() -> {
@@ -76,9 +77,9 @@ public final class ForgeContext extends SimpleContext {
 
     @Override
     protected boolean preSubmissionStart() {
-        final var config = (SimpleConfig) getConfig();
+        final var config = (CustomConfig) getConfig();
         if (!config.preSubmissionStart(this)) return false;
-        if (!consentRequired || config.consentScreenShown()) return true;
+        if (!consentRequired || ConsentState.consentScreenShown(config)) return true;
         return compatibilityLayer.getEnvironment() != CompatibilityLayer.Environment.CLIENT;
     }
 

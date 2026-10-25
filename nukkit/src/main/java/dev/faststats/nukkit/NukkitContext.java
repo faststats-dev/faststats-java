@@ -6,7 +6,7 @@ import dev.faststats.Metrics;
 import dev.faststats.SimpleContext;
 import dev.faststats.SimpleMetrics;
 import dev.faststats.Token;
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.config.CustomConfig;
 import dev.faststats.internal.LoggerFactory;
 import dev.faststats.internal.PlatformLoggerFactory;
 import org.jetbrains.annotations.Contract;
@@ -26,8 +26,8 @@ public final class NukkitContext extends SimpleContext {
     final PluginBase plugin;
 
     private NukkitContext(final Factory factory, final LoggerFactory loggerFactory, final PluginBase plugin, @Token final String token) {
-        super(factory, loggerFactory, SimpleConfig.read(Path.of(plugin.getServer().getPluginPath())
-                .resolve("faststats").resolve("config.properties"), loggerFactory), "nukkit", token);
+        super(factory, loggerFactory, CustomConfig.builder(Path.of(plugin.getServer().getPluginPath())
+                .resolve("faststats").resolve("config.properties"), loggerFactory).build(), "nukkit", token);
         this.plugin = plugin;
         initializeServices(factory);
     }
@@ -45,7 +45,7 @@ public final class NukkitContext extends SimpleContext {
 
     @Override
     protected boolean preSubmissionStart() {
-        return ((SimpleConfig) getConfig()).preSubmissionStart(this);
+        return ((CustomConfig) getConfig()).preSubmissionStart(this);
     }
 
     @Override
