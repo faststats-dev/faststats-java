@@ -18,7 +18,4 @@ dependencies {
 
     testImplementation(project(":config"))
     testImplementation(libs.gson)
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation(platform(libs.junit.bom))
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
