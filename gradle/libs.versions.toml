@@ -51,7 +51,7 @@ minestom = "net.minestom:minestom:2026.10.07-26.2"
 nukkit = "cn.nukkit:nukkit:1.0-SNAPSHOT"
 paper-api = "io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT"
 spongeapi = "org.spongepowered:spongeapi:8.3.0-SNAPSHOT"
-velocity-api = "com.velocitypowered:velocity-api:4.2.0"
+velocity-api = "com.velocitypowered:velocity-api:4.3.1"
 
 # mod loaders
 fabric-loader = "net.fabricmc:fabric-loader:0.19.5"
