@@ -39,7 +39,7 @@ forge-v26x2 = "26.2-65.1.5"
 forge-v26x3 = "26.3-66.0.12"
 
 [libraries]
-gson = "com.google.code.gson:gson:2.14.0"
+gson = "com.google.code.gson:gson:2.15.0"
 jetbrains-annotations = "org.jetbrains:annotations:26.1.0"
 jspecify = "org.jspecify:jspecify:1.0.0"
 junit-bom = "org.junit:junit-bom:6.1.3"
