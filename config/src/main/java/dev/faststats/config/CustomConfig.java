@@ -3,12 +3,13 @@ package dev.faststats.config;
 import dev.faststats.Config;
 import dev.faststats.internal.Logger;
 import dev.faststats.internal.LoggerFactory;
+import org.intellij.lang.annotations.Pattern;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -18,8 +19,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A builder-style metrics configuration.
@@ -90,6 +89,7 @@ public final class CustomConfig implements Config {
             until after a restart, to allow you to opt out if you prefer.""";
 
     private final Path file;
+    private final Logger logger;
     private final @Nullable String comment;
     private final @Nullable String onboardingMessage;
     private final Map<String, Field<?>> fields;
@@ -99,34 +99,42 @@ public final class CustomConfig implements Config {
 
     private CustomConfig(final Builder builder) {
         this.file = builder.file;
+        this.logger = builder.loggerFactory.getLogger(CustomConfig.class);
         this.comment = builder.comment;
         this.onboardingMessage = builder.onboardingMessage;
         this.fields = Map.copyOf(builder.fields);
         this.storeEnabled = builder.enabled == null;
 
-        final var logger = builder.loggerFactory.getLogger(CustomConfig.class);
+        PropertiesFile.Contents contents;
+        var broken = false;
+        try {
+            contents = PropertiesFile.read(file);
+        } catch (final IOException | RuntimeException e) {
+            logger.print(Logger.LogLevel.ERROR, e, "Failed to read FastStats config at " + file
+                    + ", FastStats is disabled until the file is fixed or deleted");
+            contents = null;
+            broken = true;
+        }
+        final var properties = contents != null ? contents.properties() : null;
 
-        final var properties = readOrEmpty(file);
-        this.firstRun = properties == null;
-        final var reader = new Reader(properties, logger);
+        final var reader = new Reader(properties, fields.values(), logger);
+        this.firstRun = !broken && reader.empty;
         fields.values().forEach(field -> {
             if (field != ENABLED || storeEnabled) values.put(field.key(), reader.parse(field));
         });
         if (builder.enabled != null) values.put(ENABLED.key(), builder.enabled);
+        if (broken) values.put(ENABLED.key(), false);
+        if (contents != null && contents.foreignEncoding()) reader.save = true;
 
         final int configVersion = get(CONFIG_VERSION);
         if (configVersion < CURRENT_CONFIG_VERSION) {
-            if (!reader.missing(CONFIG_VERSION))
+            if (reader.find(CONFIG_VERSION) != null)
                 logger.info("Updating config version from %s to %s", configVersion, CURRENT_CONFIG_VERSION);
             set(CONFIG_VERSION, CURRENT_CONFIG_VERSION);
             reader.save = true;
         } else if (configVersion > CURRENT_CONFIG_VERSION) reader.save = false;
 
-        if (reader.save) {
-            final var store = new Properties();
-            storeFields(store);
-            write(store);
-        }
+        if (reader.save && !broken) write(properties != null ? properties : new Properties());
 
         final var enabled = get(ENABLED) && enabledFlag();
         set(ENABLED, enabled);
@@ -245,44 +253,40 @@ public final class CustomConfig implements Config {
             throw new IllegalArgumentException("Field '" + field.key() + "' is not registered in this config");
     }
 
+    /**
+     * Writes the current values to the config file.
+     * <p>
+     * Entries that are not registered in this config are kept.
+     * Failures are logged instead of thrown.
+     */
     @Contract(mutates = "io")
-    public synchronized void persist() throws RuntimeException {
-        final var existing = readOrEmpty(file);
-        final var properties = existing != null ? existing : new Properties();
-        storeFields(properties);
-        write(properties);
+    public synchronized void persist() {
+        PropertiesFile.Contents existing;
+        try {
+            existing = PropertiesFile.read(file);
+        } catch (final IOException | RuntimeException e) {
+            existing = null;
+        }
+        write(existing != null ? existing.properties() : new Properties());
     }
 
     @SuppressWarnings("unchecked")
-    private void storeFields(final Properties properties) {
+    private void write(final Properties properties) {
         fields.values().forEach(field -> {
             if (field == ENABLED && !storeEnabled) return;
             final var typed = (Field<Object>) field;
-            properties.setProperty(field.key(), typed.serializer().apply(values.get(field.key())));
+            try {
+                properties.setProperty(field.key(), typed.serializer().apply(values.get(field.key())));
+                PropertiesFile.removeVariants(properties, field.key());
+            } catch (final RuntimeException e) {
+                logger.print(Logger.LogLevel.WARN, e, "Failed to serialize FastStats config property '" + field.key() + "'");
+            }
         });
-    }
-
-    private void write(final Properties properties) throws RuntimeException {
         try {
-            Files.createDirectories(file.getParent());
-        } catch (final IOException e) {
-            throw new RuntimeException("Failed to create metrics config directory", e);
-        }
-        try (final var writer = Files.newBufferedWriter(file, UTF_8)) {
-            properties.store(writer, comment);
-        } catch (final IOException e) {
-            throw new RuntimeException("Failed to save metrics config", e);
-        }
-    }
-
-    private static @Nullable Properties readOrEmpty(final Path file) throws RuntimeException {
-        if (!Files.isRegularFile(file)) return null;
-        try (final var reader = Files.newBufferedReader(file, UTF_8)) {
-            final var properties = new Properties();
-            properties.load(reader);
-            return properties;
-        } catch (final IOException e) {
-            throw new RuntimeException("Failed to read metrics config", e);
+            PropertiesFile.write(file, properties, comment);
+        } catch (final IOException | RuntimeException e) {
+            logger.print(Logger.LogLevel.WARN, e, "Failed to save FastStats config at " + file
+                    + ", changes will not persist across restarts");
         }
     }
 
@@ -316,33 +320,38 @@ public final class CustomConfig implements Config {
     private static final class Reader {
         private final @Nullable Properties properties;
         private final Logger logger;
+        private final boolean empty;
         private boolean save;
 
-        private Reader(@Nullable final Properties properties, final Logger logger) {
+        private Reader(@Nullable final Properties properties, final Collection<Field<?>> fields, final Logger logger) {
             this.properties = properties;
             this.logger = logger;
-            this.save = properties == null;
+            this.empty = properties == null || fields.stream().allMatch(field -> find(field) == null);
+            this.save = empty;
         }
 
-        private boolean missing(final Field<?> field) {
-            return properties == null || properties.getProperty(field.key()) == null;
+        private @Nullable String find(final Field<?> field) {
+            return properties != null ? PropertiesFile.findKey(properties, field.key()) : null;
         }
 
         private <T> T parse(final Field<T> field) {
             if (properties == null) return field.defaultValue().get();
-            final var property = properties.getProperty(field.key());
-            if (property == null) {
-                logger.warn("Missing configuration property: %s", field.key());
+            final var key = find(field);
+            if (key == null) {
+                if (!empty) logger.print(Logger.LogLevel.WARN, null, "Missing FastStats config property '"
+                        + field.key() + "', using the default value");
                 save = true;
                 return field.defaultValue().get();
             }
+            if (!key.equals(field.key())) save = true;
+            final var property = PropertiesFile.clean(properties.getProperty(key));
             try {
-                final var trimmed = property.trim();
-                final var value = field.parser().apply(trimmed);
-                if (!trimmed.equals(field.serializer().apply(value))) save = true;
+                final var value = field.parser().apply(property);
+                if (!property.equals(field.serializer().apply(value))) save = true;
                 return value;
             } catch (final Exception e) {
-                logger.error("Failed to read property '%s' from config", e, field.key());
+                logger.print(Logger.LogLevel.WARN, null, "Invalid value '" + property
+                        + "' for FastStats config property '" + field.key() + "', using the default value");
                 save = true;
                 return field.defaultValue().get();
             }
@@ -421,8 +430,10 @@ public final class CustomConfig implements Config {
          */
         @Contract(value = "_ -> this", mutates = "this")
         public Builder field(final Field<?> field) throws IllegalArgumentException {
-            if (fields.putIfAbsent(field.key(), field) != null)
+            final var normalized = PropertiesFile.normalize(field.key());
+            if (fields.keySet().stream().map(PropertiesFile::normalize).anyMatch(normalized::equals))
                 throw new IllegalArgumentException("Field key '" + field.key() + "' is already registered");
+            fields.put(field.key(), field);
             return this;
         }
 
@@ -442,31 +453,43 @@ public final class CustomConfig implements Config {
     /**
      * A config field.
      *
-     * @param key          the property key
+     * @param key          the property key, ASCII letters and digits optionally separated by single {@code -}, {@code _} or {@code .}
      * @param defaultValue the default value supplier
      * @param parser       converts the stored string into the value
      * @param serializer   converts the value into the stored string
      * @param <T>          the value type
      * @since 0.32.0
      */
+    @SuppressWarnings("PatternValidation")
     public record Field<T>(
-            String key,
+            @Pattern(KEY_PATTERN) String key,
             Supplier<T> defaultValue,
             Function<String, T> parser,
             Function<T, String> serializer
     ) {
+        private static final String KEY_PATTERN = "[A-Za-z0-9]+([._-][A-Za-z0-9]+)*";
+        private static final java.util.regex.Pattern KEY = java.util.regex.Pattern.compile(KEY_PATTERN);
+
+        /**
+         * @throws IllegalArgumentException if the key does not match the key pattern
+         */
+        public Field {
+            if (!KEY.matcher(key).matches()) throw new IllegalArgumentException("Invalid field key '" + key
+                    + "', only ASCII letters and digits optionally separated by single '-', '_' or '.' are allowed");
+        }
+
         @Contract(value = "_, _ -> new", pure = true)
-        public static Field<Boolean> bool(final String key, final boolean defaultValue) {
+        public static Field<Boolean> bool(@Pattern(KEY_PATTERN) final String key, final boolean defaultValue) {
             return new Field<>(key, () -> defaultValue, Boolean::parseBoolean, String::valueOf);
         }
 
         @Contract(value = "_, _ -> new", pure = true)
-        public static Field<Integer> integer(final String key, final int defaultValue) {
+        public static Field<Integer> integer(@Pattern(KEY_PATTERN) final String key, final int defaultValue) {
             return new Field<>(key, () -> defaultValue, Integer::parseInt, String::valueOf);
         }
 
         @Contract(value = "_, _ -> new", pure = true)
-        public static Field<String> string(final String key, final String defaultValue) {
+        public static Field<String> string(@Pattern(KEY_PATTERN) final String key, final String defaultValue) {
             return new Field<>(key, () -> defaultValue, Function.identity(), Function.identity());
         }
     }
