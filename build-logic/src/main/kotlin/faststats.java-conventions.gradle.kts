@@ -5,6 +5,8 @@ plugins {
 
 group = "dev.faststats.metrics"
 
+val libs = rootProject.the<VersionCatalogsExtension>().named("libs")
+
 repositories {
     mavenCentral()
 }
@@ -29,6 +31,12 @@ val generateFastStatsProperties = tasks.register("generateFastStatsProperties") 
 
 sourceSets.main {
     resources.srcDir(generateFastStatsProperties)
+}
+
+dependencies {
+    testImplementation(platform(libs.findLibrary("junit-bom").get()))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 tasks.test {

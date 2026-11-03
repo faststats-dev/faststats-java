@@ -2,8 +2,9 @@ package dev.faststats.screen.registry;
 
 import dev.faststats.SimpleContext;
 import dev.faststats.SimpleMetrics;
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.config.CustomConfig;
 import dev.faststats.data.Metric;
+import dev.faststats.screen.onboarding.ConsentState;
 import org.jetbrains.annotations.Contract;
 
 import java.util.IdentityHashMap;
@@ -60,13 +61,13 @@ public final class FastStatsRegistry {
     public synchronized boolean consentPending() {
         for (final var entry : contexts.entrySet()) {
             if (!entry.getValue().consentRequired()) continue;
-            if (!((SimpleConfig) entry.getKey().getConfig()).consentScreenShown()) return true;
+            if (!ConsentState.consentScreenShown((CustomConfig) entry.getKey().getConfig())) return true;
         }
         return false;
     }
 
-    public synchronized SimpleConfig anyConfig() throws IllegalStateException {
-        for (final var context : contexts.keySet()) return (SimpleConfig) context.getConfig();
+    public synchronized CustomConfig anyConfig() throws IllegalStateException {
+        for (final var context : contexts.keySet()) return (CustomConfig) context.getConfig();
         throw new IllegalStateException("Config not found!");
     }
 

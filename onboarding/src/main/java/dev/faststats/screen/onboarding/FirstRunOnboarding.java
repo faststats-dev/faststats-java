@@ -1,6 +1,6 @@
 package dev.faststats.screen.onboarding;
 
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.config.CustomConfig;
 import dev.faststats.screen.registry.FastStatsRegistry;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -12,7 +12,7 @@ public final class FirstRunOnboarding {
     }
 
     public static boolean shouldOpen() {
-        if (!SimpleConfig.enabledFlag()) return false;
+        if (!CustomConfig.enabledFlag()) return false;
         if (!FastStatsRegistry.instance().consentPending()) return false;
         return OPENED.compareAndSet(false, true);
     }

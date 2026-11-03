@@ -4,7 +4,7 @@ import dev.faststats.ErrorTracker;
 import dev.faststats.ErrorTrackerService;
 import dev.faststats.SimpleContext;
 import dev.faststats.Token;
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.config.CustomConfig;
 import dev.faststats.internal.PlatformLoggerFactory;
 import net.minestom.server.MinecraftServer;
 import net.minestom.server.timer.Task;
@@ -26,7 +26,7 @@ public final class MinestomContext extends SimpleContext {
     private final Set<Task> tasks = new CopyOnWriteArraySet<>();
 
     MinestomContext(final Factory factory, final dev.faststats.internal.LoggerFactory loggerFactory, @Token final String token) {
-        super(factory, loggerFactory, SimpleConfig.read(Path.of("faststats", "config.properties"), loggerFactory), "minestom", token);
+        super(factory, loggerFactory, CustomConfig.builder(Path.of("faststats", "config.properties"), loggerFactory).build(), "minestom", token);
         initializeServices(factory);
     }
 
@@ -51,7 +51,7 @@ public final class MinestomContext extends SimpleContext {
 
     @Override
     protected boolean preSubmissionStart() {
-        return ((SimpleConfig) getConfig()).preSubmissionStart(this);
+        return ((CustomConfig) getConfig()).preSubmissionStart(this);
     }
 
     @Override

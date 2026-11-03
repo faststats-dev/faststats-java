@@ -7,7 +7,7 @@ import dev.faststats.Metrics;
 import dev.faststats.SimpleContext;
 import dev.faststats.SimpleMetrics;
 import dev.faststats.Token;
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.config.CustomConfig;
 import dev.faststats.internal.LoggerFactory;
 import dev.faststats.internal.PlatformLoggerFactory;
 import org.jetbrains.annotations.Contract;
@@ -27,9 +27,9 @@ public final class HytaleContext extends SimpleContext {
     private final JavaPlugin plugin;
 
     private HytaleContext(final Factory factory, final LoggerFactory loggerFactory, final JavaPlugin plugin, @Token final String token) {
-        super(factory, loggerFactory, SimpleConfig.read(plugin.getDataDirectory().toAbsolutePath().getParent()
+        super(factory, loggerFactory, CustomConfig.builder(plugin.getDataDirectory().toAbsolutePath().getParent()
                 .resolve("faststats").resolve("config.properties"), loggerFactory
-        ), "hytale", token);
+        ).build(), "hytale", token);
         this.plugin = plugin;
         initializeServices(factory);
     }
@@ -48,7 +48,7 @@ public final class HytaleContext extends SimpleContext {
 
     @Override
     protected boolean preSubmissionStart() {
-        return ((SimpleConfig) getConfig()).preSubmissionStart(this);
+        return ((CustomConfig) getConfig()).preSubmissionStart(this);
     }
 
     @Override

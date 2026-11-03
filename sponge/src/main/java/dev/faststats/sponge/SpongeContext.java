@@ -5,6 +5,7 @@ import dev.faststats.Metrics;
 import dev.faststats.SimpleContext;
 import dev.faststats.SimpleMetrics;
 import dev.faststats.Token;
+import dev.faststats.config.CustomConfig;
 import dev.faststats.internal.LoggerFactory;
 import dev.faststats.internal.PlatformLoggerFactory;
 import org.jetbrains.annotations.Contract;
@@ -56,7 +57,7 @@ public final class SpongeContext extends SimpleContext {
 
     @Override
     protected boolean preSubmissionStart() {
-        return ((SpongeConfig) getConfig()).preSubmissionStart(this);
+        return ((CustomConfig) getConfig()).preSubmissionStart(this);
     }
 
     @Override

@@ -4,9 +4,10 @@ import dev.faststats.Metrics;
 import dev.faststats.SimpleContext;
 import dev.faststats.SimpleMetrics;
 import dev.faststats.Token;
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.config.CustomConfig;
 import dev.faststats.fabric.compat.CompatibilityLayer;
 import dev.faststats.internal.PlatformLoggerFactory;
+import dev.faststats.screen.onboarding.ConsentState;
 import dev.faststats.screen.registry.FastStatsRegistry;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
@@ -41,7 +42,7 @@ public final class FabricContext extends SimpleContext {
     private final boolean consentRequired;
 
     private FabricContext(final Factory factory, final dev.faststats.internal.LoggerFactory loggerFactory, final String modId, @Token final String token) {
-        super(factory, loggerFactory, SimpleConfig.read(configPath(), loggerFactory, isClient()), "fabric", token);
+        super(factory, loggerFactory, ConsentState.readConfig(configPath(), loggerFactory, isClient()), "fabric", token);
         this.mod = FabricLoader.getInstance().getModContainer(modId).orElseThrow(() -> {
             return new IllegalArgumentException("Mod not found: " + modId);
         });
@@ -79,9 +80,9 @@ public final class FabricContext extends SimpleContext {
 
     @Override
     protected boolean preSubmissionStart() {
-        final var config = (SimpleConfig) getConfig();
+        final var config = (CustomConfig) getConfig();
         if (!config.preSubmissionStart(this)) return false;
-        if (!consentRequired || config.consentScreenShown()) return true;
+        if (!consentRequired || ConsentState.consentScreenShown(config)) return true;
         return !isClient();
     }
 

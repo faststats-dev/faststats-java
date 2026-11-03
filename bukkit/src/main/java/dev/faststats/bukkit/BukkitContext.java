@@ -2,7 +2,7 @@ package dev.faststats.bukkit;
 
 import dev.faststats.SimpleContext;
 import dev.faststats.Token;
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.config.CustomConfig;
 import dev.faststats.internal.LoggerFactory;
 import dev.faststats.internal.PlatformLoggerFactory;
 import org.bukkit.plugin.Plugin;
@@ -23,7 +23,7 @@ public final class BukkitContext extends SimpleContext {
     private final Plugin plugin;
 
     private BukkitContext(final Factory factory, final LoggerFactory loggerFactory, final Plugin plugin, @Token final String token) {
-        super(factory, loggerFactory, SimpleConfig.read(getConfigPath(plugin), loggerFactory), "bukkit", token);
+        super(factory, loggerFactory, CustomConfig.builder(getConfigPath(plugin), loggerFactory).build(), "bukkit", token);
         this.plugin = plugin;
         initializeServices(factory);
     }
@@ -60,7 +60,7 @@ public final class BukkitContext extends SimpleContext {
 
     @Override
     protected boolean preSubmissionStart() {
-        return ((SimpleConfig) getConfig()).preSubmissionStart(this);
+        return ((CustomConfig) getConfig()).preSubmissionStart(this);
     }
 
     @Override
