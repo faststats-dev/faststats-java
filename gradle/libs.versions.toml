@@ -54,7 +54,7 @@ spongeapi = "org.spongepowered:spongeapi:8.3.0-SNAPSHOT"
 velocity-api = "com.velocitypowered:velocity-api:4.3.1"
 
 # mod loaders
-fabric-loader = "net.fabricmc:fabric-loader:0.19.5"
+fabric-loader = "net.fabricmc:fabric-loader:0.20.1"
 modlauncher = "cpw.mods:modlauncher:10.1.12"
 log4j-api = "org.apache.logging.log4j:log4j-api:2.24.3"
 neoforged-bus = "net.neoforged:bus:8.0.5"
