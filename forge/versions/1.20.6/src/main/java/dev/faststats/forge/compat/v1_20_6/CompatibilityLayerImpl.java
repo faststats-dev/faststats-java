@@ -9,17 +9,23 @@ import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
+import net.minecraftforge.server.ServerLifecycleHooks;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.Optional;
 
 public final class CompatibilityLayerImpl implements CompatibilityLayer {
-    private @Nullable MinecraftServer server;
+    private volatile @Nullable MinecraftServer server;
 
+    @SuppressWarnings("UnstableApiUsage")
     @Override
-    public void onServerLifecycle(final Runnable started, final Runnable stopping) {
-        MinecraftForge.EVENT_BUS.addListener((final ServerStartedEvent event) -> {
+    public void onServerLifecycle(final @NonNull Runnable started, final @NonNull Runnable stopping) {
+        if (ServerLifecycleHooks.getCurrentServer() != null) {
+            this.server = ServerLifecycleHooks.getCurrentServer();
+            started.run();
+        } else MinecraftForge.EVENT_BUS.addListener((final ServerStartedEvent event) -> {
             this.server = event.getServer();
             started.run();
         });

@@ -6,14 +6,16 @@ import net.minecraft.server.MinecraftServer;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.jspecify.annotations.Nullable;
 
 public final class CompatibilityLayerImpl implements CompatibilityLayer {
-    private @Nullable MinecraftServer server;
+    private volatile @Nullable MinecraftServer server;
 
     @Override
     public void initServer() {
-        NeoForge.EVENT_BUS.addListener((final ServerStartedEvent event) -> this.server = event.getServer());
+        if (ServerLifecycleHooks.getCurrentServer() != null) this.server = ServerLifecycleHooks.getCurrentServer();
+        else NeoForge.EVENT_BUS.addListener((final ServerStartedEvent event) -> this.server = event.getServer());
     }
 
     @Override

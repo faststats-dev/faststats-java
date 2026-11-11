@@ -2,16 +2,18 @@ package dev.faststats.fabric.compat.v1_18;
 
 import dev.faststats.fabric.compat.CompatibilityLayer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.MinecraftServer;
 import org.jspecify.annotations.Nullable;
 
 public final class CompatibilityLayerImpl implements CompatibilityLayer {
-    private @Nullable MinecraftServer server;
+    private volatile @Nullable MinecraftServer server;
 
     @Override
     public void initServer() {
-        ServerLifecycleEvents.SERVER_STARTING.register(server -> this.server = server);
+        if (FabricLoader.getInstance().getGameInstance() != null) this.server = (MinecraftServer) FabricLoader.getInstance().getGameInstance();
+        else ServerLifecycleEvents.SERVER_STARTED.register(server -> this.server = server);
     }
 
     @Override
