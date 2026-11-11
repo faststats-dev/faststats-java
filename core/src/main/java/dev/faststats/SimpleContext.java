@@ -15,8 +15,11 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public non-sealed abstract class SimpleContext implements FastStatsContext {
     private final @Token String token;
+    private final boolean enabled;
     private final Config config;
     private final SdkInfo sdkInfo;
 
@@ -35,15 +38,15 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
      *
      * @param config the shared configuration
      * @param name   the name of the SDK
-     * @param token  the FastStats project token
+     * @param token  the FastStats project token, or {@code null} to create a disabled context without any services
      * @throws IllegalArgumentException if the token is invalid
      * @throws IllegalArgumentException if the SDK information is invalid
      * @throws IllegalStateException    if the SDK information is incomplete or missing
      * @throws UncheckedIOException     if an IO error occurs
      * @since 0.24.0
      */
-    protected SimpleContext(final Factory<?, ?> factory, final LoggerFactory loggerFactory, final Config config, final String name, @Token final String token) throws IllegalArgumentException {
-        if (!token.matches(Token.PATTERN))
+    protected SimpleContext(final Factory<?, ?> factory, final LoggerFactory loggerFactory, final Config config, final String name, @Token final @Nullable String token) throws IllegalArgumentException {
+        if (token != null && !token.matches(Token.PATTERN))
             throw new IllegalArgumentException("Invalid token '" + token + "', must match '" + Token.PATTERN + "'");
 
         this.loggerFactory = loggerFactory;
@@ -52,7 +55,21 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
 
         this.sdkInfo = constructSdkInfo(name);
         this.config = config;
-        this.token = token;
+        this.token = token != null ? token : "";
+        this.enabled = token != null;
+    }
+
+    /**
+     * Whether this context was created with a token.
+     * <p>
+     * A context without a token is disabled: it has no services and never submits any data.
+     *
+     * @return {@code true} if this context has a token
+     * @since 0.32.1
+     */
+    @Contract(pure = true)
+    protected final boolean isEnabled() {
+        return enabled;
     }
 
     @MustBeInvokedByOverriders
@@ -71,6 +88,12 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
     private void initializeServices(final Factory<?, ?> factory, final boolean lifecycleManaged) {
         if (factory.metrics == null && factory.errorTracker == null && factory.featureFlagService == null)
             throw new IllegalStateException("Context created without any service attached, was this intentional?");
+        if (!enabled) {
+            final var resource = factory.tokenResource != null ? factory.tokenResource : Factory.TOKEN_RESOURCE_DIRECTORY + "<id>.token";
+            logger.warn("No FastStats token provided for %s, FastStats is disabled. Pass a token to the factory or inject it at build time into %s",
+                    getProjectName(), resource);
+            return;
+        }
 
         final var start = preSubmissionStart();
         if (!lifecycleManaged && !start) return;
@@ -205,6 +228,7 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
         private @Nullable Function<Metrics.Factory, Metrics> metrics = null;
         private @Nullable Function<FeatureFlagService.Factory, FeatureFlagService> featureFlagService;
         private @Nullable ErrorTracker errorTracker;
+        private @Nullable String tokenResource;
 
         /**
          * Configures the global/internal error tracker for the context.
@@ -253,6 +277,61 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
          */
         @Contract(value = " -> new", mutates = "io")
         public abstract C create();
+
+        /**
+         * Reads a token that was injected at build time from the {@value #TOKEN_RESOURCE_DIRECTORY} directory.
+         * <p>
+         * The token is read from the resource {@code META-INF/faststats/<id>.token}
+         * using the given class loader. Surrounding whitespace is ignored.
+         * <p>
+         * The resource is namespaced by {@code id} because some platforms load every project from a shared class loader.
+         * <p>
+         * If the resource is missing, empty or unreadable, {@code null} is returned.
+         * Passing {@code null} to the context creates a disabled context, so builds without a token
+         * (such as forks) keep working without submitting any data.
+         *
+         * @param loader the class loader used to find the resource, usually the project's class loader
+         * @param id     the project identifier, such as the plugin name or mod id
+         * @return the token, or {@code null} if no token was injected
+         * @since 0.32.0
+         */
+        @Contract(mutates = "io")
+        protected static @Nullable String readToken(final ClassLoader loader, final String id) {
+            final var path = TOKEN_RESOURCE_DIRECTORY + id + ".token";
+            try (final var stream = loader.getResourceAsStream(path)) {
+                if (stream == null) return null;
+                final var token = new String(stream.readAllBytes(), UTF_8).strip();
+                return token.isEmpty() ? null : token;
+            } catch (final IOException e) {
+                return null;
+            }
+        }
+
+        /**
+         * Returns the given token, or reads the token injected at build time if it is {@code null}.
+         * <p>
+         * The resource path is remembered, so a disabled context can name the expected file.
+         *
+         * @param token  the token passed to the factory, or {@code null}
+         * @param loader the class loader used to find the resource, usually the project's class loader
+         * @param id     the project identifier, such as the plugin name or mod id
+         * @return the token, or {@code null} if none was passed or injected
+         * @see #readToken(ClassLoader, String)
+         * @since 0.32.1
+         */
+        @Contract(value = "!null, _, _ -> param1", mutates = "this,io")
+        protected final @Nullable String resolveToken(@Token final @Nullable String token, final ClassLoader loader, final String id) {
+            if (token != null) return token;
+            this.tokenResource = TOKEN_RESOURCE_DIRECTORY + id + ".token";
+            return readToken(loader, id);
+        }
+
+        /**
+         * The resource directory build-time injected tokens are read from.
+         *
+         * @since 0.32.0
+         */
+        public static final String TOKEN_RESOURCE_DIRECTORY = "META-INF/faststats/";
 
         @SuppressWarnings("unchecked")
         private F self() {

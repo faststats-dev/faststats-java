@@ -7,6 +7,7 @@ import dev.faststats.internal.LoggerFactory;
 import dev.faststats.internal.PlatformLoggerFactory;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.Set;
@@ -22,7 +23,7 @@ public final class BukkitContext extends SimpleContext {
     private final Set<Runnable> cancellations = new CopyOnWriteArraySet<>();
     private final Plugin plugin;
 
-    private BukkitContext(final Factory factory, final LoggerFactory loggerFactory, final Plugin plugin, @Token final String token) {
+    private BukkitContext(final Factory factory, final LoggerFactory loggerFactory, final Plugin plugin, @Token final @Nullable String token) {
         super(factory, loggerFactory, SimpleConfig.read(getConfigPath(plugin), loggerFactory), "bukkit", token);
         this.plugin = plugin;
         initializeServices(factory);
@@ -92,7 +93,22 @@ public final class BukkitContext extends SimpleContext {
 
     public static final class Factory extends SimpleContext.Factory<BukkitContext, Factory> {
         private final Plugin plugin;
+        @Nullable
         private final @Token String token;
+
+        /**
+         * Creates a new factory that reads the token injected at build time
+         * from {@code META-INF/faststats/<plugin name>.token}.
+         * If no token was injected, a warning is logged and the created context is disabled.
+         *
+         * @param plugin the plugin
+         * @see SimpleContext.Factory#readToken(ClassLoader, String)
+         * @since 0.32.0
+         */
+        public Factory(final Plugin plugin) {
+            this.plugin = plugin;
+            this.token = null;
+        }
 
         public Factory(final Plugin plugin, @Token final String token) {
             this.plugin = plugin;
@@ -100,10 +116,12 @@ public final class BukkitContext extends SimpleContext {
         }
 
         @Override
+        @SuppressWarnings("PatternValidation")
         public BukkitContext create() {
             final var loggerFactory = new PlatformLoggerFactory((level, throwable, message) -> {
                 plugin.getLogger().log(level.getLevel(), message, throwable);
             });
+            final var token = resolveToken(this.token, plugin.getClass().getClassLoader(), plugin.getName());
             return new BukkitContext(this, loggerFactory, plugin, token);
         }
     }

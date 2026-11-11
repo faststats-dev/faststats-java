@@ -34,7 +34,7 @@ public final class SpongeContext extends SimpleContext {
             final LoggerFactory loggerFactory,
             final PluginContainer plugin,
             @ConfigDir(sharedRoot = true) final Path dataDirectory,
-            @Token final String token
+            @Token final @Nullable String token
     ) {
         super(factory, loggerFactory, SpongeConfig.read(plugin, dataDirectory
                 .resolve("faststats").resolve("config.properties"), loggerFactory
@@ -89,8 +89,8 @@ public final class SpongeContext extends SimpleContext {
     public static class Factory extends SimpleContext.Factory<SpongeContext, Factory> {
         private final PluginContainer plugin;
         private final Path dataDirectory;
-        private @Token
-        @Nullable String token;
+        @Nullable
+        private @Token String token;
 
         /**
          * Creates a new Sponge context builder.
@@ -111,6 +111,10 @@ public final class SpongeContext extends SimpleContext {
 
         /**
          * Sets the FastStats project token used by the context created from this factory.
+         * <p>
+         * If no token is set, the token injected at build time is read
+         * from {@code META-INF/faststats/<plugin id>.token}.
+         * If no token was injected, a warning is logged and the created context is disabled.
          *
          * @param token the FastStats project token
          * @return this factory
@@ -123,8 +127,8 @@ public final class SpongeContext extends SimpleContext {
         }
 
         @Override
+        @SuppressWarnings("PatternValidation")
         public SpongeContext create() {
-            if (token == null) throw new IllegalStateException("Token not configured");
             final var loggerFactory = new PlatformLoggerFactory((level, throwable, message) -> {
                 switch (level) {
                     case INFO -> {
@@ -141,6 +145,7 @@ public final class SpongeContext extends SimpleContext {
                     }
                 }
             });
+            final var token = resolveToken(this.token, plugin.instance().getClass().getClassLoader(), plugin.metadata().id());
             return new SpongeContext(this, loggerFactory, plugin, dataDirectory, token);
         }
     }

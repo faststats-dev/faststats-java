@@ -21,8 +21,9 @@ public final class MockContext extends SimpleContext {
     });
     private final Set<Future<?>> tasks = new CopyOnWriteArraySet<>();
 
+    @SuppressWarnings("PatternValidation")
     private MockContext(final Factory factory, final LoggerFactory loggerFactory) throws IllegalArgumentException {
-        super(factory, loggerFactory, factory.config(), "test", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+        super(factory, loggerFactory, factory.config(), "test", factory.resolveToken(factory.token, MockContext.class.getClassLoader(), "mock"));
         this.factory = factory;
         initializeServices(factory);
     }
@@ -97,6 +98,13 @@ public final class MockContext extends SimpleContext {
     public static final class Factory extends SimpleContext.Factory<MockContext, Factory> {
         private Config config = new MockConfig(UUID.randomUUID(), true, true, true, true, true);
         private boolean firstRun = false;
+        @org.jspecify.annotations.Nullable
+        private @Token String token = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+
+        public Factory noToken() {
+            token = null;
+            return this;
+        }
 
         public Factory allFeaturesDisabled() {
             config = new MockConfig(config.serverId(), false, false, false, false, false);
@@ -116,6 +124,7 @@ public final class MockContext extends SimpleContext {
                 if (throwable != null) throwable.printStackTrace(output);
             });
             return new MockContext(this, loggerFactory);
+
         }
 
         private Config config() {
