@@ -34,6 +34,11 @@ public final class TokenResourceTest {
     }
 
     @Test
+    public void unresolvedPlaceholderReturnsNull() {
+        assertNull(readToken(LOADER, "placeholder"));
+    }
+
+    @Test
     public void tokensAreNamespacedByIdOnASharedClassLoader() {
         final var shared = new ClassLoader(null) {
             private final Map<String, String> resources = Map.of(
