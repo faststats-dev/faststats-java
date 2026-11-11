@@ -90,7 +90,7 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
             throw new IllegalStateException("Context created without any service attached, was this intentional?");
         if (!enabled) {
             final var resource = factory.tokenResource != null ? factory.tokenResource : Factory.TOKEN_RESOURCE_DIRECTORY + "<id>.token";
-            logger.warn("No FastStats token provided for %s, FastStats is disabled. Pass a token to the factory or inject it at build time into %s",
+            logger.warn("No valid FastStats token provided for %s, FastStats is disabled. Pass a token to the factory or inject it at build time into %s",
                     getProjectName(), resource);
             return;
         }
@@ -286,7 +286,8 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
          * <p>
          * The resource is namespaced by {@code id} because some platforms load every project from a shared class loader.
          * <p>
-         * If the resource is missing, empty or unreadable, {@code null} is returned.
+         * If the resource is missing, empty, unreadable or does not contain a valid token
+         * (for example an unresolved build placeholder such as <code>${faststats.token}</code>), {@code null} is returned.
          * Passing {@code null} to the context creates a disabled context, so builds without a token
          * (such as forks) keep working without submitting any data.
          *
@@ -301,7 +302,7 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
             try (final var stream = loader.getResourceAsStream(path)) {
                 if (stream == null) return null;
                 final var token = new String(stream.readAllBytes(), UTF_8).strip();
-                return token.isEmpty() ? null : token;
+                return token.matches(Token.PATTERN) ? token : null;
             } catch (final IOException e) {
                 return null;
             }
