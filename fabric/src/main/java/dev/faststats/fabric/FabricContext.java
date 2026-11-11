@@ -14,6 +14,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.ServiceLoader;
@@ -114,8 +115,22 @@ public final class FabricContext extends SimpleContext {
 
     public static final class Factory extends SimpleContext.Factory<FabricContext, Factory> {
         private final String modId;
+        @Nullable
         private final @Token String token;
         private boolean consentRequired = false;
+
+        /**
+         * Creates a new factory that reads the token injected at build time
+         * from {@code META-INF/faststats/<mod id>.token}.
+         *
+         * @param modId the mod id
+         * @see SimpleContext.Factory#readToken(ClassLoader, String)
+         * @since 0.32.0
+         */
+        public Factory(final String modId) {
+            this.modId = modId;
+            this.token = null;
+        }
 
         public Factory(final String modId, @Token final String token) {
             this.modId = modId;
@@ -139,6 +154,7 @@ public final class FabricContext extends SimpleContext {
         }
 
         @Override
+        @SuppressWarnings("PatternValidation")
         public FabricContext create() {
             final var logger = org.slf4j.LoggerFactory.getLogger(modId);
             final var loggerFactory = new PlatformLoggerFactory((level, throwable, message) -> {
@@ -157,6 +173,7 @@ public final class FabricContext extends SimpleContext {
                     }
                 }
             });
+            final var token = this.token != null ? this.token : readToken(Factory.class.getClassLoader(), modId);
             return new FabricContext(this, loggerFactory, modId, token);
         }
     }

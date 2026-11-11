@@ -10,6 +10,7 @@ import net.minestom.server.MinecraftServer;
 import net.minestom.server.timer.Task;
 import net.minestom.server.timer.TaskSchedule;
 import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
@@ -77,13 +78,26 @@ public final class MinestomContext extends SimpleContext {
     }
 
     public static final class Factory extends SimpleContext.Factory<MinestomContext, Factory> {
+        @Nullable
         private final @Token String token;
+
+        /**
+         * Creates a new factory that reads the token injected at build time
+         * from {@code META-INF/faststats/minestom.token}.
+         *
+         * @see SimpleContext.Factory#readToken(ClassLoader, String)
+         * @since 0.32.0
+         */
+        public Factory() {
+            this.token = null;
+        }
 
         public Factory(@Token final String token) {
             this.token = token;
         }
 
         @Override
+        @SuppressWarnings("PatternValidation")
         public MinestomContext create() {
             final var logger = LoggerFactory.getLogger("FastStats");
             final var loggerFactory = new PlatformLoggerFactory((level, throwable, message) -> {
@@ -102,6 +116,7 @@ public final class MinestomContext extends SimpleContext {
                     }
                 }
             });
+            final var token = this.token != null ? this.token : readToken(Factory.class.getClassLoader(), "minestom");
             return new MinestomContext(this, loggerFactory, token);
         }
     }

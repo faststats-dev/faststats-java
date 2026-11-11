@@ -96,8 +96,8 @@ public final class VelocityContext extends SimpleContext {
         private final ProxyServer server;
         private final Path dataDirectory;
         private final Logger logger;
-        private @Token
-        @Nullable String token;
+        @Nullable
+        private @Token String token;
 
         /**
          * Creates a new Velocity context builder.
@@ -123,6 +123,9 @@ public final class VelocityContext extends SimpleContext {
 
         /**
          * Sets the FastStats project token used by the context created from this factory.
+         * <p>
+         * If no token is set, the token injected at build time is read
+         * from {@code META-INF/faststats/<plugin id>.token}.
          *
          * @param token the FastStats project token
          * @return this factory
@@ -135,8 +138,11 @@ public final class VelocityContext extends SimpleContext {
         }
 
         @Override
+        @SuppressWarnings("PatternValidation")
         public VelocityContext create() {
-            if (token == null) throw new IllegalStateException("Token not configured");
+            final var token = this.token != null ? this.token : readToken(plugin.getInstance()
+                    .map(instance -> instance.getClass().getClassLoader())
+                    .orElse(Factory.class.getClassLoader()), plugin.getDescription().getId());
             final var loggerFactory = new PlatformLoggerFactory((level, t, message) -> {
                 switch (level) {
                     case INFO -> logger.info(message, t);

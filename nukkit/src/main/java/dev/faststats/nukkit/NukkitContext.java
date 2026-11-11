@@ -10,6 +10,7 @@ import dev.faststats.config.SimpleConfig;
 import dev.faststats.internal.LoggerFactory;
 import dev.faststats.internal.PlatformLoggerFactory;
 import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.Set;
@@ -70,7 +71,21 @@ public final class NukkitContext extends SimpleContext {
 
     public static final class Factory extends SimpleContext.Factory<NukkitContext, Factory> {
         private final PluginBase plugin;
+        @Nullable
         private final @Token String token;
+
+        /**
+         * Creates a new factory that reads the token injected at build time
+         * from {@code META-INF/faststats/<plugin name>.token}.
+         *
+         * @param plugin the plugin
+         * @see SimpleContext.Factory#readToken(ClassLoader, String)
+         * @since 0.32.0
+         */
+        public Factory(final PluginBase plugin) {
+            this.plugin = plugin;
+            this.token = null;
+        }
 
         public Factory(final PluginBase plugin, @Token final String token) {
             this.plugin = plugin;
@@ -78,6 +93,7 @@ public final class NukkitContext extends SimpleContext {
         }
 
         @Override
+        @SuppressWarnings("PatternValidation")
         public NukkitContext create() {
             final var loggerFactory = new PlatformLoggerFactory((level, t, message) -> {
                 switch (level) {
@@ -86,6 +102,7 @@ public final class NukkitContext extends SimpleContext {
                     case WARN -> plugin.getLogger().warning(message, t);
                 }
             });
+            final var token = this.token != null ? this.token : readToken(plugin.getClass().getClassLoader(), plugin.getName());
             return new NukkitContext(this, loggerFactory, plugin, token);
         }
     }

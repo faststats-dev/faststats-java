@@ -1,6 +1,5 @@
 package dev.faststats.neoforge;
 
-import dev.faststats.screen.registry.FastStatsRegistry;
 import dev.faststats.Metrics;
 import dev.faststats.SimpleContext;
 import dev.faststats.SimpleMetrics;
@@ -9,6 +8,7 @@ import dev.faststats.config.SimpleConfig;
 import dev.faststats.internal.LoggerFactory;
 import dev.faststats.internal.PlatformLoggerFactory;
 import dev.faststats.neoforge.compat.CompatibilityLayer;
+import dev.faststats.screen.registry.FastStatsRegistry;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLPaths;
@@ -17,6 +17,7 @@ import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforgespi.language.IModInfo;
 import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.ServiceLoader;
@@ -115,8 +116,22 @@ public final class NeoForgeContext extends SimpleContext {
 
     public static final class Factory extends SimpleContext.Factory<NeoForgeContext, Factory> {
         private final String modId;
+        @Nullable
         private final @Token String token;
         private boolean consentRequired = false;
+
+        /**
+         * Creates a new factory that reads the token injected at build time
+         * from {@code META-INF/faststats/<mod id>.token}.
+         *
+         * @param modId the mod id
+         * @see SimpleContext.Factory#readToken(ClassLoader, String)
+         * @since 0.32.0
+         */
+        public Factory(final String modId) {
+            this.modId = modId;
+            this.token = null;
+        }
 
         public Factory(final String modId, @Token final String token) {
             this.modId = modId;
@@ -140,6 +155,7 @@ public final class NeoForgeContext extends SimpleContext {
         }
 
         @Override
+        @SuppressWarnings("PatternValidation")
         public NeoForgeContext create() {
             final var logger = org.slf4j.LoggerFactory.getLogger(modId);
             final var loggerFactory = new PlatformLoggerFactory((level, throwable, message) -> {
@@ -149,6 +165,7 @@ public final class NeoForgeContext extends SimpleContext {
                     case WARN -> logger.warn(message, throwable);
                 }
             });
+            final var token = this.token != null ? this.token : readToken(Factory.class.getClassLoader(), modId);
             return new NeoForgeContext(this, loggerFactory, modId, token);
         }
     }

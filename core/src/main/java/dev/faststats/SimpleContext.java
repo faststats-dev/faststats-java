@@ -15,6 +15,8 @@ import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public non-sealed abstract class SimpleContext implements FastStatsContext {
     private final @Token String token;
     private final Config config;
@@ -253,6 +255,45 @@ public non-sealed abstract class SimpleContext implements FastStatsContext {
          */
         @Contract(value = " -> new", mutates = "io")
         public abstract C create();
+
+        /**
+         * Reads a token that was injected at build time from the {@value #TOKEN_RESOURCE_DIRECTORY} directory.
+         * <p>
+         * The token is read from the resource {@code META-INF/faststats/<id>.token}
+         * using the given class loader. Surrounding whitespace is ignored.
+         * <p>
+         * The resource is namespaced by {@code id} because some platforms load every project from a shared class loader.
+         *
+         * @param loader the class loader used to find the resource, usually the project's class loader
+         * @param id     the project identifier, such as the plugin name or mod id
+         * @return the token
+         * @throws IllegalStateException if the resource is missing or empty
+         * @throws UncheckedIOException  if the resource cannot be read
+         * @since 0.32.0
+         */
+        @Contract(mutates = "io")
+        protected static String readToken(final ClassLoader loader, final String id) throws IllegalStateException, UncheckedIOException {
+            final var path = TOKEN_RESOURCE_DIRECTORY + id + ".token";
+            try (final var stream = loader.getResourceAsStream(path)) {
+                if (stream == null) throw new IllegalStateException(
+                        "No FastStats token provided and resource '" + path + "' not found, was the token injected at build time?"
+                );
+                final var token = new String(stream.readAllBytes(), UTF_8).strip();
+                if (token.isEmpty()) throw new IllegalStateException(
+                        "FastStats token resource '" + path + "' is empty, was the token available at build time?"
+                );
+                return token;
+            } catch (final IOException e) {
+                throw new UncheckedIOException("Failed to read FastStats token from '" + path + "'", e);
+            }
+        }
+
+        /**
+         * The resource directory build-time injected tokens are read from.
+         *
+         * @since 0.32.0
+         */
+        public static final String TOKEN_RESOURCE_DIRECTORY = "META-INF/faststats/";
 
         @SuppressWarnings("unchecked")
         private F self() {
