@@ -14,6 +14,7 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.file.Path;
 import java.util.ServiceLoader;
@@ -40,7 +41,7 @@ public final class FabricContext extends SimpleContext {
     private final ModContainer mod;
     private final boolean consentRequired;
 
-    private FabricContext(final Factory factory, final dev.faststats.internal.LoggerFactory loggerFactory, final String modId, @Token final String token) {
+    private FabricContext(final Factory factory, final dev.faststats.internal.LoggerFactory loggerFactory, final String modId, @Token final @Nullable String token) {
         super(factory, loggerFactory, SimpleConfig.read(configPath(), loggerFactory, isClient()), "fabric", token);
         this.mod = FabricLoader.getInstance().getModContainer(modId).orElseThrow(() -> {
             return new IllegalArgumentException("Mod not found: " + modId);
@@ -50,7 +51,7 @@ public final class FabricContext extends SimpleContext {
                 .orElseThrow(() -> new IllegalStateException("No Fabric compatibility layer found"));
         this.consentRequired = factory.consentRequired;
         initializeManagedServices(factory);
-        FastStatsRegistry.instance().register(this, factory.consentRequired);
+        if (isEnabled()) FastStatsRegistry.instance().register(this, factory.consentRequired);
         switch (FabricLoader.getInstance().getEnvironmentType()) {
             case CLIENT -> {
                 ready();
@@ -114,8 +115,23 @@ public final class FabricContext extends SimpleContext {
 
     public static final class Factory extends SimpleContext.Factory<FabricContext, Factory> {
         private final String modId;
+        @Nullable
         private final @Token String token;
         private boolean consentRequired = false;
+
+        /**
+         * Creates a new factory that reads the token injected at build time
+         * from {@code META-INF/faststats/<mod id>.token}.
+         * If no token was injected, a warning is logged and the created context is disabled.
+         *
+         * @param modId the mod id
+         * @see SimpleContext.Factory#readToken(ClassLoader, String)
+         * @since 0.32.0
+         */
+        public Factory(final String modId) {
+            this.modId = modId;
+            this.token = null;
+        }
 
         public Factory(final String modId, @Token final String token) {
             this.modId = modId;
@@ -139,6 +155,7 @@ public final class FabricContext extends SimpleContext {
         }
 
         @Override
+        @SuppressWarnings("PatternValidation")
         public FabricContext create() {
             final var logger = org.slf4j.LoggerFactory.getLogger(modId);
             final var loggerFactory = new PlatformLoggerFactory((level, throwable, message) -> {
@@ -157,6 +174,7 @@ public final class FabricContext extends SimpleContext {
                     }
                 }
             });
+            final var token = resolveToken(this.token, Factory.class.getClassLoader(), modId);
             return new FabricContext(this, loggerFactory, modId, token);
         }
     }

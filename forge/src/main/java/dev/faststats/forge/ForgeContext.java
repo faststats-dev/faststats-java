@@ -1,6 +1,5 @@
 package dev.faststats.forge;
 
-import dev.faststats.screen.registry.FastStatsRegistry;
 import dev.faststats.Metrics;
 import dev.faststats.SimpleContext;
 import dev.faststats.SimpleMetrics;
@@ -9,7 +8,9 @@ import dev.faststats.config.SimpleConfig;
 import dev.faststats.forge.compat.CompatibilityLayer;
 import dev.faststats.internal.LoggerFactory;
 import dev.faststats.internal.PlatformLoggerFactory;
+import dev.faststats.screen.registry.FastStatsRegistry;
 import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -36,13 +37,13 @@ public final class ForgeContext extends SimpleContext {
     private final String modVersion;
     private final boolean consentRequired;
 
-    private ForgeContext(final Factory factory, final LoggerFactory loggerFactory, final String modId, @Token final String token) {
+    private ForgeContext(final Factory factory, final LoggerFactory loggerFactory, final String modId, @Token final @Nullable String token) {
         this(factory, loggerFactory, modId, token, ServiceLoader.load(CompatibilityLayer.class)
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No Forge compatibility layer found")));
     }
 
-    private ForgeContext(final Factory factory, final LoggerFactory loggerFactory, final String modId, @Token final String token, final CompatibilityLayer compatibilityLayer) {
+    private ForgeContext(final Factory factory, final LoggerFactory loggerFactory, final String modId, @Token final @Nullable String token, final CompatibilityLayer compatibilityLayer) {
         super(factory, loggerFactory, SimpleConfig.read(
                 compatibilityLayer.configDirectory().resolve("faststats").resolve("config.properties"), loggerFactory,
                 compatibilityLayer.getEnvironment() == CompatibilityLayer.Environment.CLIENT), "forge", token);
@@ -53,7 +54,7 @@ public final class ForgeContext extends SimpleContext {
         this.compatibilityLayer = compatibilityLayer;
         this.consentRequired = factory.consentRequired;
         initializeManagedServices(factory);
-        FastStatsRegistry.instance().register(this, factory.consentRequired);
+        if (isEnabled()) FastStatsRegistry.instance().register(this, factory.consentRequired);
         switch (compatibilityLayer.getEnvironment()) {
             case CLIENT -> ready();
             case SERVER -> compatibilityLayer.onServerLifecycle(this::ready, this::shutdown);
@@ -103,8 +104,23 @@ public final class ForgeContext extends SimpleContext {
 
     public static final class Factory extends SimpleContext.Factory<ForgeContext, Factory> {
         private final String modId;
+        @Nullable
         private final @Token String token;
         private boolean consentRequired = false;
+
+        /**
+         * Creates a new factory that reads the token injected at build time
+         * from {@code META-INF/faststats/<mod id>.token}.
+         * If no token was injected, a warning is logged and the created context is disabled.
+         *
+         * @param modId the mod id
+         * @see SimpleContext.Factory#readToken(ClassLoader, String)
+         * @since 0.32.0
+         */
+        public Factory(final String modId) {
+            this.modId = modId;
+            this.token = null;
+        }
 
         public Factory(final String modId, @Token final String token) {
             this.modId = modId;
@@ -128,6 +144,7 @@ public final class ForgeContext extends SimpleContext {
         }
 
         @Override
+        @SuppressWarnings("PatternValidation")
         public ForgeContext create() {
             final var logger = org.slf4j.LoggerFactory.getLogger(modId);
             final var loggerFactory = new PlatformLoggerFactory((level, throwable, message) -> {
@@ -137,6 +154,7 @@ public final class ForgeContext extends SimpleContext {
                     case WARN -> logger.warn(message, throwable);
                 }
             });
+            final var token = resolveToken(this.token, Factory.class.getClassLoader(), modId);
             return new ForgeContext(this, loggerFactory, modId, token);
         }
     }

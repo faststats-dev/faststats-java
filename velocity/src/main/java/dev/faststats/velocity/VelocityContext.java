@@ -38,7 +38,7 @@ public final class VelocityContext extends SimpleContext {
             final PluginContainer plugin,
             final ProxyServer server,
             @DataDirectory final Path dataDirectory,
-            @Token final String token
+            @Token final @Nullable String token
     ) {
         super(factory, loggerFactory, SimpleConfig.read(dataDirectory.resolveSibling("faststats")
                 .resolve("config.properties"), loggerFactory
@@ -96,8 +96,8 @@ public final class VelocityContext extends SimpleContext {
         private final ProxyServer server;
         private final Path dataDirectory;
         private final Logger logger;
-        private @Token
-        @Nullable String token;
+        @Nullable
+        private @Token String token;
 
         /**
          * Creates a new Velocity context builder.
@@ -123,6 +123,10 @@ public final class VelocityContext extends SimpleContext {
 
         /**
          * Sets the FastStats project token used by the context created from this factory.
+         * <p>
+         * If no token is set, the token injected at build time is read
+         * from {@code META-INF/faststats/<plugin id>.token}.
+         * If no token was injected, a warning is logged and the created context is disabled.
          *
          * @param token the FastStats project token
          * @return this factory
@@ -135,8 +139,8 @@ public final class VelocityContext extends SimpleContext {
         }
 
         @Override
+        @SuppressWarnings("PatternValidation")
         public VelocityContext create() {
-            if (token == null) throw new IllegalStateException("Token not configured");
             final var loggerFactory = new PlatformLoggerFactory((level, t, message) -> {
                 switch (level) {
                     case INFO -> logger.info(message, t);
@@ -144,6 +148,9 @@ public final class VelocityContext extends SimpleContext {
                     case WARN -> logger.warn(message, t);
                 }
             });
+            final var token = resolveToken(this.token, plugin.getInstance()
+                    .map(instance -> instance.getClass().getClassLoader())
+                    .orElse(Factory.class.getClassLoader()), plugin.getDescription().getId());
             return new VelocityContext(this, loggerFactory, plugin, server, dataDirectory, token);
         }
     }

@@ -11,6 +11,7 @@ import dev.faststats.config.SimpleConfig;
 import dev.faststats.internal.LoggerFactory;
 import dev.faststats.internal.PlatformLoggerFactory;
 import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -26,7 +27,7 @@ public final class HytaleContext extends SimpleContext {
     private final Set<TaskRegistration> registrations = new CopyOnWriteArraySet<>();
     private final JavaPlugin plugin;
 
-    private HytaleContext(final Factory factory, final LoggerFactory loggerFactory, final JavaPlugin plugin, @Token final String token) {
+    private HytaleContext(final Factory factory, final LoggerFactory loggerFactory, final JavaPlugin plugin, @Token final @Nullable String token) {
         super(factory, loggerFactory, SimpleConfig.read(plugin.getDataDirectory().toAbsolutePath().getParent()
                 .resolve("faststats").resolve("config.properties"), loggerFactory
         ), "hytale", token);
@@ -71,7 +72,22 @@ public final class HytaleContext extends SimpleContext {
 
     public static final class Factory extends SimpleContext.Factory<HytaleContext, Factory> {
         private final JavaPlugin plugin;
+        @Nullable
         private final @Token String token;
+
+        /**
+         * Creates a new factory that reads the token injected at build time
+         * from {@code META-INF/faststats/<plugin name>.token}.
+         * If no token was injected, a warning is logged and the created context is disabled.
+         *
+         * @param plugin the plugin
+         * @see SimpleContext.Factory#readToken(ClassLoader, String)
+         * @since 0.32.0
+         */
+        public Factory(final JavaPlugin plugin) {
+            this.plugin = plugin;
+            this.token = null;
+        }
 
         public Factory(final JavaPlugin plugin, @Token final String token) {
             this.plugin = plugin;
@@ -79,6 +95,7 @@ public final class HytaleContext extends SimpleContext {
         }
 
         @Override
+        @SuppressWarnings("PatternValidation")
         public HytaleContext create() {
             final var loggerFactory = new PlatformLoggerFactory((level, throwable, message) -> {
                 final var api = switch (level) {
@@ -89,6 +106,7 @@ public final class HytaleContext extends SimpleContext {
                 if (throwable == null) api.log(message);
                 else api.log(message, throwable);
             });
+            final var token = resolveToken(this.token, plugin.getClass().getClassLoader(), plugin.getName());
             return new HytaleContext(this, loggerFactory, plugin, token);
         }
     }

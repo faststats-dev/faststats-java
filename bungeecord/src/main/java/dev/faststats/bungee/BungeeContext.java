@@ -10,6 +10,7 @@ import dev.faststats.internal.PlatformLoggerFactory;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.api.scheduler.ScheduledTask;
 import org.jetbrains.annotations.Contract;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -24,7 +25,7 @@ public final class BungeeContext extends SimpleContext {
     private final Set<ScheduledTask> tasks = new CopyOnWriteArraySet<>();
     private final Plugin plugin;
 
-    private BungeeContext(final Factory factory, final LoggerFactory loggerFactory, final Plugin plugin, @Token final String token) {
+    private BungeeContext(final Factory factory, final LoggerFactory loggerFactory, final Plugin plugin, @Token final @Nullable String token) {
         super(factory, loggerFactory, SimpleConfig.read(plugin.getProxy().getPluginsFolder().toPath()
                 .resolve("faststats").resolve("config.properties"), loggerFactory
         ), "bungeecord", token);
@@ -67,7 +68,22 @@ public final class BungeeContext extends SimpleContext {
 
     public static final class Factory extends SimpleContext.Factory<BungeeContext, Factory> {
         private final Plugin plugin;
+        @Nullable
         private final @Token String token;
+
+        /**
+         * Creates a new factory that reads the token injected at build time
+         * from {@code META-INF/faststats/<plugin name>.token}.
+         * If no token was injected, a warning is logged and the created context is disabled.
+         *
+         * @param plugin the plugin
+         * @see SimpleContext.Factory#readToken(ClassLoader, String)
+         * @since 0.32.0
+         */
+        public Factory(final Plugin plugin) {
+            this.plugin = plugin;
+            this.token = null;
+        }
 
         public Factory(final Plugin plugin, @Token final String token) {
             this.plugin = plugin;
@@ -75,10 +91,12 @@ public final class BungeeContext extends SimpleContext {
         }
 
         @Override
+        @SuppressWarnings("PatternValidation")
         public BungeeContext create() {
             final var loggerFactory = new PlatformLoggerFactory((level, throwable, message) -> {
                 plugin.getLogger().log(level.getLevel(), message, throwable);
             });
+            final var token = resolveToken(this.token, plugin.getClass().getClassLoader(), plugin.getDescription().getName());
             return new BungeeContext(this, loggerFactory, plugin, token);
         }
     }
