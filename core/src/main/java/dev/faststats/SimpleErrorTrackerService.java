@@ -74,7 +74,7 @@ final class SimpleErrorTrackerService extends SubmissionService implements Error
     }
 
     private void submit() {
-        if (!context.submissionActive || !context.getConfig().errorTracking()) return;
+        if (!context.isSubmitting() || !context.getConfig().errorTracking()) return;
         try {
             final var data = createData();
             if (data == null) return;

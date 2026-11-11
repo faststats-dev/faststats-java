@@ -126,6 +126,11 @@ public sealed interface FeatureFlag<T> permits SimpleFeatureFlag {
      * <p>
      * Failed fetches do not update the cached value. Failure details are only
      * logged when debug logging is enabled.
+     * <p>
+     * While submission is not active, for example before the user gave consent
+     * or on the first run of a server, no request is sent and the future
+     * completes with the {@linkplain #getDefaultValue() default value}.
+     * The cached value is not updated.
      *
      * @return a future completing with the latest server value
      * @see #whenReady()
@@ -143,6 +148,8 @@ public sealed interface FeatureFlag<T> permits SimpleFeatureFlag {
      * <p>
      * The returned future completes with the updated value after the local
      * cache has been reset and the follow-up fetch finishes.
+     * It completes exceptionally with an {@link IllegalStateException}
+     * if submission is not active.
      *
      * @return a future completing with the updated flag value
      * @see #fetch()
@@ -159,6 +166,8 @@ public sealed interface FeatureFlag<T> permits SimpleFeatureFlag {
      * <p>
      * The returned future completes with the updated value after the local
      * cache has been reset and the follow-up fetch finishes.
+     * It completes exceptionally with an {@link IllegalStateException}
+     * if submission is not active.
      *
      * @return a future completing with the updated flag value
      * @see #fetch()

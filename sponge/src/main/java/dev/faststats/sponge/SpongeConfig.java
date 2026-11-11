@@ -161,7 +161,7 @@ public record SpongeConfig(
         }
     }
 
-    public boolean preSubmissionStart(final SpongeContext context) {
+    public boolean preSubmissionStart(final LoggerFactory loggerFactory) {
         if (Boolean.getBoolean("faststats.first-run")) return false;
 
         if (firstRun()) {
@@ -169,7 +169,7 @@ public record SpongeConfig(
             final var split = ONBOARDING_MESSAGE.split("\n");
             for (final var s : split) if (s.length() > separatorLength) separatorLength = s.length();
 
-            final var logger = context.getLoggerFactory().getLogger(getClass());
+            final var logger = loggerFactory.getLogger(getClass());
             logger.print(Logger.LogLevel.INFO, null, "-".repeat(separatorLength));
             for (final var s : split) logger.print(Logger.LogLevel.INFO, null, s);
             logger.print(Logger.LogLevel.INFO, null, "-".repeat(separatorLength));

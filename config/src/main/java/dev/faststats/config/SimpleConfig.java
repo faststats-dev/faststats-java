@@ -1,7 +1,6 @@
 package dev.faststats.config;
 
 import dev.faststats.Config;
-import dev.faststats.SimpleContext;
 import dev.faststats.internal.Logger;
 import dev.faststats.internal.LoggerFactory;
 import org.jetbrains.annotations.ApiStatus;
@@ -57,11 +56,11 @@ public final class SimpleConfig implements Config {
     private final boolean debug;
     private final boolean firstRun;
     private final boolean client;
-    private volatile boolean additionalMetrics;
-    private volatile boolean enabled;
-    private volatile boolean errorTracking;
-    private volatile boolean submitMetrics;
-    private volatile boolean consentScreenShown;
+    private final boolean additionalMetrics;
+    private final boolean enabled;
+    private final boolean errorTracking;
+    private final boolean submitMetrics;
+    private final boolean consentScreenShown;
 
     public SimpleConfig(
             final Path file,
@@ -97,17 +96,9 @@ public final class SimpleConfig implements Config {
         return enabled;
     }
 
-    public void enabled(final boolean enabled) {
-        this.enabled = enabled;
-    }
-
     @Override
     public boolean additionalMetrics() {
         return additionalMetrics;
-    }
-
-    public void additionalMetrics(final boolean additionalMetrics) {
-        this.additionalMetrics = additionalMetrics;
     }
 
     @Override
@@ -120,17 +111,9 @@ public final class SimpleConfig implements Config {
         return submitMetrics;
     }
 
-    public void submitMetrics(final boolean submitMetrics) {
-        this.submitMetrics = submitMetrics;
-    }
-
     @Override
     public boolean errorTracking() {
         return errorTracking;
-    }
-
-    public void errorTracking(final boolean errorTracking) {
-        this.errorTracking = errorTracking;
     }
 
     public boolean firstRun() {
@@ -141,8 +124,31 @@ public final class SimpleConfig implements Config {
         return consentScreenShown;
     }
 
-    public void consentScreenShown(final boolean consentScreenShown) {
-        this.consentScreenShown = consentScreenShown;
+    /**
+     * Creates a copy of this config that reflects the consent given on the consent screen.
+     * <p>
+     * FastStats is enabled if either metrics submission or error tracking was allowed,
+     * and additional metrics require metrics submission.
+     *
+     * @param submitMetrics     whether metrics submission was allowed
+     * @param additionalMetrics whether additional metrics were allowed
+     * @param errorTracking     whether error tracking was allowed
+     * @return the new config, marked as having shown the consent screen
+     */
+    @Contract(value = "_, _, _ -> new", pure = true)
+    public SimpleConfig withConsent(final boolean submitMetrics, final boolean additionalMetrics, final boolean errorTracking) {
+        return new SimpleConfig(
+                file,
+                serverId,
+                submitMetrics || errorTracking,
+                submitMetrics && additionalMetrics,
+                debug,
+                submitMetrics,
+                errorTracking,
+                firstRun,
+                client,
+                true
+        );
     }
 
     /**
@@ -298,7 +304,7 @@ public final class SimpleConfig implements Config {
         }
     }
 
-    public boolean preSubmissionStart(final SimpleContext context) {
+    public boolean preSubmissionStart(final LoggerFactory loggerFactory) {
         if (Boolean.getBoolean("faststats.first-run")) return false;
 
         if (firstRun()) {
@@ -306,7 +312,7 @@ public final class SimpleConfig implements Config {
             final var split = ONBOARDING_MESSAGE.split("\n");
             for (final var s : split) if (s.length() > separatorLength) separatorLength = s.length();
 
-            final var logger = context.getLoggerFactory().getLogger(getClass());
+            final var logger = loggerFactory.getLogger(getClass());
             logger.print(Logger.LogLevel.INFO, null, "-".repeat(separatorLength));
             for (final var s : split) logger.print(Logger.LogLevel.INFO, null, s);
             logger.print(Logger.LogLevel.INFO, null, "-".repeat(separatorLength));

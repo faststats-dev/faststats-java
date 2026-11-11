@@ -1,7 +1,7 @@
 package dev.faststats.screen.minecraft.mixin;
 
-import dev.faststats.screen.onboarding.FirstRunOnboarding;
 import dev.faststats.screen.minecraft.ConsentScreen;
+import dev.faststats.screen.onboarding.FirstRunOnboarding;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.network.chat.Component;

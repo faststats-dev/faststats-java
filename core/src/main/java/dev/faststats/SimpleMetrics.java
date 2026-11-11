@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 @ApiStatus.Internal
-public abstract class SimpleMetrics extends SubmissionService implements Metrics {
+public final class SimpleMetrics extends SubmissionService implements Metrics {
     private static final String COLLECT_PATH = "/v1/collect";
 
     private final @Nullable Runnable flush;
@@ -25,7 +25,7 @@ public abstract class SimpleMetrics extends SubmissionService implements Metrics
     ).resolve(COLLECT_PATH);
 
     @Contract(mutates = "io")
-    protected SimpleMetrics(final Factory factory) {
+    private SimpleMetrics(final Factory factory) {
         super(factory.context);
         this.metrics = Set.copyOf(factory.metrics);
         this.flush = factory.flush;
@@ -39,12 +39,8 @@ public abstract class SimpleMetrics extends SubmissionService implements Metrics
         context.scheduleAtFixedRate(this::submit, initialDelay, period, TimeUnit.MILLISECONDS);
     }
 
-    public boolean isClientApplication() {
-        return false;
-    }
-
     private boolean submit() {
-        if (!context.submissionActive || !context.getConfig().submitMetrics()) return false;
+        if (!context.isSubmitting() || !context.getConfig().submitMetrics()) return false;
         try {
             if (submit(url, createData(), "metrics")) {
                 if (flush != null) flush.run();
@@ -70,7 +66,7 @@ public abstract class SimpleMetrics extends SubmissionService implements Metrics
     private static final int coreCount = Runtime.getRuntime().availableProcessors();
 
     private void appendInternalData(final JsonObject metrics) {
-        metrics.addProperty("client", isClientApplication());
+        metrics.addProperty("client", context.isClientApplication());
         metrics.addProperty("core_count", coreCount);
         metrics.addProperty("java_vendor", javaVendor);
         metrics.addProperty("java_version", javaVersion);
@@ -96,9 +92,9 @@ public abstract class SimpleMetrics extends SubmissionService implements Metrics
         });
     }
 
-    public final void appendData(final JsonObject metrics) {
+    public void appendData(final JsonObject metrics) {
         appendInternalData(metrics);
-        appendDefaultData(metrics);
+        context.appendDefaultMetrics(metrics);
         appendCustomData(metrics);
     }
 
@@ -115,10 +111,7 @@ public abstract class SimpleMetrics extends SubmissionService implements Metrics
         return data;
     }
 
-    @Contract(mutates = "param1")
-    protected abstract void appendDefaultData(JsonObject metrics);
-
-    protected void shutdown() {
+    void shutdown() {
         try {
             logger.info("Shutting down metrics submission");
             submit();
@@ -132,13 +125,18 @@ public abstract class SimpleMetrics extends SubmissionService implements Metrics
         return metrics.stream();
     }
 
-    public abstract static class Factory implements Metrics.Factory {
+    static final class Factory implements Metrics.Factory {
         private @Nullable Runnable flush;
         private final Set<Metric<?>> metrics = new HashSet<>(0);
-        protected final SimpleContext context;
+        private final SimpleContext context;
 
-        protected Factory(final SimpleContext context) {
+        Factory(final SimpleContext context) {
             this.context = context;
+        }
+
+        @Override
+        public Metrics create() throws IllegalStateException {
+            return new SimpleMetrics(this);
         }
 
         @Override

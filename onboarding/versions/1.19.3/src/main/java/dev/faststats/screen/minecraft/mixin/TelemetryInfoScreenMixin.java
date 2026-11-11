@@ -1,7 +1,7 @@
 package dev.faststats.screen.minecraft.mixin;
 
-import dev.faststats.screen.onboarding.ConsentText;
 import dev.faststats.screen.minecraft.ConsentScreen;
+import dev.faststats.screen.onboarding.ConsentText;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.telemetry.TelemetryInfoScreen;

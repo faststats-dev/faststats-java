@@ -8,13 +8,13 @@ import org.jetbrains.annotations.Contract;
  *
  * @since 0.24.0
  */
-public interface Metrics {
+public sealed interface Metrics permits SimpleMetrics {
     /**
      * A metrics factory.
      *
      * @since 0.24.0
      */
-    interface Factory {
+    sealed interface Factory permits SimpleMetrics.Factory {
         /**
          * Adds a metric to the metrics submission.
          * <p>
