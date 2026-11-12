@@ -43,7 +43,7 @@ import java.util.function.Supplier;
  * }
  * }</pre>
  *
- * @since 0.32.0
+ * @since 0.33.0
  */
 public final class CustomConfig implements Config {
     private static final int CURRENT_CONFIG_VERSION = 3;
@@ -221,7 +221,7 @@ public final class CustomConfig implements Config {
      *
      * @param field the field
      * @return {@code true} if the field is registered, {@code false} otherwise
-     * @since 0.32.0
+     * @since 0.33.0
      */
     @Contract(pure = true)
     public boolean has(final Field<?> field) {
@@ -235,7 +235,7 @@ public final class CustomConfig implements Config {
      * @param <T>   the value type
      * @return the current value
      * @throws IllegalArgumentException if the field was not registered with the builder
-     * @since 0.32.0
+     * @since 0.33.0
      */
     @SuppressWarnings("unchecked")
     public <T> T get(final Field<T> field) throws IllegalArgumentException {
@@ -252,7 +252,7 @@ public final class CustomConfig implements Config {
      * @param value the new value
      * @param <T>   the value type
      * @throws IllegalArgumentException if the field was not registered with the builder
-     * @since 0.32.0
+     * @since 0.33.0
      */
     public <T> void set(final Field<T> field, final T value) throws IllegalArgumentException {
         update(editor -> editor.set(field, value));
@@ -274,7 +274,7 @@ public final class CustomConfig implements Config {
      *
      * @param action the changes to apply
      * @throws IllegalArgumentException if a field was not registered with the builder
-     * @since 0.32.0
+     * @since 0.33.0
      */
     public synchronized void update(final Consumer<Editor> action) throws IllegalArgumentException {
         final var changed = new HashMap<>(values);
@@ -292,7 +292,7 @@ public final class CustomConfig implements Config {
     /**
      * Collects changes for {@link #update(Consumer)}.
      *
-     * @since 0.32.0
+     * @since 0.33.0
      */
     public interface Editor {
         /**
@@ -303,7 +303,7 @@ public final class CustomConfig implements Config {
          * @param <T>   the value type
          * @return this editor
          * @throws IllegalArgumentException if the field was not registered with the builder
-         * @since 0.32.0
+         * @since 0.33.0
          */
         @Contract(value = "_, _ -> this", mutates = "this")
         <T> Editor set(Field<T> field, T value) throws IllegalArgumentException;
@@ -432,7 +432,7 @@ public final class CustomConfig implements Config {
     /**
      * Builder for {@link CustomConfig}.
      *
-     * @since 0.32.0
+     * @since 0.33.0
      */
     public static final class Builder {
         private final Path file;
@@ -455,7 +455,7 @@ public final class CustomConfig implements Config {
          *
          * @param comment the comment, or {@code null} to omit it
          * @return this builder
-         * @since 0.32.0
+         * @since 0.33.0
          */
         @Contract(value = "_ -> this", mutates = "this")
         public Builder comment(@Nullable final String comment) {
@@ -468,7 +468,7 @@ public final class CustomConfig implements Config {
          *
          * @param onboardingMessage the message, or {@code null} to disable it
          * @return this builder
-         * @since 0.32.0
+         * @since 0.33.0
          */
         @Contract(value = "_ -> this", mutates = "this")
         public Builder onboardingMessage(@Nullable final String onboardingMessage) {
@@ -483,7 +483,7 @@ public final class CustomConfig implements Config {
          *
          * @param enabled the enabled state
          * @return this builder
-         * @since 0.32.0
+         * @since 0.33.0
          */
         @Contract(value = "_ -> this", mutates = "this")
         public Builder enabled(final boolean enabled) {
@@ -497,7 +497,7 @@ public final class CustomConfig implements Config {
          * @param field the field
          * @return this builder
          * @throws IllegalArgumentException if the key is already registered
-         * @since 0.32.0
+         * @since 0.33.0
          */
         @Contract(value = "_ -> this", mutates = "this")
         public Builder field(final Field<?> field) throws IllegalArgumentException {
@@ -513,7 +513,7 @@ public final class CustomConfig implements Config {
          *
          * @return the config
          * @throws RuntimeException if the file could not be read or written
-         * @since 0.32.0
+         * @since 0.33.0
          */
         @Contract(value = " -> new", mutates = "io")
         public CustomConfig build() throws RuntimeException {
@@ -529,7 +529,7 @@ public final class CustomConfig implements Config {
      * @param parser       converts the stored string into the value
      * @param serializer   converts the value into the stored string
      * @param <T>          the value type
-     * @since 0.32.0
+     * @since 0.33.0
      */
     @SuppressWarnings("PatternValidation")
     public record Field<T>(
