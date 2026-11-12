@@ -94,11 +94,13 @@ public final class FastStatsRegistry {
         for (final var registered : contexts.entrySet()) {
             final var context = registered.getKey();
             final var config = registered.getValue().config();
-            config.submitMetrics(submitMetrics);
-            config.additionalMetrics(submitMetrics && additionalMetrics);
-            config.errorTracking(errorTracking);
-            config.enabled(submitMetrics || errorTracking);
-            if (config.has(ConsentState.CONSENT_SCREEN_SHOWN)) config.set(ConsentState.CONSENT_SCREEN_SHOWN, true);
+            config.update(editor -> {
+                editor.set(CustomConfig.SUBMIT_METRICS, submitMetrics)
+                        .set(CustomConfig.SUBMIT_ADDITIONAL_METRICS, submitMetrics && additionalMetrics)
+                        .set(CustomConfig.SUBMIT_ERRORS, errorTracking)
+                        .set(CustomConfig.ENABLED, submitMetrics || errorTracking);
+                if (config.has(ConsentState.CONSENT_SCREEN_SHOWN)) editor.set(ConsentState.CONSENT_SCREEN_SHOWN, true);
+            });
             context.updateConfig(config);
             if (config.enabled()) context.startSubmission();
             else context.stopSubmission();

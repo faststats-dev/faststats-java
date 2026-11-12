@@ -328,6 +328,59 @@ public final class CustomConfigTest {
     }
 
     @Test
+    public void updateAppliesAllChangesAtOnce() throws IOException {
+        final var config = builder().build();
+
+        config.update(editor -> editor
+                .set(CustomConfig.SUBMIT_METRICS, false)
+                .set(CustomConfig.SUBMIT_ERRORS, false)
+                .set(CustomConfig.SUBMIT_ADDITIONAL_METRICS, false));
+        config.persist();
+
+        assertFalse(config.submitMetrics());
+        assertFalse(config.errorTracking());
+        assertFalse(config.additionalMetrics());
+        final var properties = load();
+        assertEquals("false", properties.getProperty("submitMetrics"));
+        assertEquals("false", properties.getProperty("submitErrors"));
+        assertEquals("false", properties.getProperty("submitAdditionalMetrics"));
+    }
+
+    @Test
+    public void failedUpdateAppliesNothing() {
+        final var config = builder().build();
+        final var unregistered = CustomConfig.Field.bool("unregistered", false);
+
+        assertThrows(IllegalArgumentException.class, () -> config.update(editor -> editor
+                .set(CustomConfig.SUBMIT_METRICS, false)
+                .set(unregistered, true)));
+
+        assertTrue(config.submitMetrics());
+    }
+
+    @Test
+    public void readersNeverSeeHalfAppliedUpdate() throws InterruptedException {
+        final var config = builder().build();
+        final var torn = new java.util.concurrent.atomic.AtomicBoolean();
+        final var stop = new java.util.concurrent.atomic.AtomicBoolean();
+        final var reader = new Thread(() -> {
+            while (!stop.get()) {
+                // ENABLED and SUBMIT_ERRORS are always opposite below, so only a torn read returns true
+                if (config.errorTracking()) torn.set(true);
+            }
+        });
+        reader.start();
+        for (var i = 0; i < 20_000; i++) {
+            final var on = i % 2 == 0;
+            config.update(editor -> editor.set(CustomConfig.SUBMIT_ERRORS, on).set(CustomConfig.ENABLED, !on));
+        }
+        stop.set(true);
+        reader.join();
+
+        assertFalse(torn.get());
+    }
+
+    @Test
     public void enabledFlagDisablesFeaturesWithoutChangingFile() throws IOException {
         System.setProperty("faststats.enabled", "false");
 
@@ -474,7 +527,7 @@ public final class CustomConfigTest {
     @ValueSource(strings = {
             "", " ", "enabled ", " enabled", "on boarding", "a=b", "a:b", "#comment", "!comment",
             "-key", "key-", "_key", "key_", ".key", "key.", "a--b", "a-_b", "a..b",
-            "k\u00E4se", "\uFF4B\uFF45\uFF59", "key\u00A0", "\u200Bkey", "key\u2060", "key\t", "key\n", "a/b", "a\\b"
+            "käse", "ｋｅｙ", "key\u00A0", "\u200Bkey", "key\u2060", "key\t", "key\n", "a/b", "a\\b"
     })
     @SuppressWarnings("PatternValidation")
     public void invalidFieldKeyIsRejected(final String key) {

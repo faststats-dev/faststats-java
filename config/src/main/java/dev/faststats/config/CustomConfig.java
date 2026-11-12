@@ -10,13 +10,14 @@ import org.jspecify.annotations.Nullable;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -93,7 +94,11 @@ public final class CustomConfig implements Config {
     private final @Nullable String comment;
     private final @Nullable String onboardingMessage;
     private final Map<String, Field<?>> fields;
-    private final Map<String, Object> values = new ConcurrentHashMap<>();
+    /**
+     * Immutable snapshot of the current values, replaced as a whole on every change
+     * so readers never observe a partially applied {@link #update(Consumer)}.
+     */
+    private volatile Map<String, Object> values;
     private final boolean storeEnabled;
     private final boolean firstRun;
     private final boolean broken;
@@ -121,10 +126,12 @@ public final class CustomConfig implements Config {
         final var reader = new Reader(properties, fields.values(), logger);
         this.broken = broken;
         this.firstRun = !broken && reader.empty;
+        final var initial = new HashMap<String, Object>();
         fields.values().forEach(field -> {
-            if (field != ENABLED || storeEnabled) values.put(field.key(), reader.parse(field));
+            if (field != ENABLED || storeEnabled) initial.put(field.key(), reader.parse(field));
         });
-        if (builder.enabled != null) values.put(ENABLED.key(), builder.enabled);
+        if (builder.enabled != null) initial.put(ENABLED.key(), builder.enabled);
+        this.values = Map.copyOf(initial);
         if (contents != null && contents.foreignEncoding()) reader.save = true;
 
         final int configVersion = get(CONFIG_VERSION);
@@ -150,7 +157,16 @@ public final class CustomConfig implements Config {
 
     @Override
     public boolean enabled() {
-        return !broken && get(ENABLED) && enabledFlag();
+        return enabled(values);
+    }
+
+    private boolean enabled(final Map<String, Object> snapshot) {
+        return !broken && (Boolean) snapshot.get(ENABLED.key()) && enabledFlag();
+    }
+
+    private boolean feature(final Field<Boolean> field) {
+        final var snapshot = values;
+        return enabled(snapshot) && (Boolean) snapshot.get(field.key());
     }
 
     public void enabled(final boolean enabled) {
@@ -159,7 +175,7 @@ public final class CustomConfig implements Config {
 
     @Override
     public boolean additionalMetrics() {
-        return enabled() && get(SUBMIT_ADDITIONAL_METRICS);
+        return feature(SUBMIT_ADDITIONAL_METRICS);
     }
 
     public void additionalMetrics(final boolean additionalMetrics) {
@@ -173,7 +189,7 @@ public final class CustomConfig implements Config {
 
     @Override
     public boolean submitMetrics() {
-        return enabled() && get(SUBMIT_METRICS);
+        return feature(SUBMIT_METRICS);
     }
 
     public void submitMetrics(final boolean submitMetrics) {
@@ -182,7 +198,7 @@ public final class CustomConfig implements Config {
 
     @Override
     public boolean errorTracking() {
-        return enabled() && get(SUBMIT_ERRORS);
+        return feature(SUBMIT_ERRORS);
     }
 
     public void errorTracking(final boolean errorTracking) {
@@ -239,8 +255,58 @@ public final class CustomConfig implements Config {
      * @since 0.32.0
      */
     public <T> void set(final Field<T> field, final T value) throws IllegalArgumentException {
-        requireRegistered(field);
-        values.put(field.key(), Objects.requireNonNull(value, "value"));
+        update(editor -> editor.set(field, value));
+    }
+
+    /**
+     * Sets several fields at once.
+     * <p>
+     * Readers see either all or none of the changes, and a concurrent {@link #persist()}
+     * writes either the old or the new values, never a mix.
+     * If the action throws, no change is applied.
+     * Call {@link #persist()} to write the changes to disk.
+     *
+     * <pre>{@code
+     * config.update(editor -> editor
+     *         .set(CustomConfig.SUBMIT_METRICS, false)
+     *         .set(CustomConfig.SUBMIT_ERRORS, false));
+     * }</pre>
+     *
+     * @param action the changes to apply
+     * @throws IllegalArgumentException if a field was not registered with the builder
+     * @since 0.32.0
+     */
+    public synchronized void update(final Consumer<Editor> action) throws IllegalArgumentException {
+        final var changed = new HashMap<>(values);
+        action.accept(new Editor() {
+            @Override
+            public <T> Editor set(final Field<T> field, final T value) {
+                requireRegistered(field);
+                changed.put(field.key(), Objects.requireNonNull(value, "value"));
+                return this;
+            }
+        });
+        values = Map.copyOf(changed);
+    }
+
+    /**
+     * Collects changes for {@link #update(Consumer)}.
+     *
+     * @since 0.32.0
+     */
+    public interface Editor {
+        /**
+         * Sets the value of a field.
+         *
+         * @param field the field
+         * @param value the new value
+         * @param <T>   the value type
+         * @return this editor
+         * @throws IllegalArgumentException if the field was not registered with the builder
+         * @since 0.32.0
+         */
+        @Contract(value = "_, _ -> this", mutates = "this")
+        <T> Editor set(Field<T> field, T value) throws IllegalArgumentException;
     }
 
     private void requireRegistered(final Field<?> field) {
@@ -276,11 +342,12 @@ public final class CustomConfig implements Config {
 
     @SuppressWarnings("unchecked")
     private void write(final Properties properties) {
+        final var snapshot = values;
         fields.values().forEach(field -> {
             if (field == ENABLED && !storeEnabled) return;
             final var typed = (Field<Object>) field;
             try {
-                properties.setProperty(field.key(), typed.serializer().apply(values.get(field.key())));
+                properties.setProperty(field.key(), typed.serializer().apply(snapshot.get(field.key())));
                 PropertiesFile.removeVariants(properties, field.key());
             } catch (final RuntimeException e) {
                 logger.print(Logger.LogLevel.WARN, e, "Failed to serialize FastStats config property '" + field.key() + "'");
