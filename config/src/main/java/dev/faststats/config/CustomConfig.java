@@ -96,6 +96,7 @@ public final class CustomConfig implements Config {
     private final Map<String, Object> values = new ConcurrentHashMap<>();
     private final boolean storeEnabled;
     private final boolean firstRun;
+    private final boolean broken;
 
     private CustomConfig(final Builder builder) {
         this.file = builder.file;
@@ -118,12 +119,12 @@ public final class CustomConfig implements Config {
         final var properties = contents != null ? contents.properties() : null;
 
         final var reader = new Reader(properties, fields.values(), logger);
+        this.broken = broken;
         this.firstRun = !broken && reader.empty;
         fields.values().forEach(field -> {
             if (field != ENABLED || storeEnabled) values.put(field.key(), reader.parse(field));
         });
         if (builder.enabled != null) values.put(ENABLED.key(), builder.enabled);
-        if (broken) values.put(ENABLED.key(), false);
         if (contents != null && contents.foreignEncoding()) reader.save = true;
 
         final int configVersion = get(CONFIG_VERSION);
@@ -135,12 +136,6 @@ public final class CustomConfig implements Config {
         } else if (configVersion > CURRENT_CONFIG_VERSION) reader.save = false;
 
         if (reader.save && !broken) write(properties != null ? properties : new Properties());
-
-        final var enabled = get(ENABLED) && enabledFlag();
-        set(ENABLED, enabled);
-        set(SUBMIT_METRICS, enabled && get(SUBMIT_METRICS));
-        set(SUBMIT_ERRORS, enabled && get(SUBMIT_ERRORS));
-        set(SUBMIT_ADDITIONAL_METRICS, enabled && get(SUBMIT_ADDITIONAL_METRICS));
     }
 
     @Contract(value = "_, _ -> new", pure = true)
@@ -155,7 +150,7 @@ public final class CustomConfig implements Config {
 
     @Override
     public boolean enabled() {
-        return get(ENABLED);
+        return !broken && get(ENABLED) && enabledFlag();
     }
 
     public void enabled(final boolean enabled) {
@@ -164,7 +159,7 @@ public final class CustomConfig implements Config {
 
     @Override
     public boolean additionalMetrics() {
-        return get(SUBMIT_ADDITIONAL_METRICS);
+        return enabled() && get(SUBMIT_ADDITIONAL_METRICS);
     }
 
     public void additionalMetrics(final boolean additionalMetrics) {
@@ -178,7 +173,7 @@ public final class CustomConfig implements Config {
 
     @Override
     public boolean submitMetrics() {
-        return get(SUBMIT_METRICS);
+        return enabled() && get(SUBMIT_METRICS);
     }
 
     public void submitMetrics(final boolean submitMetrics) {
@@ -187,7 +182,7 @@ public final class CustomConfig implements Config {
 
     @Override
     public boolean errorTracking() {
-        return get(SUBMIT_ERRORS);
+        return enabled() && get(SUBMIT_ERRORS);
     }
 
     public void errorTracking(final boolean errorTracking) {
@@ -257,15 +252,24 @@ public final class CustomConfig implements Config {
      * Writes the current values to the config file.
      * <p>
      * Entries that are not registered in this config are kept.
+     * Nothing is written if the file could not be read, either now or when the config was built,
+     * so that a broken or unreadable file is never replaced with defaults.
      * Failures are logged instead of thrown.
      */
     @Contract(mutates = "io")
     public synchronized void persist() {
-        PropertiesFile.Contents existing;
+        if (broken) {
+            logger.print(Logger.LogLevel.WARN, null, "Not saving FastStats config at " + file
+                    + " because it could not be read on startup, fix or delete the file and restart");
+            return;
+        }
+        final PropertiesFile.Contents existing;
         try {
             existing = PropertiesFile.read(file);
         } catch (final IOException | RuntimeException e) {
-            existing = null;
+            logger.print(Logger.LogLevel.WARN, e, "Not saving FastStats config at " + file
+                    + " because it could not be read, changes will not persist across restarts");
+            return;
         }
         write(existing != null ? existing.properties() : new Properties());
     }

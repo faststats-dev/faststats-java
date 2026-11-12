@@ -340,6 +340,11 @@ public final class CustomConfigTest {
         assertFalse(config.errorTracking());
         assertEquals("true", load().getProperty("enabled"));
         assertEquals("true", load().getProperty("submitMetrics"));
+
+        config.persist();
+        assertEquals("true", load().getProperty("enabled"));
+        assertEquals("true", load().getProperty("submitMetrics"));
+        assertEquals("true", load().getProperty("submitErrors"));
     }
 
     @Test

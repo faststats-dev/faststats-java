@@ -243,6 +243,48 @@ public final class MisconfiguredConfigTest {
     }
 
     @Test
+    public void persistAfterDisabledByFileKeepsSubmitFlags() throws IOException {
+        store("enabled=false\nsubmitMetrics=true\nsubmitErrors=true\nsubmitAdditionalMetrics=true\n");
+        final var config = read();
+        assertDisabled(config);
+
+        config.persist();
+
+        final var properties = load();
+        assertEquals("false", properties.getProperty("enabled"));
+        assertEquals("true", properties.getProperty("submitMetrics"));
+        assertEquals("true", properties.getProperty("submitErrors"));
+        assertEquals("true", properties.getProperty("submitAdditionalMetrics"));
+    }
+
+    @Test
+    public void persistDoesNotOverwriteFileBrokenOnStartup() throws IOException {
+        // a directory cannot be read, so the config is broken on startup
+        Files.createDirectories(file);
+        final var config = read();
+        assertDisabled(config);
+        // the user fixes the file while the server runs; persist must not replace it with defaults
+        Files.delete(file);
+        final var original = "enabled=true\nserverId=" + UUID.randomUUID() + "\nmy-note=keep\n";
+        Files.writeString(file, original);
+
+        config.persist();
+
+        assertEquals(original, Files.readString(file));
+    }
+
+    @Test
+    public void persistDoesNotOverwriteFileThatBecameUnreadable() throws IOException {
+        store("enabled=true\n");
+        final var config = read();
+        Files.delete(file);
+        Files.createDirectories(file);
+
+        assertDoesNotThrow(config::persist);
+        assertTrue(Files.isDirectory(file));
+    }
+
+    @Test
     public void unreadableFileDisablesEvenWithEnabledOverride() throws IOException {
         Files.createDirectories(file);
 
@@ -381,8 +423,8 @@ public final class MisconfiguredConfigTest {
         config.persist();
         assertSingleSpelling("enabled", "false");
         assertSingleSpelling("serverId", config.serverId().toString());
-        // persist writes the effective in-memory state, which is disabled
-        assertSingleSpelling("submitMetrics", "false");
+        // persist writes the stored values, not the effective (disabled) state
+        assertSingleSpelling("submitMetrics", "true");
         assertDisabled(read());
     }
 
