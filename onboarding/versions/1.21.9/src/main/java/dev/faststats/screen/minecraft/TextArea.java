@@ -62,7 +62,8 @@ final class TextArea extends AbstractTextAreaWidget {
     @Override
     public boolean mouseClicked(final MouseButtonEvent event, final boolean doubleClick) {
         if (event.button() == 0 && isWithin(event.x(), event.y())
-                && onClick.test(styleAt(event.x() - getInnerLeft(), event.y() - getInnerTop() + scrollAmount()))) return true;
+                && onClick.test(styleAt(event.x() - getInnerLeft(), event.y() - getInnerTop() + scrollAmount())))
+            return true;
         return super.mouseClicked(event, doubleClick);
     }
 

@@ -42,7 +42,7 @@ final class SimpleTrackedError implements TrackedError {
         public StackTraceElement[] stackTraces() {
             return stackTraces.clone();
         }
-        
+
         @Override
         public boolean equals(@Nullable final Object o) {
             if (o == null || getClass() != o.getClass()) return false;

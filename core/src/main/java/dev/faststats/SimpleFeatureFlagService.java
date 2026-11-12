@@ -45,6 +45,7 @@ final class SimpleFeatureFlagService extends SubmissionService implements Featur
 
     @SuppressWarnings("unchecked")
     <T> CompletableFuture<T> fetch(final SimpleFeatureFlag<T> flag) {
+        if (!context.isSubmitting()) return CompletableFuture.completedFuture(flag.getDefaultValue());
         final var future = new CompletableFuture<T>();
         final var existing = fetchesInProgress.putIfAbsent(flag.getId(), future);
         if (existing != null) return (CompletableFuture<T>) existing;
@@ -65,6 +66,9 @@ final class SimpleFeatureFlagService extends SubmissionService implements Featur
     }
 
     private <T> CompletableFuture<T> sendOptRequest(final SimpleFeatureFlag<T> flag, final String path) {
+        if (!context.isSubmitting()) return CompletableFuture.failedFuture(new IllegalStateException(
+                "FastStats submission is not active for " + context.getProjectName()
+        ));
         final var requestBody = createRequestBody(flag);
         return send(path, requestBody).thenCompose(response -> {
             if (isSuccessful(response)) return fetch(flag);

@@ -68,26 +68,16 @@ public final class ConsentState {
 
         final var contexts = registry.contexts();
         if (contexts.isEmpty()) return;
+        final var logger = contexts.get(0).getLoggerFactory().getLogger(ConsentState.class);
 
-        final var enabled = submitMetrics || errorTracking;
-        contexts.forEach(context -> {
-            final var config = (SimpleConfig) context.getConfig();
-            config.submitMetrics(submitMetrics);
-            config.additionalMetrics(additionalMetrics());
-            config.errorTracking(errorTracking);
-            config.enabled(enabled);
-            config.consentScreenShown(true);
-            context.submissionActive = enabled;
-        });
-
-        final var context = contexts.get(0);
-        final var config = (SimpleConfig) context.getConfig();
-        PERSISTENCE.execute(() -> {
-            try {
-                config.persist();
-            } catch (final Throwable t) {
-                context.getLoggerFactory().getLogger(ConsentState.class).error("Failed to save FastStats consent", t);
-            }
+        registry.applyConsent(submitMetrics, additionalMetrics(), errorTracking).ifPresent(config -> {
+            PERSISTENCE.execute(() -> {
+                try {
+                    config.persist();
+                } catch (final Throwable t) {
+                    logger.error("Failed to save FastStats consent", t);
+                }
+            });
         });
     }
 }

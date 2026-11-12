@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ErrorTrackerTest {
     private final SimpleErrorTracker tracker = (SimpleErrorTracker) ErrorTracker.contextUnaware();
-    private final MockContext context = new MockContext.Factory()
+    private final SimpleContext context = new MockContext.Factory()
             .errorTrackerService(tracker)
             .create();
 
