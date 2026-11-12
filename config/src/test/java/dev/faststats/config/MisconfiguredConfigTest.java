@@ -182,6 +182,19 @@ public final class MisconfiguredConfigTest {
     }
 
     @Test
+    public void malformedUnicodeEscapeKeepsEscapedBackslashes() throws IOException {
+        store("enabled=true\nserverId=\\uZZZZ\npath=C:\\\\users\nother=\\\\\\uZZZZ\n");
+
+        final var config = read();
+
+        assertTrue(config.enabled());
+        assertFalse(config.firstRun());
+        final var properties = load();
+        assertEquals("C:\\users", properties.getProperty("path"));
+        assertEquals("\\\\uZZZZ", properties.getProperty("other"));
+    }
+
+    @Test
     public void windowsPathBackslashes() throws IOException {
         store("enabled=false\nsomething=C:\\users\\name\n");
 

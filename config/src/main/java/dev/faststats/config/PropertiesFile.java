@@ -32,7 +32,7 @@ final class PropertiesFile {
     private static final Charset UTF_32LE = Charset.forName("UTF-32LE");
     private static final Charset UTF_32BE = Charset.forName("UTF-32BE");
     private static final Comparator<String> KEY_ORDER = String.CASE_INSENSITIVE_ORDER.thenComparing(Comparator.naturalOrder());
-    private static final Pattern MALFORMED_UNICODE_ESCAPE = Pattern.compile("\\\\u(?![0-9a-fA-F]{4})");
+    private static final Pattern MALFORMED_UNICODE_ESCAPE = Pattern.compile("(?<!\\\\)((?:\\\\\\\\)*)\\\\u(?![0-9a-fA-F]{4})");
 
     private PropertiesFile() {
     }
@@ -61,7 +61,7 @@ final class PropertiesFile {
             return new Contents(load(decoded.content()), decoded.foreignEncoding());
         } catch (final IllegalArgumentException e) {
             try {
-                final var content = MALFORMED_UNICODE_ESCAPE.matcher(decoded.content()).replaceAll("\\\\\\\\u");
+                final var content = MALFORMED_UNICODE_ESCAPE.matcher(decoded.content()).replaceAll("$1\\\\\\\\u");
                 return new Contents(load(content), decoded.foreignEncoding());
             } catch (final IllegalArgumentException again) {
                 throw new IOException("Malformed config file", again);
