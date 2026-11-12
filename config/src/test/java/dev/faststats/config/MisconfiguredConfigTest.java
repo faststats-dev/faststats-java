@@ -14,6 +14,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Random;
 import java.util.UUID;
@@ -26,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public final class MisconfiguredConfigTest {
@@ -240,6 +242,27 @@ public final class MisconfiguredConfigTest {
         assertFalse(config.firstRun());
         assertTrue(Files.isDirectory(file));
         assertDoesNotThrow(config::persist);
+    }
+
+    private static final CustomConfig.Field<String> NULLABLE_PARSER = new CustomConfig.Field<>("motd", () -> "hello",
+            value -> value.isEmpty() ? null : value, Objects::toString);
+
+    @Test
+    public void parserReturningNullUsesDefault() throws IOException {
+        store("enabled=false\nmotd=\n");
+
+        final var config = assertDoesNotThrow(() -> CustomConfig.builder(file, loggerFactory).field(NULLABLE_PARSER).build());
+
+        assertEquals("hello", config.get(NULLABLE_PARSER));
+        assertEquals("hello", load().getProperty("motd"));
+    }
+
+    @Test
+    public void nullDefaultValueNamesTheField() {
+        final var field = new CustomConfig.Field<>("motd", () -> null, Objects::toString, Objects::toString);
+
+        final var e = assertThrows(NullPointerException.class, () -> CustomConfig.builder(file, loggerFactory).field(field).build());
+        assertTrue(e.getMessage().contains("'motd'"), e.getMessage());
     }
 
     @Test

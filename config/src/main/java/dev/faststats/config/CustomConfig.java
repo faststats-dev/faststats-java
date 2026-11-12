@@ -406,26 +406,31 @@ public final class CustomConfig implements Config {
         }
 
         private <T> T parse(final Field<T> field) {
-            if (properties == null) return field.defaultValue().get();
+            if (properties == null) return defaultValue(field);
             final var key = find(field);
             if (key == null) {
                 if (!empty) logger.print(Logger.LogLevel.WARN, null, "Missing FastStats config property '"
                         + field.key() + "', using the default value");
                 save = true;
-                return field.defaultValue().get();
+                return defaultValue(field);
             }
             if (!key.equals(field.key())) save = true;
             final var property = PropertiesFile.clean(properties.getProperty(key));
             try {
-                final var value = field.parser().apply(property);
+                final var value = Objects.requireNonNull(field.parser().apply(property), "parsed value");
                 if (!property.equals(field.serializer().apply(value))) save = true;
                 return value;
             } catch (final Exception e) {
                 logger.print(Logger.LogLevel.WARN, null, "Invalid value '" + property
                         + "' for FastStats config property '" + field.key() + "', using the default value");
                 save = true;
-                return field.defaultValue().get();
+                return defaultValue(field);
             }
+        }
+
+        private static <T> T defaultValue(final Field<T> field) {
+            return Objects.requireNonNull(field.defaultValue().get(),
+                    () -> "Default value of FastStats config field '" + field.key() + "' must not be null");
         }
     }
 
@@ -525,8 +530,10 @@ public final class CustomConfig implements Config {
      * A config field.
      *
      * @param key          the property key, ASCII letters and digits optionally separated by single {@code -}, {@code _} or {@code .}
-     * @param defaultValue the default value supplier
-     * @param parser       converts the stored string into the value
+     * @param defaultValue the default value supplier, must not return {@code null}
+     * @param parser       converts the stored string into the value;
+     *                     throwing or returning {@code null} marks the stored value as invalid,
+     *                     so the default value is used instead
      * @param serializer   converts the value into the stored string
      * @param <T>          the value type
      * @since 0.33.0

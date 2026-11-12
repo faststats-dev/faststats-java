@@ -361,6 +361,7 @@ public final class CustomConfigTest {
     @Test
     public void readersNeverSeeHalfAppliedUpdate() throws InterruptedException {
         final var config = builder().build();
+        config.update(editor -> editor.set(CustomConfig.SUBMIT_ERRORS, false).set(CustomConfig.ENABLED, true));
         final var torn = new java.util.concurrent.atomic.AtomicBoolean();
         final var stop = new java.util.concurrent.atomic.AtomicBoolean();
         final var reader = new Thread(() -> {
