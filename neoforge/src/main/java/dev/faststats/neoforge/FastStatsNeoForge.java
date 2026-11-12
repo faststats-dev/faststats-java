@@ -3,7 +3,7 @@ package dev.faststats.neoforge;
 import com.google.gson.JsonObject;
 import dev.faststats.FastStatsContext;
 import dev.faststats.SimpleContext;
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.screen.onboarding.ConsentState;
 import dev.faststats.internal.PlatformLoggerFactory;
 import dev.faststats.neoforge.compat.CompatibilityLayer;
 import dev.faststats.screen.registry.FastStatsRegistry;
@@ -80,7 +80,7 @@ public final class FastStatsNeoForge {
         final IModInfo mod = ModList.get().getModContainerById(modId).map(ModContainer::getModInfo).orElseThrow(() -> {
             return new IllegalArgumentException("Mod not found: " + modId);
         });
-        final var config = SimpleConfig.read(configPath(), loggerFactory, client);
+        final var config = ConsentState.readConfig(configPath(), loggerFactory, client);
 
         return new SimpleContext.ConsentBuilder("neoforge")
                 .loggerFactory(loggerFactory)
@@ -104,7 +104,7 @@ public final class FastStatsNeoForge {
                     if (client) {
                         context.ready();
                         // otherwise the consent screen starts submission once consent was given
-                        if (config.preSubmissionStart(loggerFactory) && (!requireConsent || config.consentScreenShown()))
+                        if (config.preSubmissionStart(loggerFactory) && (!requireConsent || ConsentState.consentScreenShown(config)))
                             context.startSubmission();
                     } else {
                         // the server instance is captured once it started, only needed for metrics

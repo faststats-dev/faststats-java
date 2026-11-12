@@ -3,7 +3,7 @@ package dev.faststats.nukkit;
 import cn.nukkit.plugin.PluginBase;
 import dev.faststats.FastStatsContext;
 import dev.faststats.SimpleContext;
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.config.CustomConfig;
 import dev.faststats.internal.PlatformLoggerFactory;
 import org.jetbrains.annotations.Contract;
 
@@ -62,8 +62,8 @@ public final class FastStatsNukkit {
             }
         });
         final var server = plugin.getServer();
-        final var config = SimpleConfig.read(Path.of(server.getPluginPath())
-                .resolve("faststats").resolve("config.properties"), loggerFactory);
+        final var config = CustomConfig.builder(Path.of(server.getPluginPath())
+                .resolve("faststats").resolve("config.properties"), loggerFactory).build();
         return new SimpleContext.Builder("nukkit")
                 .loggerFactory(loggerFactory)
                 .config(config)

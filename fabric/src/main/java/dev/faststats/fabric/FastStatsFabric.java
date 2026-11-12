@@ -3,7 +3,7 @@ package dev.faststats.fabric;
 import com.google.gson.JsonObject;
 import dev.faststats.FastStatsContext;
 import dev.faststats.SimpleContext;
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.screen.onboarding.ConsentState;
 import dev.faststats.fabric.compat.CompatibilityLayer;
 import dev.faststats.internal.PlatformLoggerFactory;
 import dev.faststats.screen.registry.FastStatsRegistry;
@@ -89,7 +89,7 @@ public final class FastStatsFabric {
         final var compatibilityLayer = ServiceLoader.load(CompatibilityLayer.class)
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No Fabric compatibility layer found"));
-        final var config = SimpleConfig.read(configPath(), loggerFactory, client);
+        final var config = ConsentState.readConfig(configPath(), loggerFactory, client);
 
         return new SimpleContext.ConsentBuilder("fabric")
                 .loggerFactory(loggerFactory)
@@ -114,7 +114,7 @@ public final class FastStatsFabric {
                         case CLIENT -> {
                             context.ready();
                             // otherwise the consent screen starts submission once consent was given
-                            if (config.preSubmissionStart(loggerFactory) && (!requireConsent || config.consentScreenShown()))
+                            if (config.preSubmissionStart(loggerFactory) && (!requireConsent || ConsentState.consentScreenShown(config)))
                                 context.startSubmission();
                             ClientLifecycleEvents.CLIENT_STOPPING.register(ignored -> context.shutdown());
                         }

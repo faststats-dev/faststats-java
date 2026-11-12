@@ -2,7 +2,7 @@ package dev.faststats.bungee;
 
 import dev.faststats.FastStatsContext;
 import dev.faststats.SimpleContext;
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.config.CustomConfig;
 import dev.faststats.internal.PlatformLoggerFactory;
 import net.md_5.bungee.api.plugin.Plugin;
 import org.jetbrains.annotations.Contract;
@@ -52,8 +52,8 @@ public final class FastStatsBungee {
             plugin.getLogger().log(level.getLevel(), message, throwable);
         });
         final var server = plugin.getProxy();
-        final var config = SimpleConfig.read(server.getPluginsFolder().toPath()
-                .resolve("faststats").resolve("config.properties"), loggerFactory);
+        final var config = CustomConfig.builder(server.getPluginsFolder().toPath()
+                .resolve("faststats").resolve("config.properties"), loggerFactory).build();
         final var name = plugin.getDescription().getName();
         return new SimpleContext.Builder("bungeecord")
                 .loggerFactory(loggerFactory)

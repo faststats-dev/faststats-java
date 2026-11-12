@@ -6,7 +6,7 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import dev.faststats.FastStatsContext;
 import dev.faststats.SimpleContext;
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.config.CustomConfig;
 import dev.faststats.internal.PlatformLoggerFactory;
 import org.jetbrains.annotations.Contract;
 import org.slf4j.Logger;
@@ -115,8 +115,8 @@ public final class FastStatsVelocity {
                 case WARN -> logger.warn(message, t);
             }
         });
-        final var config = SimpleConfig.read(dataDirectory.resolveSibling("faststats")
-                .resolve("config.properties"), loggerFactory);
+        final var config = CustomConfig.builder(dataDirectory.resolveSibling("faststats")
+                .resolve("config.properties"), loggerFactory).build();
         final var id = plugin.getDescription().getId();
         return new SimpleContext.Builder("velocity")
                 .loggerFactory(loggerFactory)

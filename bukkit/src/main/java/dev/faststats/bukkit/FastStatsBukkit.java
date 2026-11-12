@@ -3,7 +3,7 @@ package dev.faststats.bukkit;
 import com.google.gson.JsonObject;
 import dev.faststats.FastStatsContext;
 import dev.faststats.SimpleContext;
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.config.CustomConfig;
 import dev.faststats.internal.PlatformLoggerFactory;
 import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.plugin.Plugin;
@@ -61,7 +61,7 @@ public final class FastStatsBukkit {
         final var loggerFactory = new PlatformLoggerFactory((level, throwable, message) -> {
             plugin.getLogger().log(level.getLevel(), message, throwable);
         });
-        final var config = SimpleConfig.read(getConfigPath(plugin), loggerFactory);
+        final var config = CustomConfig.builder(getConfigPath(plugin), loggerFactory).build();
         return new SimpleContext.Builder("bukkit")
                 .loggerFactory(loggerFactory)
                 .config(config)

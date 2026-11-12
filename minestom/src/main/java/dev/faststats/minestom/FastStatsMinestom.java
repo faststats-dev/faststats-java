@@ -4,7 +4,7 @@ import dev.faststats.ErrorTracker;
 import dev.faststats.ErrorTrackerService;
 import dev.faststats.FastStatsContext;
 import dev.faststats.SimpleContext;
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.config.CustomConfig;
 import dev.faststats.internal.PlatformLoggerFactory;
 import net.minestom.server.Auth;
 import net.minestom.server.MinecraftServer;
@@ -68,7 +68,7 @@ public final class FastStatsMinestom {
                 }
             }
         });
-        final var config = SimpleConfig.read(Path.of("faststats", "config.properties"), loggerFactory);
+        final var config = CustomConfig.builder(Path.of("faststats", "config.properties"), loggerFactory).build();
         return new SimpleContext.Builder("minestom")
                 .loggerFactory(loggerFactory)
                 .config(config)

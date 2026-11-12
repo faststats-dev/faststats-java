@@ -7,7 +7,7 @@ import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.universe.Universe;
 import dev.faststats.FastStatsContext;
 import dev.faststats.SimpleContext;
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.config.CustomConfig;
 import dev.faststats.internal.PlatformLoggerFactory;
 import org.jetbrains.annotations.Contract;
 
@@ -64,8 +64,8 @@ public final class FastStatsHytale {
             if (throwable == null) api.log(message);
             else api.log(message, throwable);
         });
-        final var config = SimpleConfig.read(plugin.getDataDirectory().toAbsolutePath().getParent()
-                .resolve("faststats").resolve("config.properties"), loggerFactory);
+        final var config = CustomConfig.builder(plugin.getDataDirectory().toAbsolutePath().getParent()
+                .resolve("faststats").resolve("config.properties"), loggerFactory).build();
         final var pluginVersion = plugin.getManifest().getVersion().toString();
         return new SimpleContext.Builder("hytale")
                 .loggerFactory(loggerFactory)

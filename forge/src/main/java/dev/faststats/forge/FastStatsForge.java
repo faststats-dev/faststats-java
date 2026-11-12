@@ -2,7 +2,7 @@ package dev.faststats.forge;
 
 import dev.faststats.FastStatsContext;
 import dev.faststats.SimpleContext;
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.screen.onboarding.ConsentState;
 import dev.faststats.forge.compat.CompatibilityLayer;
 import dev.faststats.internal.PlatformLoggerFactory;
 import dev.faststats.screen.registry.FastStatsRegistry;
@@ -70,7 +70,7 @@ public final class FastStatsForge {
         final var modVersion = compatibilityLayer.modVersion(modId).orElseThrow(() -> {
             return new IllegalArgumentException("Mod not found: " + modId);
         });
-        final var config = SimpleConfig.read(compatibilityLayer.configDirectory()
+        final var config = ConsentState.readConfig(compatibilityLayer.configDirectory()
                 .resolve("faststats").resolve("config.properties"), loggerFactory, client);
 
         return new SimpleContext.ConsentBuilder("forge")
@@ -98,7 +98,7 @@ public final class FastStatsForge {
                     if (client) {
                         context.ready();
                         // otherwise the consent screen starts submission once consent was given
-                        if (config.preSubmissionStart(loggerFactory) && (!requireConsent || config.consentScreenShown()))
+                        if (config.preSubmissionStart(loggerFactory) && (!requireConsent || ConsentState.consentScreenShown(config)))
                             context.startSubmission();
                     } else compatibilityLayer.onServerLifecycle(context::ready, context::shutdown);
                 });

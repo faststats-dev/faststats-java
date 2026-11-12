@@ -1,13 +1,17 @@
 package dev.faststats.screen.onboarding;
 
 import dev.faststats.Config;
-import dev.faststats.config.SimpleConfig;
+import dev.faststats.config.CustomConfig;
+import dev.faststats.internal.LoggerFactory;
 import dev.faststats.screen.registry.FastStatsRegistry;
 
+import java.nio.file.Path;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 public final class ConsentState {
+    public static final CustomConfig.Field<Boolean> CONSENT_SCREEN_SHOWN = CustomConfig.Field.bool("consent-screen-shown", false);
+
     private static final Executor PERSISTENCE = Executors.newSingleThreadExecutor(runnable -> {
         final var thread = new Thread(runnable, "faststats-config-writer");
         thread.setDaemon(true);
@@ -26,6 +30,16 @@ public final class ConsentState {
         this.submitMetrics = submitMetrics;
         this.additionalMetrics = submitMetrics && additionalMetrics;
         this.errorTracking = errorTracking;
+    }
+
+    public static CustomConfig readConfig(final Path file, final LoggerFactory loggerFactory, final boolean client) {
+        final var builder = CustomConfig.builder(file, loggerFactory);
+        if (client) builder.field(CONSENT_SCREEN_SHOWN);
+        return builder.build();
+    }
+
+    public static boolean consentScreenShown(final CustomConfig config) {
+        return config.has(CONSENT_SCREEN_SHOWN) && config.get(CONSENT_SCREEN_SHOWN);
     }
 
     public boolean submitMetrics() {
@@ -60,7 +74,7 @@ public final class ConsentState {
     }
 
     public boolean editable() {
-        return SimpleConfig.enabledFlag();
+        return CustomConfig.enabledFlag();
     }
 
     public synchronized void apply(final FastStatsRegistry registry) {
