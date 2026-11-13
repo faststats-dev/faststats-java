@@ -16,6 +16,11 @@
     "David | NonSwag"
   ],
   "environment": "*",
+  "entrypoints": {
+    "server": [
+      "dev.faststats.fabric.FastStatsServerEntrypoint"
+    ]
+  },
   "mixins": [
     "faststats-onboarding.mixins.json"
   ],

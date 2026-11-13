@@ -36,7 +36,8 @@ import java.util.ServiceLoader;
  * The lifecycle of the built context is managed automatically,
  * you neither have to make it {@linkplain FastStatsContext#ready() ready} nor shut it down:
  * on a client it is ready right away and shut down when the client stops,
- * on a dedicated server it is ready once the server started and shut down when it stops.
+ * on a dedicated server it is ready once the server started (right away if it already did)
+ * and shut down when it stops.
  *
  * @since 0.33.0
  */
@@ -81,14 +82,12 @@ public final class FastStatsFabric {
                 }
             }
         });
-        final var environment = FabricLoader.getInstance().getEnvironmentType();
-        final var client = environment == EnvType.CLIENT;
         final ModContainer mod = FabricLoader.getInstance().getModContainer(modId).orElseThrow(() -> {
             return new IllegalArgumentException("Mod not found: " + modId);
         });
-        final var compatibilityLayer = ServiceLoader.load(CompatibilityLayer.class)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No Fabric compatibility layer found"));
+        final var loader = loader();
+        final var client = loader.environment() == EnvType.CLIENT;
+        final var compatibilityLayer = loader.compat();
         final var config = SimpleConfig.read(configPath(), loggerFactory, client);
 
         return new SimpleContext.ConsentBuilder("fabric")
@@ -98,34 +97,34 @@ public final class FastStatsFabric {
                 .tokenResource(FastStatsFabric.class.getClassLoader(), modId)
                 .clientApplication(client)
                 .defaultMetrics((ignored, metrics) -> {
-                    metrics.addProperty("online_mode", client ? compatibilityLayer.clientOnlineMode() : compatibilityLayer.serverOnlineMode());
-                    metrics.addProperty("player_count", client ? compatibilityLayer.clientPlayerCount() : compatibilityLayer.serverPlayerCount());
+                    metrics.addProperty("online_mode", compatibilityLayer.onlineMode());
+                    metrics.addProperty("player_count", compatibilityLayer.playerCount());
                     appendFabricData(metrics, mod, client);
                 })
                 .onReady(context -> {
-                    // dedicated servers never ask for consent, clients start submission once built
-                    if (!client && config.preSubmissionStart(loggerFactory)) ((SimpleContext) context).startSubmission();
+                    if (!client && config.preSubmissionStart(loggerFactory))
+                        ((SimpleContext) context).startSubmission();
                 })
                 .onShutdown(FastStatsRegistry.instance()::unregister)
                 .onBuild((context, builder) -> {
-                    final var requireConsent = ((SimpleContext.ConsentBuilder) builder).isConsentRequired();
-                    if (context.isEnabled()) FastStatsRegistry.instance().register(context, requireConsent);
-                    switch (environment) {
-                        case CLIENT -> {
-                            context.ready();
-                            // otherwise the consent screen starts submission once consent was given
-                            if (config.preSubmissionStart(loggerFactory) && (!requireConsent || config.consentScreenShown()))
-                                context.startSubmission();
-                            ClientLifecycleEvents.CLIENT_STOPPING.register(ignored -> context.shutdown());
-                        }
-                        case SERVER -> {
-                            // the server instance is captured once it is starting, only needed for metrics
-                            if (context.metrics().isPresent()) compatibilityLayer.initServer();
-                            ServerLifecycleEvents.SERVER_STARTED.register(ignored -> context.ready());
-                            ServerLifecycleEvents.SERVER_STOPPING.register(ignored -> context.shutdown());
-                        }
+                    if (compatibilityLayer instanceof final CompatibilityLayer.Server server) {
+                        server.whenReady(context::ready);
+                        ServerLifecycleEvents.SERVER_STOPPING.register(ignored -> context.shutdown());
+                    } else {
+                        context.ready();
+                        final var requireConsent = ((SimpleContext.ConsentBuilder) builder).isConsentRequired();
+                        if (context.isEnabled()) FastStatsRegistry.instance().register(context, requireConsent);
+                        if (config.preSubmissionStart(loggerFactory) && (!requireConsent || config.consentScreenShown()))
+                            context.startSubmission();
+                        ClientLifecycleEvents.CLIENT_STOPPING.register(ignored -> context.shutdown());
                     }
                 });
+    }
+
+    static CompatibilityLayer.Loader loader() {
+        return ServiceLoader.load(CompatibilityLayer.Loader.class)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No Fabric compatibility layer found"));
     }
 
     private static void appendFabricData(final JsonObject metrics, final ModContainer mod, final boolean client) {

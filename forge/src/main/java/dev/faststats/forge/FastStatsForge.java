@@ -27,7 +27,8 @@ import java.util.ServiceLoader;
  * The lifecycle of the built context is managed automatically,
  * you neither have to make it {@linkplain FastStatsContext#ready() ready} nor shut it down:
  * on a client it is ready right away,
- * on a dedicated server it is ready once the server started and shut down when it stops.
+ * on a dedicated server it is ready once the server started (right away if it already did)
+ * and shut down when it stops.
  *
  * @since 0.33.0
  */
@@ -63,14 +64,13 @@ public final class FastStatsForge {
                 case WARN -> logger.warn(message, throwable);
             }
         });
-        final var compatibilityLayer = ServiceLoader.load(CompatibilityLayer.class)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No Forge compatibility layer found"));
-        final var client = compatibilityLayer.getEnvironment() == CompatibilityLayer.Environment.CLIENT;
-        final var modVersion = compatibilityLayer.modVersion(modId).orElseThrow(() -> {
+        final var loader = loader();
+        final var client = loader.environment() == CompatibilityLayer.Environment.CLIENT;
+        final var compatibilityLayer = loader.compat();
+        final var modVersion = loader.modVersion(modId).orElseThrow(() -> {
             return new IllegalArgumentException("Mod not found: " + modId);
         });
-        final var config = SimpleConfig.read(compatibilityLayer.configDirectory()
+        final var config = SimpleConfig.read(loader.configDirectory()
                 .resolve("faststats").resolve("config.properties"), loggerFactory, client);
 
         return new SimpleContext.ConsentBuilder("forge")
@@ -80,27 +80,34 @@ public final class FastStatsForge {
                 .tokenResource(FastStatsForge.class.getClassLoader(), modId)
                 .clientApplication(client)
                 .defaultMetrics((ignored, metrics) -> {
-                    metrics.addProperty("online_mode", client ? compatibilityLayer.clientOnlineMode() : compatibilityLayer.serverOnlineMode());
-                    metrics.addProperty("player_count", client ? compatibilityLayer.clientPlayerCount() : compatibilityLayer.serverPlayerCount());
-                    compatibilityLayer.modVersion("minecraft").ifPresent(s -> metrics.addProperty("game_version", s));
-                    compatibilityLayer.modVersion("forge").ifPresent(s -> metrics.addProperty("platform_version", s));
+                    metrics.addProperty("online_mode", compatibilityLayer.onlineMode());
+                    metrics.addProperty("player_count", compatibilityLayer.playerCount());
+                    loader.modVersion("minecraft").ifPresent(s -> metrics.addProperty("game_version", s));
+                    loader.modVersion("forge").ifPresent(s -> metrics.addProperty("platform_version", s));
                     metrics.addProperty("plugin_version", modVersion);
                     metrics.addProperty("server_type", client ? "Forge Client" : "Forge");
                 })
                 .onReady(context -> {
-                    // dedicated servers never ask for consent, clients start submission once built
                     if (!client && config.preSubmissionStart(loggerFactory)) ((SimpleContext) context).startSubmission();
                 })
                 .onShutdown(FastStatsRegistry.instance()::unregister)
                 .onBuild((context, builder) -> {
-                    final var requireConsent = ((SimpleContext.ConsentBuilder) builder).isConsentRequired();
-                    if (context.isEnabled()) FastStatsRegistry.instance().register(context, requireConsent);
-                    if (client) {
+                    if (compatibilityLayer instanceof final CompatibilityLayer.Server server) {
+                        server.whenReady(context::ready);
+                        server.whenStopping(context::shutdown);
+                    } else {
                         context.ready();
-                        // otherwise the consent screen starts submission once consent was given
+                        final var requireConsent = ((SimpleContext.ConsentBuilder) builder).isConsentRequired();
+                        if (context.isEnabled()) FastStatsRegistry.instance().register(context, requireConsent);
                         if (config.preSubmissionStart(loggerFactory) && (!requireConsent || config.consentScreenShown()))
                             context.startSubmission();
-                    } else compatibilityLayer.onServerLifecycle(context::ready, context::shutdown);
+                    }
                 });
+    }
+
+    static CompatibilityLayer.Loader loader() {
+        return ServiceLoader.load(CompatibilityLayer.Loader.class)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No Forge compatibility layer found"));
     }
 }

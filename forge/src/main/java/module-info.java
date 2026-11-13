@@ -15,5 +15,5 @@ module dev.faststats.forge {
     requires static org.jetbrains.annotations;
     requires static org.jspecify;
 
-    uses dev.faststats.forge.compat.CompatibilityLayer;
+    uses dev.faststats.forge.compat.CompatibilityLayer.Loader;
 }
