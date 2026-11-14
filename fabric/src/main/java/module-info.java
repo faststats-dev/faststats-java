@@ -16,5 +16,5 @@ module dev.faststats.fabric {
     requires static org.jetbrains.annotations;
     requires static org.jspecify;
 
-    uses dev.faststats.fabric.compat.CompatibilityLayer;
+    uses dev.faststats.fabric.compat.CompatibilityLayer.Loader;
 }

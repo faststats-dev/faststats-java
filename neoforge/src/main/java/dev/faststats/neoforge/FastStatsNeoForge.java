@@ -7,11 +7,11 @@ import dev.faststats.config.SimpleConfig;
 import dev.faststats.internal.PlatformLoggerFactory;
 import dev.faststats.neoforge.compat.CompatibilityLayer;
 import dev.faststats.screen.registry.FastStatsRegistry;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforgespi.language.IModInfo;
 import org.jetbrains.annotations.Contract;
@@ -37,7 +37,8 @@ import java.util.ServiceLoader;
  * The lifecycle of the built context is managed automatically,
  * you neither have to make it {@linkplain FastStatsContext#ready() ready} nor shut it down:
  * on a client it is ready right away,
- * on a dedicated server it is ready once the server started and shut down when it stops.
+ * on a dedicated server it is ready once the server started (right away if it already did)
+ * and shut down when it stops.
  *
  * @since 0.33.0
  */
@@ -73,10 +74,9 @@ public final class FastStatsNeoForge {
                 case WARN -> logger.warn(message, throwable);
             }
         });
-        final var compatibilityLayer = ServiceLoader.load(CompatibilityLayer.class)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No NeoForge compatibility layer found"));
-        final var client = compatibilityLayer.getEnvironment() == CompatibilityLayer.Environment.CLIENT;
+        final var loader = loader();
+        final var client = loader.environment() == Dist.CLIENT;
+        final var compatibilityLayer = loader.compat();
         final IModInfo mod = ModList.get().getModContainerById(modId).map(ModContainer::getModInfo).orElseThrow(() -> {
             return new IllegalArgumentException("Mod not found: " + modId);
         });
@@ -89,30 +89,32 @@ public final class FastStatsNeoForge {
                 .tokenResource(FastStatsNeoForge.class.getClassLoader(), modId)
                 .clientApplication(client)
                 .defaultMetrics((ignored, metrics) -> {
-                    metrics.addProperty("online_mode", client ? compatibilityLayer.clientOnlineMode() : compatibilityLayer.serverOnlineMode());
-                    metrics.addProperty("player_count", client ? compatibilityLayer.clientPlayerCount() : compatibilityLayer.serverPlayerCount());
+                    metrics.addProperty("online_mode", compatibilityLayer.onlineMode());
+                    metrics.addProperty("player_count", compatibilityLayer.playerCount());
                     appendNeoForgeData(metrics, mod, client ? "NeoForge Client" : "NeoForge");
                 })
                 .onReady(context -> {
-                    // dedicated servers never ask for consent, clients start submission once built
                     if (!client && config.preSubmissionStart(loggerFactory)) ((SimpleContext) context).startSubmission();
                 })
                 .onShutdown(FastStatsRegistry.instance()::unregister)
                 .onBuild((context, builder) -> {
-                    final var requireConsent = ((SimpleContext.ConsentBuilder) builder).isConsentRequired();
-                    if (context.isEnabled()) FastStatsRegistry.instance().register(context, requireConsent);
-                    if (client) {
+                    if (compatibilityLayer instanceof final CompatibilityLayer.Server server) {
+                        server.whenReady(context::ready);
+                        NeoForge.EVENT_BUS.addListener((final ServerStoppingEvent event) -> context.shutdown());
+                    } else {
                         context.ready();
-                        // otherwise the consent screen starts submission once consent was given
+                        final var requireConsent = ((SimpleContext.ConsentBuilder) builder).isConsentRequired();
+                        if (context.isEnabled()) FastStatsRegistry.instance().register(context, requireConsent);
                         if (config.preSubmissionStart(loggerFactory) && (!requireConsent || config.consentScreenShown()))
                             context.startSubmission();
-                    } else {
-                        // the server instance is captured once it started, only needed for metrics
-                        if (context.metrics().isPresent()) compatibilityLayer.initServer();
-                        NeoForge.EVENT_BUS.addListener((final ServerStartedEvent event) -> context.ready());
-                        NeoForge.EVENT_BUS.addListener((final ServerStoppingEvent event) -> context.shutdown());
                     }
                 });
+    }
+
+    static CompatibilityLayer.Loader loader() {
+        return ServiceLoader.load(CompatibilityLayer.Loader.class)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No NeoForge compatibility layer found"));
     }
 
     private static void appendNeoForgeData(final JsonObject metrics, final IModInfo mod, final String serverType) {

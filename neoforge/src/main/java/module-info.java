@@ -17,5 +17,5 @@ module dev.faststats.neoforge {
     requires static org.jetbrains.annotations;
     requires static org.jspecify;
 
-    uses dev.faststats.neoforge.compat.CompatibilityLayer;
+    uses dev.faststats.neoforge.compat.CompatibilityLayer.Loader;
 }

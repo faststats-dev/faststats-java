@@ -1,16 +1,50 @@
 package dev.faststats.fabric.compat;
 
-/**
- * Version-specific Fabric integration hooks.
- */
+import net.fabricmc.api.EnvType;
+import org.jetbrains.annotations.ApiStatus;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@ApiStatus.Internal
 public interface CompatibilityLayer {
-    void initServer();
+    boolean onlineMode();
 
-    boolean clientOnlineMode();
+    int playerCount();
 
-    int clientPlayerCount();
+    interface Client extends CompatibilityLayer {
+    }
 
-    boolean serverOnlineMode();
+    abstract class Server implements CompatibilityLayer {
+        private final List<Runnable> pending = new ArrayList<>();
+        private boolean started;
 
-    int serverPlayerCount();
+        public abstract void initServer();
+
+        public final void whenReady(final Runnable task) {
+            synchronized (pending) {
+                if (!started) {
+                    pending.add(task);
+                    return;
+                }
+            }
+            task.run();
+        }
+
+        protected final void onStarted() {
+            final List<Runnable> tasks;
+            synchronized (pending) {
+                started = true;
+                tasks = List.copyOf(pending);
+                pending.clear();
+            }
+            tasks.forEach(Runnable::run);
+        }
+    }
+
+    interface Loader {
+        CompatibilityLayer compat();
+
+        EnvType environment();
+    }
 }
