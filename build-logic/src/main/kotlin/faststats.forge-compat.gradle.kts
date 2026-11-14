@@ -34,7 +34,7 @@ sourceSets.main {
 tasks.processResources {
     from(project(":forge").file("src/main/resources"))
     val version = provider { project.version.toString() }
-    val range = "[${minecraft.name}]"
+    val range = mavenVersionRange(minecraftPlatform, minecraft)
     inputs.property("version", version)
     inputs.property("minecraft", range)
     filesMatching("META-INF/mods.toml") {

@@ -16,7 +16,7 @@ extra.set("publishVersionSuffix", "mc$minecraft")
 tasks.processResources {
     from(project(":neoforge").file("src/main/resources"))
     val version = provider { project.version.toString() }
-    val range = "[${minecraft.name}]"
+    val range = mavenVersionRange(minecraftPlatform, minecraft)
     inputs.property("version", version)
     inputs.property("minecraft", range)
     filesMatching("META-INF/neoforge.mods.toml") {

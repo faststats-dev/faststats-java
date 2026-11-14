@@ -79,6 +79,28 @@ val minecraftPlatforms = setOf("fabric", "forge", "neoforge")
 
 fun minecraftVersions(platform: String): List<MinecraftVersion> = platformVersions.getValue(platform)
 
+/**
+ * The version the Minecraft versions an artifact built for [version] runs on end before, exclusive.
+ *
+ * It is the next version with its own artifact in the same release (26.3 -> 26.3.1),
+ * otherwise the next release (26.3 -> 26.4), so the latest artifact keeps working on patches released after it.
+ * Obfuscated versions stay pinned to the exact version, as every release ships with its own obfuscation.
+ */
+private fun upperBound(platform: String, version: MinecraftVersion): String? {
+    if (version.obfuscated) return null
+    val (major, minor) = version.name.split('.')
+    val next = minecraftVersions(platform).dropWhile { it.name != version.name }.getOrNull(1)
+    return next?.name?.takeIf { it.startsWith("$major.$minor.") } ?: "$major.${minor.toInt() + 1}"
+}
+
+// the versions as a Fabric version predicate, the trailing dash excludes the snapshots of the upper bound
+fun fabricVersionRange(platform: String, version: MinecraftVersion): String =
+    upperBound(platform, version)?.let { ">=${version.name} <$it-" } ?: version.name
+
+// the versions as a Maven version range, used by NeoForge and Forge
+fun mavenVersionRange(platform: String, version: MinecraftVersion): String =
+    upperBound(platform, version)?.let { "[${version.name},$it)" } ?: "[${version.name}]"
+
 // projects are named :<platform>:versions:<minecraft version>
 val Project.minecraftPlatform: String get() = path.split(':')[1]
 
