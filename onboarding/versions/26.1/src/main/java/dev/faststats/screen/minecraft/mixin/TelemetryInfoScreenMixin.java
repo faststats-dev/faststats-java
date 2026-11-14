@@ -2,6 +2,7 @@ package dev.faststats.screen.minecraft.mixin;
 
 import dev.faststats.screen.minecraft.ConsentScreen;
 import dev.faststats.screen.onboarding.ConsentText;
+import dev.faststats.screen.registry.FastStatsRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -30,6 +31,8 @@ public final class TelemetryInfoScreenMixin extends Screen {
 
     @Inject(method = "init", at = @At("TAIL"))
     private void faststats$addButton(final CallbackInfo callback) {
+        faststats$button = null;
+        if (FastStatsRegistry.instance().isEmpty()) return;
         final Component message = Component.literal(ConsentText.BUTTON);
         faststats$button = addRenderableWidget(Button.builder(message, ignored -> {
             Minecraft.getInstance().setScreenAndShow(new ConsentScreen(this));
