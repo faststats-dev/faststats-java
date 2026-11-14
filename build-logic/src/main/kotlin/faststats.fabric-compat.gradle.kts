@@ -22,7 +22,7 @@ extra.set("publishVersionSuffix", "mc$minecraft")
 tasks.processResources {
     from(project(":fabric").file("src/main/resources"))
     val version = provider { project.version.toString() }
-    val minecraftVersion = minecraft.name
+    val minecraftVersion = fabricVersionRange(minecraftPlatform, minecraft)
     inputs.property("version", version)
     inputs.property("minecraft", minecraftVersion)
     filesMatching("fabric.mod.json") {
