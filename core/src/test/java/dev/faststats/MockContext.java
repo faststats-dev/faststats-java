@@ -1,10 +1,12 @@
 package dev.faststats;
 
+import com.google.gson.JsonObject;
 import dev.faststats.internal.Logger;
 import dev.faststats.internal.PlatformLoggerFactory;
 import org.jspecify.annotations.Nullable;
 
 import java.util.UUID;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 public final class MockContext {
@@ -45,6 +47,11 @@ public final class MockContext {
 
         public Factory metrics(final Function<Metrics.Factory, Metrics> metrics) {
             builder.metrics(metrics);
+            return this;
+        }
+
+        public Factory defaultMetrics(final BiConsumer<SimpleContext, JsonObject> defaultMetrics) {
+            builder.defaultMetrics(defaultMetrics);
             return this;
         }
 

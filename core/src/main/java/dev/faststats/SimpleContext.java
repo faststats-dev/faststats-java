@@ -262,7 +262,32 @@ public final class SimpleContext implements FastStatsContext {
         loggerFactory.setDebug(config.debug());
     }
 
-    void appendDefaultMetrics(final JsonObject metrics) {
+    private static final String javaVendor = System.getProperty("java.vendor");
+    private static final String javaVersion = System.getProperty("java.version");
+    private static final String osArch = System.getProperty("os.arch");
+    private static final String osName = System.getProperty("os.name");
+    private static final String osVersion = System.getProperty("os.version");
+    private static final int coreCount = Runtime.getRuntime().availableProcessors();
+
+    /**
+     * Appends the SDK's runtime data (Java, OS) and the platform's default data
+     * (server type, versions, ...) to the given object.
+     * <p>
+     * Used by both metrics and error reports, so the platform data is present
+     * even when no metrics instance is configured.
+     */
+    void appendPlatformData(final JsonObject metrics) {
+        metrics.addProperty("client", clientApplication);
+        metrics.addProperty("core_count", coreCount);
+        metrics.addProperty("java_vendor", javaVendor);
+        metrics.addProperty("java_version", javaVersion);
+        metrics.addProperty("os_arch", osArch);
+        metrics.addProperty("os_name", osName);
+        metrics.addProperty("os_version", osVersion);
+        appendDefaultMetrics(metrics);
+    }
+
+    private void appendDefaultMetrics(final JsonObject metrics) {
         try {
             if (defaultMetrics != null) defaultMetrics.accept(this, metrics);
         } catch (final Throwable t) {

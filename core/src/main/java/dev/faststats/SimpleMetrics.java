@@ -58,24 +58,7 @@ public final class SimpleMetrics extends SubmissionService implements Metrics {
         return "metrics";
     }
 
-    private static final String javaVendor = System.getProperty("java.vendor");
-    private static final String javaVersion = System.getProperty("java.version");
-    private static final String osArch = System.getProperty("os.arch");
-    private static final String osName = System.getProperty("os.name");
-    private static final String osVersion = System.getProperty("os.version");
-    private static final int coreCount = Runtime.getRuntime().availableProcessors();
-
-    private void appendInternalData(final JsonObject metrics) {
-        metrics.addProperty("client", context.isClientApplication());
-        metrics.addProperty("core_count", coreCount);
-        metrics.addProperty("java_vendor", javaVendor);
-        metrics.addProperty("java_version", javaVersion);
-        metrics.addProperty("os_arch", osArch);
-        metrics.addProperty("os_name", osName);
-        metrics.addProperty("os_version", osVersion);
-    }
-
-    private void appendCustomData(final JsonObject metrics) {
+    void appendCustomData(final JsonObject metrics) {
         if (!context.getConfig().additionalMetrics()) return;
         this.metrics.forEach(metric -> {
             try {
@@ -92,17 +75,12 @@ public final class SimpleMetrics extends SubmissionService implements Metrics {
         });
     }
 
-    public void appendData(final JsonObject metrics) {
-        appendInternalData(metrics);
-        context.appendDefaultMetrics(metrics);
-        appendCustomData(metrics);
-    }
-
     private JsonObject createData() {
         final var data = new JsonObject();
         final var metrics = new JsonObject();
 
-        appendData(metrics);
+        context.appendPlatformData(metrics);
+        appendCustomData(metrics);
 
         data.addProperty("project_name", context.getProjectName());
         data.addProperty("identifier", context.getConfig().serverId().toString());
