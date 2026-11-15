@@ -99,10 +99,8 @@ final class SimpleErrorTrackerService extends SubmissionService implements Error
         data.addProperty("sdk_version", context.getSdkInfo().getVersion());
 
         final var defaultContext = new JsonObject();
-        context.metrics().ifPresent(metrics -> {
-            final var simpleMetrics = (SimpleMetrics) metrics;
-            simpleMetrics.appendData(defaultContext);
-        });
+        context.appendPlatformData(defaultContext);
+        context.metrics().ifPresent(metrics -> ((SimpleMetrics) metrics).appendCustomData(defaultContext));
         globalErrorTracker.getAttributes().forEachPrimitive(defaultContext::add);
         data.add("context", defaultContext);
 
